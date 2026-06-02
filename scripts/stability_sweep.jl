@@ -1,7 +1,7 @@
-# src_new/stability_sweep.jl
+# scripts/stability_sweep.jl
 
-include("utils.jl")
-include("simulation.jl")
+include("../src/utils.jl")
+include("../src/simulation.jl")
 include("parameters.jl")
 
 using Random, Statistics, Base.Threads, NPZ, ProgressMeter

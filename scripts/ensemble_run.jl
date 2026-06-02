@@ -1,7 +1,7 @@
-# src_new/ensemble_run.jl
+# scripts/ensemble_run.jl
 
-include("utils.jl")
-include("simulation.jl")
+include("../src/utils.jl")
+include("../src/simulation.jl")
 include("parameters.jl")
 
 using Base.Threads

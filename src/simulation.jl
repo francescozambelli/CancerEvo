@@ -1,3 +1,5 @@
+# src/simulation.jl
+
 include("utils.jl")
 
 function simulation_optimized(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int, n_it_store::Int, bar=true, limit=0.5, lower_limit=0.0)
