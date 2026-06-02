@@ -104,14 +104,6 @@ function load_prior_data(data_dir::String)::DataFrame
         end
     end
 
-    # Also load any previously written adaptive results
-    adaptive_path = joinpath(data_dir, OUTPUT_FILE)
-    if isfile(adaptive_path)
-        df = CSV.read(adaptive_path, DataFrame)
-        push!(frames, df)
-        println("  Loaded adaptive prior: $OUTPUT_FILE ($(nrow(df)) rows)")
-    end
-
     isempty(frames) && return DataFrame(rmax=Float64[], stable_dmu=Float64[])
     return vcat(frames...; cols=:intersect)
 end
@@ -120,7 +112,7 @@ end
 """
     fit_boundary_model(prior::DataFrame) → Function
 
-Fit a log-linear model  log(dmu*) = a + b·log(rmax)  to the prior data and
+Fit a linear interpolation model with flat extrapolation to the prior data and
 return a closure  rmax → dmu_predicted.
 
 If fewer than 2 unique rmax values are available, falls back to the mean
@@ -133,16 +125,22 @@ function fit_boundary_model(prior::DataFrame)
         return _ -> fallback
     end
 
-    log_r   = log.(prior.rmax)
-    log_dmu = log.(prior.stable_dmu)
+    sorted_prior = sort(prior, :rmax)
 
-    # Ordinary least-squares: [1 log_r] * [a; b] = log_dmu
-    X = hcat(ones(length(log_r)), log_r)
-    coef = X \ log_dmu          # Julia's backslash → least-squares solution
-    a, b = coef
-
-    println("  Boundary model: log(dmu*) = $(round(a, sigdigits=4)) + $(round(b, sigdigits=4)) · log(rmax)")
-    return rmax -> exp(a + b * log(rmax))
+    return rmax -> begin
+        if rmax <= sorted_prior.rmax[1]
+            return sorted_prior.stable_dmu[1]
+        elseif rmax >= sorted_prior.rmax[end]
+            return sorted_prior.stable_dmu[end]
+        else
+            idx = findlast(sorted_prior.rmax .<= rmax)
+            r1 = sorted_prior.rmax[idx]
+            r2 = sorted_prior.rmax[idx+1]
+            y1 = sorted_prior.stable_dmu[idx]
+            y2 = sorted_prior.stable_dmu[idx+1]
+            return y1 + (y2 - y1) * (rmax - r1) / (r2 - r1)
+        end
+    end
 end
 
 
@@ -268,7 +266,6 @@ end
 Create the output CSV with a header if it does not already exist.
 """
 function init_output(path::String)
-    isfile(path) && return
     open(path, "w") do io
         println(io, "rmax,stable_dmu")
     end
@@ -396,13 +393,16 @@ function run_stability_sweep(; n_rmax::Int = N_RMAX_DEFAULT, dry_run::Bool = fal
                 s1, s2 = states[i], states[i+1]
                 if (s1 == "Tumor_Max" && s2 == "Tumor_Min") ||
                    (s1 == "Tumor_Min" && s2 == "Tumor_Max")
-                    mid = (dmu_vals[i] + dmu_vals[i+1]) / 2
-                    push!(found_dmus, mid)
-                    println("  Transition at dmu ≈ $(round(mid, sigdigits=5))")
+                    boundary_lo = dmu_vals[i]
+                    boundary_hi = dmu_vals[i+1]
+                    println("  Refining transition boundary [$(round(boundary_lo,sigdigits=4)), $(round(boundary_hi,sigdigits=4))]...")
+                    dmu_star = bisect_boundary(r_max, boundary_lo, boundary_hi, N_BISECT)
+                    push!(found_dmus, dmu_star)
+                    println("    → transition boundary dmu* ≈ $(round(dmu_star, sigdigits=5))")
                     break
                 end
             end
-            window_multiplier *= FALLBACK_MULTIPLIER   # widen for next iteration
+            window_multiplier = 1.0   # reset since we successfully found the boundary!
 
         elseif !isempty(max_idxs) && isempty(min_idxs) && isempty(stable_idxs)
             # ── Case C: all Tumor_Max → window too low, shift up ─────────────

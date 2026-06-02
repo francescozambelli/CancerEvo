@@ -1,14 +1,16 @@
 """
 plot_stability_sweep.py
 -----------------------
-Plot the stability sweep results: stable mutation rate (``stable_dmu``)
-as a function of the normalised maximum reproduction rate (``rmax / r0``).
+Interactive unified phase diagram: all stability datasets overlaid, with
+adaptive boundary median + IQR ribbon.  No analytic theory curve.
 
-Reproduces Cells 5–7 of notebooks/analysis.ipynb.
+Opens an interactive HTML figure (Plotly) that supports zoom, pan, and hover.
+Also saves a static PNG to outputs/figures/stability_sweep.png.
 
 Outputs
 -------
-outputs/figures/stability_sweep.png
+outputs/figures/stability_sweep.html   ← interactive (open in browser)
+outputs/figures/stability_sweep.png    ← static snapshot
 """
 
 import sys
@@ -17,79 +19,141 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.interpolate import make_smoothing_spline
+import plotly.graph_objects as go
 
-from src.analysis.loaders import load_stability_results
-
-# ---------------------------------------------------------------------------
-# Style
-# ---------------------------------------------------------------------------
-plt.rcParams.update({
-    "font.family": "sans-serif",
-    "font.size": 13,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-})
+from src.analysis.loaders import load_stability_results, load_all_stability_results
 
 # ---------------------------------------------------------------------------
-# Load
+# Load data
 # ---------------------------------------------------------------------------
 df0, df1 = load_stability_results()
+merged    = load_all_stability_results()
 
-# ── Group by rmax_norm ──
-grp0 = df0.groupby("rmax_norm")["stable_dmu"].mean()
-grp1 = df1.groupby("rmax_norm")["stable_dmu"].mean()
+dfa              = merged[merged["source"] == "adaptive"]
+adaptive_available = not dfa.empty
 
-# ── Analytical prediction ──
-x_theory = np.linspace(1.0, 2.0, 200)
-# From the notebook: y = (1 - (r)^(-1/10)) / 10
-y_theory  = (1 - x_theory ** (-1.0 / 10)) / 10
+XMAX = 10.0   # rmax/r0 cut-off
+
+# ── Adaptive boundary: per-rmax_norm statistics ──────────────────────────────
+if adaptive_available:
+    dfa_clip = dfa[dfa["rmax_norm"] <= XMAX].copy()
+    grp = dfa_clip.groupby("rmax_norm")["stable_dmu"]
+    r_unique  = np.array(sorted(dfa_clip["rmax_norm"].unique()))
+    adapt_med = grp.median().values
+    adapt_lo  = grp.quantile(0.25).values
+    adapt_hi  = grp.quantile(0.75).values
+    adapt_rmax_raw = dfa_clip["rmax_norm"].values
+    adapt_dmu_raw  = dfa_clip["stable_dmu"].values
 
 # ---------------------------------------------------------------------------
-# Plot
+# Build figure
 # ---------------------------------------------------------------------------
-fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-fig.suptitle("Stability Sweep: Critical Mutation Rate", fontsize=16,
-             fontweight="bold", y=1.02)
+fig = go.Figure()
 
-# ── Panel 1: grouped mean ──
-ax = axes[0]
-ax.plot(grp0.index, grp0.values, "o-", color="#E63946", lw=2,
-        markersize=6, label="Sweep 1")
-ax.plot(grp1.index, grp1.values, "s-", color="#2A9D8F", lw=2,
-        markersize=6, label="Sweep 2")
-ax.plot(x_theory, y_theory, "--", color="#333333", lw=2,
-        label=r"Theory: $(1-r^{-1/10})/10$")
+# ── Prior sweep 1 ────────────────────────────────────────────────────────────
+mask0 = df0["rmax_norm"] <= XMAX
+fig.add_trace(go.Scatter(
+    x=df0.loc[mask0, "rmax_norm"],
+    y=df0.loc[mask0, "stable_dmu"],
+    mode="markers",
+    name="Sweep 1",
+    marker=dict(color="#E63946", size=6, opacity=0.45),
+    hovertemplate="rmax/r0: %{x:.3f}<br>δμ: %{y:.5f}<extra>Sweep 1</extra>",
+))
 
-ax.set_xlabel(r"$r_{\max}/r_0$", fontsize=15)
-ax.set_ylabel(r"Mean stable $\delta\mu$", fontsize=14)
-ax.set_title("Mean Stable Mutation Rate", fontsize=14)
-ax.legend(fontsize=12)
-ax.yaxis.grid(True, ls="--", alpha=0.4)
+# ── Prior sweep 2 ────────────────────────────────────────────────────────────
+mask1 = df1["rmax_norm"] <= XMAX
+fig.add_trace(go.Scatter(
+    x=df1.loc[mask1, "rmax_norm"],
+    y=df1.loc[mask1, "stable_dmu"],
+    mode="markers",
+    name="Sweep 2",
+    marker=dict(color="#2A9D8F", size=6, opacity=0.45),
+    hovertemplate="rmax/r0: %{x:.3f}<br>δμ: %{y:.5f}<extra>Sweep 2</extra>",
+))
 
-# ── Panel 2: scatter (all individual runs) ──
-ax = axes[1]
-ax.scatter(df0["rmax_norm"], df0["stable_dmu"] * 10,
-           color="#E63946", alpha=0.5, s=18, label="Sweep 1 (×10)")
-ax.scatter(df1["rmax_norm"], df1["stable_dmu"] * 10,
-           color="#2A9D8F", alpha=0.5, s=18, label="Sweep 2 (×10)")
+# ── Adaptive data ─────────────────────────────────────────────────────────────
+if adaptive_available:
+    # Raw scatter
+    fig.add_trace(go.Scatter(
+        x=adapt_rmax_raw,
+        y=adapt_dmu_raw,
+        mode="markers",
+        name="Adaptive (raw)",
+        marker=dict(color="#6A0572", size=5, opacity=0.35),
+        hovertemplate="rmax/r0: %{x:.3f}<br>δμ: %{y:.5f}<extra>Adaptive raw</extra>",
+    ))
 
-y_theory2 = 1.0 - x_theory ** (-1.0 / 18)
-ax.plot(x_theory, y_theory2, "--", color="#333333", lw=2,
-        label=r"Theory: $1 - r^{-1/18}$")
+    # IQR ribbon (filled area between Q25 and Q75)
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([r_unique, r_unique[::-1]]),
+        y=np.concatenate([adapt_hi, adapt_lo[::-1]]),
+        fill="toself",
+        fillcolor="rgba(106,5,114,0.12)",
+        line=dict(width=0),
+        name="Adaptive IQR",
+        showlegend=True,
+        hoverinfo="skip",
+    ))
 
-ax.set_xlabel(r"$r_{\max}/r_0$", fontsize=15)
-ax.set_ylabel(r"Stable $\delta\mu \times 10$", fontsize=14)
-ax.set_title("Individual Runs", fontsize=14)
-ax.legend(fontsize=12)
-ax.yaxis.grid(True, ls="--", alpha=0.4)
+    # Median boundary line
+    fig.add_trace(go.Scatter(
+        x=r_unique,
+        y=adapt_med,
+        mode="lines+markers",
+        name="Adaptive boundary (median)",
+        line=dict(color="#6A0572", width=2.5),
+        marker=dict(size=6),
+        hovertemplate="rmax/r0: %{x:.3f}<br>δμ*: %{y:.5f}<extra>Adaptive median</extra>",
+    ))
 
-plt.tight_layout()
+# ---------------------------------------------------------------------------
+# Layout
+# ---------------------------------------------------------------------------
+fig.update_layout(
+    title=dict(
+        text="Phase Boundary: Critical Mutation Rate δμ*(r<sub>max</sub>)",
+        font=dict(size=18),
+        x=0.5,
+    ),
+    xaxis=dict(
+        title=dict(text="r<sub>max</sub> / r<sub>0</sub>", font=dict(size=15)),
+        range=[0, XMAX],
+        showgrid=True,
+        gridcolor="#e0e0e0",
+    ),
+    yaxis=dict(
+        title=dict(text="Phase boundary δμ*", font=dict(size=15)),
+        showgrid=True,
+        gridcolor="#e0e0e0",
+    ),
+    legend=dict(
+        font=dict(size=12),
+        bordercolor="#cccccc",
+        borderwidth=1,
+    ),
+    plot_bgcolor="white",
+    hovermode="closest",
+    width=900,
+    height=560,
+)
 
+# ---------------------------------------------------------------------------
+# Save
+# ---------------------------------------------------------------------------
 out_dir = Path(__file__).resolve().parents[2] / "outputs" / "figures"
 out_dir.mkdir(parents=True, exist_ok=True)
-out_path = out_dir / "stability_sweep.png"
-plt.savefig(out_path, dpi=150, bbox_inches="tight")
-print(f"Saved → {out_path}")
-plt.show()
+
+html_path = out_dir / "stability_sweep.html"
+png_path  = out_dir / "stability_sweep.png"
+
+fig.write_html(str(html_path), include_plotlyjs="cdn")
+print(f"Saved interactive → {html_path}")
+
+try:
+    fig.write_image(str(png_path), scale=2)
+    print(f"Saved static     → {png_path}")
+except Exception as e:
+    print(f"Static PNG skipped ({e}); install kaleido: pip install kaleido")
+
+fig.show()
