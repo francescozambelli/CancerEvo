@@ -1,26 +1,6 @@
 include("utils.jl")
 
-import Pkg
-
-# List of packages you want
-packages = [
-    "Random", "Statistics", "Plots", "ProgressMeter", "JSON", 
-    "StatsBase", "Distributions", "GLM", "LaTeXStrings", 
-    "SplitApplyCombine", "StatsPlots"
-]
-
-for pkg in packages
-    # Check if the package can be loaded
-    try
-        @eval using $(Symbol(pkg))
-    catch
-        println("Installing $pkg ...")
-        Pkg.add(pkg)
-        @eval using $(Symbol(pkg))
-    end
-end
-
-using Random, Statistics, Plots, ProgressMeter, JSON, StatsBase, Distributions, GLM, LaTeXStrings, SplitApplyCombine, StatsPlots
+using Random, Statistics, ProgressMeter, JSON, StatsBase, Distributions, GLM, LaTeXStrings, SplitApplyCombine
 
 # Interventions #
 function int_a!(tiss, chrom_gene_mut, gene_map, mu0, dmu, r0, dr, dm)

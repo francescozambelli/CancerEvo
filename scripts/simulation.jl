@@ -2,27 +2,9 @@ include("utils.jl")
 include("parameters.jl")
 include("interventions.jl")
 
-import Pkg
+# simulation.jl is the main entry point. 
+# It includes other scripts and defines the main simulation loop.
 
-# List of packages you want
-packages = [
-    "Random", "Statistics", "Plots", "ProgressMeter", "JSON", 
-    "StatsBase", "Distributions", "GLM", "LaTeXStrings", 
-    "SplitApplyCombine", "StatsPlots"
-]
-
-for pkg in packages
-    # Check if the package can be loaded
-    try
-        @eval using $(Symbol(pkg))
-    catch
-        println("Installing $pkg ...")
-        Pkg.add(pkg)
-        @eval using $(Symbol(pkg))
-    end
-end
-
-using Random, Statistics, Plots, ProgressMeter, JSON, StatsBase, Distributions, GLM, LaTeXStrings, SplitApplyCombine, StatsPlots
 
 # Simulation loop
 

@@ -1,24 +1,7 @@
 import Pkg
+Pkg.activate(joinpath(dirname(@__DIR__)))
 
-# List of packages you want
-packages = [
-    "Random", "Statistics", "Plots", "ProgressMeter", "JSON", 
-    "StatsBase", "Distributions", "GLM", "LaTeXStrings", 
-    "SplitApplyCombine", "StatsPlots"
-]
-
-for pkg in packages
-    # Check if the package can be loaded
-    try
-        @eval using $(Symbol(pkg))
-    catch
-        println("Installing $pkg ...")
-        Pkg.add(pkg)
-        @eval using $(Symbol(pkg))
-    end
-end
-
-using Random, Statistics, Plots, ProgressMeter, JSON, StatsBase, Distributions, GLM, LaTeXStrings, SplitApplyCombine, StatsPlots
+using Random, Statistics, ProgressMeter, JSON, StatsBase, Distributions, GLM, LaTeXStrings, SplitApplyCombine
 
 ### Save data to file ###
 
@@ -285,9 +268,9 @@ end
 # Perturbation of the initial state
 # ---------------------------------
 function perturb_init_tissue!(tiss::Tissue, r::Float64, pert_chrom_gene_mut::Vector{Vector{Int}})
-    for i in 1:L
-        for j in 1:L
-            if (i-L//2)^2+(j-L//2)^2 <= (r*L)^2
+    for i in 1:tiss.L
+        for j in 1:tiss.L
+            if (i-tiss.L//2)^2+(j-tiss.L//2)^2 <= (r*tiss.L)^2
                 tiss.cells[i,j].chromosomes.chromosomes_gene_mut = copy(pert_chrom_gene_mut)
                 tiss.cells[i,j].state=1
                 update_mu!(tiss.cells[i,j])
