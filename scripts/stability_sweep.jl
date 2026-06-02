@@ -452,11 +452,11 @@ end
 
 if abspath(PROGRAM_FILE) == @__FILE__
     dry_run = "--dry-run" in ARGS
-    n_rmax  = N_RMAX_DEFAULT
+    n_rmax_val = N_RMAX_DEFAULT
     for (i, arg) in enumerate(ARGS)
         if arg == "--n-rmax" && i < length(ARGS)
-            n_rmax = parse(Int, ARGS[i+1])
+            global n_rmax_val = parse(Int, ARGS[i+1])
         end
     end
-    run_stability_sweep(; n_rmax=n_rmax, dry_run=dry_run)
+    run_stability_sweep(; n_rmax=n_rmax_val, dry_run=dry_run)
 end
