@@ -1,10 +1,9 @@
 # scripts/study_spatial.jl
 #
-# Study spatial structures at high mutation rate dmu = 0.0030:
-#   1. Fast Increase (Tumor_Max): rmax = 0.3153, dmu = 0.0030
-#      (Saves steps 0, 20, 50, 100, 150)
-#   2. Fast Decrease (Tumor_Min): rmax = 0.8480, dmu = 0.0030
-#      (Saves steps 0, 1, 2, 3, 5)
+# Study spatial structures at the new healthy-cell-based boundary for rmax = 0.8480:
+#   1. Below Boundary: rmax = 0.8480, dmu = 0.0045
+#   2. On Boundary: rmax = 0.8480, dmu = 0.00577
+#   3. Above Boundary: rmax = 0.8480, dmu = 0.0070
 
 include("../src/utils.jl")
 include("../src/simulation.jl")
@@ -32,32 +31,28 @@ function run_spatial_study()
     out_dir = joinpath(dirname(@__DIR__), "data", "spatial_study")
     mkpath(out_dir)
 
-    # 1. Fast Increase Case
-    println("\nRunning Fast Increase Scenario (rmax=0.3153, dmu=0.0030)...")
-    tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, 0.0030, r0, 0.03153, 0.3153, 0.0, N_CHR_STAB)
-    perturb_optimized!(tiss, R_PERT_STABILITY, PERT_CHR_STAB)
-    
-    inc_steps = [0, 20, 50, 100, 150]
-    for step in 0:150
-        if step in inc_steps
-            npzwrite(joinpath(out_dir, "fast_inc_step_$(step).npz"), reshape(tiss.state, (L, L)))
-            println("  Saved step $step")
-        end
-        substitute_optimized!(tiss, N_CHR_STAB)
-    end
+    scenarios = [
+        (name="dec_below", dmu=0.0045),
+        (name="dec_on", dmu=0.00577),
+        (name="dec_above", dmu=0.0070)
+    ]
 
-    # 2. Fast Decrease Case
-    println("\nRunning Fast Decrease Scenario (rmax=0.8480, dmu=0.0030)...")
-    tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, 0.0030, r0, 0.0848, 0.8480, 0.0, N_CHR_STAB)
-    perturb_optimized!(tiss, R_PERT_STABILITY, PERT_CHR_STAB)
-    
-    dec_steps = [0, 1, 2, 3, 5]
-    for step in 0:5
-        if step in dec_steps
-            npzwrite(joinpath(out_dir, "fast_dec_step_$(step).npz"), reshape(tiss.state, (L, L)))
-            println("  Saved step $step")
+    for sc in scenarios
+        println("\nRunning study for scenario: $(sc.name) (rmax=0.8480, dmu=$(sc.dmu))...")
+        dr = 0.0848
+        tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK,
+                                mu0, sc.dmu, r0, dr, 0.8480, 0.0, N_CHR_STAB)
+        perturb_optimized!(tiss, R_PERT_STABILITY, PERT_CHR_STAB)
+
+        intervals = [0, 50, 100, 200, 400]
+        for step in 0:400
+            if step in intervals
+                grid = reshape(tiss.state, (L, L))
+                npzwrite(joinpath(out_dir, "$(sc.name)_step_$(step).npz"), grid)
+                println("  Saved step $step")
+            end
+            substitute_optimized!(tiss, N_CHR_STAB)
         end
-        substitute_optimized!(tiss, N_CHR_STAB)
     end
     
     println("\nSpatial study simulations complete!")

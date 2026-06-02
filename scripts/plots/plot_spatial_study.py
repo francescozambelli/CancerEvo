@@ -22,9 +22,9 @@ colors = ["#E9F5EC", "#E63946", "#3A3A3A"]
 cmap = ListedColormap(colors)
 
 scenarios = [
-    {"id": "dec_below", "title": "Below Boundary\n(rmax=0.8480, dmu=0.0018)"},
-    {"id": "dec_on", "title": "On Boundary (Transition)\n(rmax=0.8480, dmu=0.0023)"},
-    {"id": "dec_above", "title": "Above Boundary\n(rmax=0.8480, dmu=0.0028)"}
+    {"id": "dec_below", "title": "Below Boundary\n(rmax=0.8480, dmu=0.0045)"},
+    {"id": "dec_on", "title": "On Boundary (Transition)\n(rmax=0.8480, dmu=0.0058)"},
+    {"id": "dec_above", "title": "Above Boundary\n(rmax=0.8480, dmu=0.0070)"}
 ]
 
 steps = [0, 50, 100, 200, 400]

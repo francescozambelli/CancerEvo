@@ -2,7 +2,7 @@
 plot_stability_sweep.py
 -----------------------
 Interactive unified phase diagram: all stability datasets overlaid, with
-adaptive boundary median + IQR ribbon.  No analytic theory curve.
+adaptive boundary median + IQR ribbon, and analytic theory curve.
 
 Opens an interactive HTML figure (Plotly) that supports zoom, pan, and hover.
 Also saves a static PNG to outputs/figures/stability_sweep.png.
@@ -46,31 +46,41 @@ if adaptive_available:
     adapt_dmu_raw  = dfa_clip["stable_dmu"].values
 
 # ---------------------------------------------------------------------------
+# Theoretical prediction (corrected)
+# ---------------------------------------------------------------------------
+# Model parameters (from scripts/parameters.jl)
+r0   = 0.15
+N_I  = 10
+N_HK = 10
+
+# In the sweep: dr = rmax/10, so r_cancer = min(r0 + 20*(rmax/10), rmax) = rmax (no genetic cap)
+#
+# Stability condition: after a boundary division, BOTH mother AND daughter are mutated.
+#   Net cancer gain per step at boundary:
+#     r_cancer * P_s [daughter survives] - r_cancer * (1-P_s) [mother dies] = r0
+#   => r_cancer * (2*P_s - 1) = r0
+#   => P_s = (1 + r0/r_cancer) / 2
+#   => (1 - N_I*dmu*)^N_HK = (1 + r0/r_cancer) / 2
+#   => dmu* = [1 - ((1 + r0/r_cancer)/2)^(1/N_HK)] / N_I
+#
+# Limiting cases:
+#   r_cancer = r0: P_s = 1 => dmu* = 0  (no advantage, any mutation kills)
+#   r_cancer >> r0: P_s -> 0.5 => dmu*_inf = [1 - 0.5^(1/N_HK)] / N_I
+
+theory_rmax_norm = np.linspace(1.001, XMAX, 600)
+theory_rmax_abs  = theory_rmax_norm * r0          # r_cancer = rmax (dr = rmax/10)
+P_s_star         = (1.0 + r0 / theory_rmax_abs) / 2.0
+mu_star          = 1.0 - P_s_star ** (1.0 / N_HK)
+dmu_star         = np.clip(mu_star / N_I, 0.0, None)
+
+# Asymptotic saturation
+dmu_star_sat = float((1.0 - 0.5 ** (1.0 / N_HK)) / N_I)
+
+
+# ---------------------------------------------------------------------------
 # Build figure
 # ---------------------------------------------------------------------------
 fig = go.Figure()
-
-# ── Prior sweep 1 ────────────────────────────────────────────────────────────
-mask0 = df0["rmax_norm"] <= XMAX
-fig.add_trace(go.Scatter(
-    x=df0.loc[mask0, "rmax_norm"],
-    y=df0.loc[mask0, "stable_dmu"],
-    mode="markers",
-    name="Sweep 1",
-    marker=dict(color="#E63946", size=6, opacity=0.45),
-    hovertemplate="rmax/r0: %{x:.3f}<br>δμ: %{y:.5f}<extra>Sweep 1</extra>",
-))
-
-# ── Prior sweep 2 ────────────────────────────────────────────────────────────
-mask1 = df1["rmax_norm"] <= XMAX
-fig.add_trace(go.Scatter(
-    x=df1.loc[mask1, "rmax_norm"],
-    y=df1.loc[mask1, "stable_dmu"],
-    mode="markers",
-    name="Sweep 2",
-    marker=dict(color="#2A9D8F", size=6, opacity=0.45),
-    hovertemplate="rmax/r0: %{x:.3f}<br>δμ: %{y:.5f}<extra>Sweep 2</extra>",
-))
 
 # ── Adaptive data ─────────────────────────────────────────────────────────────
 if adaptive_available:
@@ -106,6 +116,26 @@ if adaptive_available:
         marker=dict(size=6),
         hovertemplate="rmax/r0: %{x:.3f}<br>δμ*: %{y:.5f}<extra>Adaptive median</extra>",
     ))
+
+# ── Theoretical prediction ───────────────────────────────────────────────────
+# Corrected formula: both mother and daughter mutate; dr=rmax/10 so r_cancer=rmax
+fig.add_trace(go.Scatter(
+    x=theory_rmax_norm,
+    y=dmu_star,
+    mode="lines",
+    name="Theory: δμ* = [1−((1+r₀/rₘₐₓ)/2)^(1/N_HK)]/N_I",
+    line=dict(color="#F4A261", width=3, dash="solid"),
+    hovertemplate="rmax/r0: %{x:.3f}<br>δμ* theory: %{y:.5f}<extra>Theory</extra>",
+))
+
+# Horizontal line at asymptotic saturation
+fig.add_hline(
+    y=dmu_star_sat,
+    line=dict(color="rgba(244,162,97,0.45)", width=1.5, dash="dash"),
+    annotation_text=f"δμ*<sub>∞</sub> = [1−0.5<sup>1/N_HK</sup>]/N_I ≈ {dmu_star_sat:.4f}",
+    annotation_position="top right",
+    annotation_font=dict(size=11, color="#F4A261"),
+)
 
 # ---------------------------------------------------------------------------
 # Layout
