@@ -6,3 +6,5 @@
 data/
 images/
 gif/
+
+__pycache__/
