@@ -212,3 +212,22 @@ def load_all_stability_results() -> pd.DataFrame:
     merged = pd.concat(frames, ignore_index=True)
     merged.sort_values(["rmax", "stable_dmu"], inplace=True, ignore_index=True)
     return merged
+
+
+def load_external_tumor_mu() -> List[np.ndarray]:
+    """
+    Load mutation rate trajectories for 'Tumor' runs from the external data directory.
+    """
+    external_dir = Path("/data/UNIVERSITA/PhD/PROJECTS/Data/CancerEvo")
+    mu_path = external_dir / "0ch_mu.txt"
+    state_path = external_dir / "0ch_state.txt"
+
+    data = []
+    with open(mu_path) as f:
+        for line in f:
+            data.append(np.array([float(n) for n in line.strip().split(", ")]))
+
+    states = np.loadtxt(state_path, dtype=str)
+    tumor_indices = np.where(states == "Tumor")[0]
+    return [data[i] for i in tumor_indices]
+

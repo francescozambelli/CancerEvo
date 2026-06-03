@@ -42,7 +42,7 @@ function run_ensemble(num_sims=50)
     
     println("--- Ensemble Runner ---")
     println("Running $num_sims simulations on $(Threads.nthreads()) threads.")
-    println("Parameters: L=$L, steps=$n_steps, limit=$limit")
+    println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR")
     
     progress_lock = ReentrantLock()
     completed = 0
