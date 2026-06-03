@@ -244,7 +244,7 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
 
     ax.set_xlabel(r"$r/r_0$", fontsize=16, labelpad=10)
     ax.set_ylabel(r"$P_{\rm death}$", fontsize=16, labelpad=10)
-    ax.set_zlabel(f"Tumor Density ({scale_str})", fontsize=14, labelpad=18)
+    ax.set_zlabel(f"Tumor Density ({scale_str})", fontsize=14, labelpad=26)
 
     ax.set_xlim(min(x_new), max(x_new))
     ax.set_ylim(min(y_spline), max(y_spline) * 1.5)
@@ -263,8 +263,8 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
     ax.zaxis.set_major_formatter(FuncFormatter(format_sci))
     
     # Rotate Z-axis tick labels and add padding to avoid superposition with grid/label
-    ax.tick_params(axis="z", pad=10)
-    plt.setp(ax.get_zticklabels(), rotation=15, ha='right')
+    ax.tick_params(axis="z", pad=6)
+    plt.setp(ax.get_zticklabels(), rotation=15, ha='left')
     
     ax.xaxis.set_pane_color((0.95, 0.95, 0.95, 0.3))
     ax.yaxis.set_pane_color((0.95, 0.95, 0.95, 0.3))
