@@ -26,6 +26,7 @@ import plotly.graph_objects as go
 from scipy.interpolate import make_smoothing_spline
 
 from src.analysis.loaders import load_all_stability_results
+from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
 # Load data
@@ -36,18 +37,31 @@ dfa              = merged[merged["source"] == "adaptive"]
 adaptive_available = not dfa.empty
 
 XMAX = 7.0   # rmax/r0 cut-off (updated to 7.0)
-YMAX = 0.072  # maximum mutation rate to plot
+r0   = 0.15
+N_HK = 10
+N_I  = 10
+
+# Maximum mutation rate to plot was 0.072, convert it to p_death space
+YMAX = dyn_state(0.0, 1.0, 0.072, 0.0, N_HK)[1]
 
 # ── Adaptive boundary: per-rmax_norm statistics ──────────────────────────────
 if adaptive_available:
     dfa_clip = dfa[dfa["rmax_norm"] <= XMAX].copy()
     grp = dfa_clip.groupby("rmax_norm")["stable_dmu"]
     r_unique  = np.array(sorted(dfa_clip["rmax_norm"].unique()))
-    adapt_med = grp.median().values * 10
-    adapt_lo  = grp.quantile(0.25).values * 10
-    adapt_hi  = grp.quantile(0.75).values * 10
+    adapt_med_mu = grp.median().values * 10
+    
+    # Map raw mutation rate to p_death space using dyn_state with k=0
+    adapt_med = dyn_state(0.0, 1.0, adapt_med_mu, 0.0, N_HK)[1]
+    
+    adapt_lo_mu  = grp.quantile(0.25).values * 10
+    adapt_hi_mu  = grp.quantile(0.75).values * 10
     adapt_rmax_raw = dfa_clip["rmax_norm"].values
-    adapt_dmu_raw  = dfa_clip["stable_dmu"].values * 10
+    adapt_dmu_raw_mu  = dfa_clip["stable_dmu"].values * 10
+    
+    adapt_lo = dyn_state(0.0, 1.0, adapt_lo_mu, 0.0, N_HK)[1]
+    adapt_hi = dyn_state(0.0, 1.0, adapt_hi_mu, 0.0, N_HK)[1]
+    adapt_dmu_raw = dyn_state(0.0, 1.0, adapt_dmu_raw_mu, 0.0, N_HK)[1]
 
     # Fit a smoothing spline on the median points to draw a smooth boundary
     # lam=0.0001 handles the small deviations to give a clean smooth curve
@@ -58,19 +72,16 @@ if adaptive_available:
 # ---------------------------------------------------------------------------
 # Theoretical prediction (corrected)
 # ---------------------------------------------------------------------------
-r0   = 0.15
-N_I  = 10
-N_HK = 10
-
 theory_rmax_norm = np.linspace(1.001, XMAX, 600)
 theory_rmax_abs  = theory_rmax_norm * r0
 P_s_star         = (1.0 + r0 / theory_rmax_abs) / 2.0
 mu_star          = 1.0 - P_s_star ** (1.0 / N_HK)
-dmu_star         = np.clip(mu_star / N_I, 0.0, None) * 10  # Already scaled by 10 (mu_star)
+p_star_theory    = dyn_state(0.0, 1.0, mu_star, 0.0, N_HK)[1]
 
 # Asymptotic saturation (multiplied by N_I to get mu saturation)
 dmu_star_sat = float((1.0 - 0.5 ** (1.0 / N_HK)) / N_I)
 mu_star_sat = dmu_star_sat * N_I
+p_star_sat = dyn_state(0.0, 1.0, mu_star_sat, 0.0, N_HK)[1]
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +98,7 @@ plt.rcParams.update({
 fig_mpl, ax_mpl = plt.subplots(figsize=(8.5, 6))
 
 # Theory critical boundary curve (Blue dashed line)
-ax_mpl.plot(theory_rmax_norm, dmu_star, color="blue", ls="--", lw=1.5, alpha=0.7, zorder=3, label="Theory (Critical boundary)")
+ax_mpl.plot(theory_rmax_norm, p_star_theory, color="blue", ls="--", lw=1.5, alpha=0.7, zorder=3, label="Theory (Critical boundary)")
 
 # Simulation boundary line (Solid black line connecting smooth spline)
 if adaptive_available:
@@ -95,35 +106,35 @@ if adaptive_available:
     
     # Color-filled regimes (Healthy above sweep boundary, Tumor below sweep boundary)
     ax_mpl.fill_between(r_smooth, adapt_med_smooth, YMAX, alpha=0.12, color="#2A9D8F", label="Healthy regime")
-    ax_mpl.fill_between(r_smooth, -0.002, adapt_med_smooth, alpha=0.12, color="#E63946", label="Tumor regime")
+    ax_mpl.fill_between(r_smooth, -0.0015, adapt_med_smooth, alpha=0.12, color="#E63946", label="Tumor regime")
     
     # Simulation data points (Gray markers)
     ax_mpl.scatter(r_unique, adapt_med, color="gray", s=50, zorder=10, edgecolor="black", linewidths=1.0, label="Sim. data")
 
 # Asymptotic saturation
-ax_mpl.axhline(mu_star_sat, color="orange", ls="--", lw=1.5, alpha=0.6, zorder=3)
-ax_mpl.text(XMAX * 0.98, mu_star_sat + 0.001, 
-            r"$\mu^*_{\infty} = 1 - 0.5^{1/N_{\mathrm{HK}}} \approx 0.067$", 
+ax_mpl.axhline(p_star_sat, color="orange", ls="--", lw=1.5, alpha=0.6, zorder=3)
+ax_mpl.text(XMAX * 0.98, p_star_sat + 0.0008, 
+            r"$P_{\rm death, \infty}^* \approx 0.044$", 
             color="orange", ha="right", va="bottom", fontsize=11)
 
 # Annotate regimes (centered in white boxes matching phase_diagram.png)
-ax_mpl.text(2.0, 0.055, "Tumor Collapse",
+ax_mpl.text(2.0, 0.032, "Tumor Collapse",
             bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=12, ha="center")
-ax_mpl.text(5.0, 0.008, "Tumor Expansion",
+ax_mpl.text(3.5, 0.008, "Tumor Expansion",
             bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=12, ha="center")
 
 # Labels & Bounds
 ax_mpl.set_xlabel(r"$r_{\mathrm{max}} / r_0$", fontsize=16)
-ax_mpl.set_ylabel(r"Phase boundary $\mu^*$", fontsize=16)
-ax_mpl.set_title(r"Phase Boundary: Critical Mutation Rate $\mu^*(r_{\mathrm{max}})$", 
+ax_mpl.set_ylabel(r"$P_{\rm death}$", fontsize=16)
+ax_mpl.set_title(r"Critical Death Probability vs. $r_{\mathrm{max}}$", 
                  fontsize=15, fontweight="bold", pad=15)
 
 ax_mpl.set_xlim(1.0, XMAX)
-ax_mpl.set_ylim(-0.002, YMAX)
+ax_mpl.set_ylim(-0.0015, YMAX)
 ax_mpl.yaxis.grid(True, ls=":", alpha=0.5)
-ax_mpl.legend(fontsize=11, loc=[0.6, 0.3])
+ax_mpl.legend(fontsize=11, loc=[0.6, 0.1])
 
 plt.tight_layout()
 
@@ -143,7 +154,7 @@ if adaptive_available:
         mode="markers",
         name="Sim. data",
         marker=dict(size=6, color="gray", line=dict(color="black", width=0.8)),
-        hovertemplate="rmax/r0: %{x:.3f}<br>μ: %{y:.5f}<extra>Sim. data</extra>",
+        hovertemplate="rmax/r0: %{x:.3f}<br>P_death: %{y:.5f}<extra>Sim. data</extra>",
     ))
     # Median boundary line (black, smooth)
     fig_plotly.add_trace(go.Scatter(
@@ -158,18 +169,18 @@ if adaptive_available:
 # Theory critical boundary (Blue dashed line)
 fig_plotly.add_trace(go.Scatter(
     x=theory_rmax_norm,
-    y=dmu_star,
+    y=p_star_theory,
     mode="lines",
     name="Theory (Critical boundary)",
     line=dict(color="blue", width=2, dash="dash"),
-    hovertemplate="rmax/r0: %{x:.3f}<br>μ* theory: %{y:.5f}<extra>Theory</extra>",
+    hovertemplate="rmax/r0: %{x:.3f}<br>P_death theory: %{y:.5f}<extra>Theory</extra>",
 ))
 
 # Saturation line (Orange)
 fig_plotly.add_hline(
-    y=mu_star_sat,
+    y=p_star_sat,
     line=dict(color="rgba(255,165,0,0.45)", width=1.5, dash="dash"),
-    annotation_text=f"μ*<sub>∞</sub> ≈ {mu_star_sat:.4f}",
+    annotation_text=f"P<sub>death</sub>*<sub>∞</sub> ≈ {p_star_sat:.4f}",
     annotation_position="top right",
     annotation_font=dict(size=11, color="orange"),
 )
@@ -177,7 +188,7 @@ fig_plotly.add_hline(
 # Layout matching Plotly style with new colors and limits
 fig_plotly.update_layout(
     title=dict(
-        text="Phase Boundary: Critical Mutation Rate μ*(r<sub>max</sub>)",
+        text="Phase Boundary: Critical Death Probability P<sub>death</sub>*(r<sub>max</sub>)",
         font=dict(size=18),
         x=0.5,
     ),
@@ -188,7 +199,7 @@ fig_plotly.update_layout(
         gridcolor="#e0e0e0",
     ),
     yaxis=dict(
-        title=dict(text="Mutation rate μ", font=dict(size=15)),
+        title=dict(text="Phase boundary P<sub>death</sub>", font=dict(size=15)),
         range=[0, YMAX],
         showgrid=True,
         gridcolor="#e0e0e0",
