@@ -8,3 +8,6 @@ images/
 gif/
 
 __pycache__/
+*.pyc
+*.pyo
+*.pyd

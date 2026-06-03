@@ -203,7 +203,9 @@ ax[3].legend(fontsize=16)
 # Save figure
 output_dir = PROJECT_ROOT / "outputs" / "figures"
 output_dir.mkdir(parents=True, exist_ok=True)
-output_path = output_dir / "plot_stationarity.png"
-plt.savefig(output_path, dpi=200, bbox_inches="tight")
-print(f"Saved figure to: {output_path}")
+output_path_png = output_dir / "plot_stationarity.png"
+output_path_svg = output_dir / "plot_stationarity.svg"
+plt.savefig(output_path_png, dpi=200, bbox_inches="tight")
+plt.savefig(output_path_svg, bbox_inches="tight")
+print(f"Saved figures to:\n  - {output_path_png}\n  - {output_path_svg}")
 plt.close()

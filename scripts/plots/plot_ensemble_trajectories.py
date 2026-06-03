@@ -162,7 +162,7 @@ ax.set_xlabel("Time", fontsize=15)
 ax.set_ylabel("Tumor cell density", fontsize=15)
 ax.set_title("Tumor Density Trajectories", fontsize=14)
 ax.legend(fontsize=13)
-ax.grid(ls="--", lw=1, alpha=0.5)
+ax.grid(False)
 
 # ── Right: smooth absolute growth speed with confidence bars ────────────────
 # Plots d(density)/dt (absolute rate) with confidence bands.
@@ -196,13 +196,15 @@ ax.set_xlabel("Time", fontsize=15)
 ax.set_ylabel(r"Tumor growth speed  $d\rho/dt$", fontsize=14)
 ax.set_title("Absolute Growth Speed", fontsize=14)
 ax.legend(fontsize=13)
-ax.grid(ls="--", lw=1, alpha=0.5)
+ax.grid(False)
 
 plt.tight_layout()
 
 out_dir = Path(__file__).resolve().parents[2] / "outputs" / "figures"
 out_dir.mkdir(parents=True, exist_ok=True)
-out_path = out_dir / "ensemble_trajectories.png"
-plt.savefig(out_path, dpi=150, bbox_inches="tight")
-print(f"\nSaved → {out_path}")
+out_path_png = out_dir / "ensemble_trajectories.png"
+out_path_svg = out_dir / "ensemble_trajectories.svg"
+plt.savefig(out_path_png, dpi=150, bbox_inches="tight")
+plt.savefig(out_path_svg, bbox_inches="tight")
+print(f"\nSaved →\n  - {out_path_png}\n  - {out_path_svg}")
 plt.show()

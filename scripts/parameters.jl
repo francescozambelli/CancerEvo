@@ -1,6 +1,6 @@
 #### Optimized Simulation Parameters ####
 
-N_CHR = 4
+N_CHR = 2
 N_I   = 10
 N_O   = 10
 N_S   = 10
@@ -10,7 +10,7 @@ N_HK  = 10
 # Tissue properties
 L     = 200
 mu0   = 0.0
-dmu   = 15e-3
+dmu   = 1.5e-2
 r0    = 1.5e-1
 dr    = 0.8e-2
 rmax  = 2 * r0
@@ -39,4 +39,4 @@ function to_mask(vec)
 end
 
 pert_chr = to_mask(pert_vec)
-pert_chrs = [pert_chr, pert_chr] # Initial chromosomes for the cancer seed
+pert_chrs = [pert_chr, pert_chr] # Initial chromosomes for the cancer seed 

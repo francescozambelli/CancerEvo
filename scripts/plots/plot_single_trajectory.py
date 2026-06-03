@@ -38,7 +38,9 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 – registers the projecti
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.interpolate import make_smoothing_spline
 
-from src.analysis.loaders import load_ensemble_csv, load_sim
+from matplotlib.ticker import MaxNLocator, FuncFormatter
+
+from src.analysis.loaders import load_ensemble_csv, load_sim, load_adaptive_stability_results
 from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
@@ -56,15 +58,24 @@ ENSEMBLE_DIR = "ensemble_results_2CHR"
 R0 = 0.15        # baseline reproduction rate
 N_HK = 10        # number of HK genes
 
-# Phase-diagram data (from notebook Cell 24)
-r_prop_list = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0])
-results = np.array([
-    -0.6101874390439277, 0.6226682669930774, 1.2917773010287472,
-     1.8387745389776091, 2.2434712898547584, 2.6607741287392520,
-     2.9356429157955044, 3.1821620335205547, 3.4130647650803505,
-     3.6252708643165220,  3.8084414875435573,
-])
-p_die_data = np.array([(1.0 - (1.0 - m * 1e-2) ** N_HK) for m in results])
+# Phase-diagram data (from sweep:analysis_adaptive)
+dfa = load_adaptive_stability_results()
+if not dfa.empty:
+    grp = dfa.groupby("rmax_norm")["stable_dmu"]
+    r_prop_list = np.array(sorted(dfa["rmax_norm"].unique()))
+    mu_med = grp.median().values * 10
+    p_die_data = 1.0 - (1.0 - mu_med) ** N_HK
+else:
+    # fallback to original hardcoded values if file not found
+    r_prop_list = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0])
+    results = np.array([
+        -0.6101874390439277, 0.6226682669930774, 1.2917773010287472,
+         1.8387745389776091, 2.2434712898547584, 2.6607741287392520,
+         2.9356429157955044, 3.1821620335205547, 3.4130647650803505,
+         3.6252708643165220,  3.8084414875435573,
+    ])
+    p_die_data = np.array([(1.0 - (1.0 - m * 1e-2) ** N_HK) for m in results])
+
 spl = make_smoothing_spline(r_prop_list, p_die_data, lam=0.001)
 x_new = np.linspace(0.8, 2.2, 200)
 
@@ -78,7 +89,7 @@ idx_h = summary[
     (summary["outcome"] == "Health") & (summary["steps"] > min_len)
 ].index[4]          # 5th qualifying health run
 idx_t = summary[
-    (summary["outcome"] == "Tumor")  & (summary["steps"] > min_len)
+    (summary["outcome"] != "Health")  & (summary["steps"] > min_len)
 ].index[0]
 
 sid_h = summary.loc[idx_h, "sim_id"]
@@ -116,6 +127,7 @@ def _four_panel(pts, sim, td, spl, x_new, title, color):
     for axi in ax:
         axi.tick_params(axis="both", which="major", labelsize=13)
         axi.grid(ls=":", alpha=0.4)
+        axi.yaxis.set_major_locator(MaxNLocator(nbins=5))
 
     # Panel 0: phase space
     y_spl = spl(x_new)
@@ -171,9 +183,13 @@ out_dir.mkdir(parents=True, exist_ok=True)
 
 fig_h.savefig(out_dir / "single_trajectory_4panel_health.png", dpi=150,
               bbox_inches="tight")
+fig_h.savefig(out_dir / "single_trajectory_4panel_health.svg",
+              bbox_inches="tight")
 fig_t.savefig(out_dir / "single_trajectory_4panel_tumor.png", dpi=150,
               bbox_inches="tight")
-print("Saved 4-panel figures.")
+fig_t.savefig(out_dir / "single_trajectory_4panel_tumor.svg",
+              bbox_inches="tight")
+print("Saved 4-panel figures (PNG and SVG).")
 
 # ---------------------------------------------------------------------------
 # ── Figure 2: 3-D phase-space trajectories ────────────────────────────────
@@ -227,14 +243,29 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
                 color="k", ls="--", lw=1.5)
 
     ax.set_xlabel(r"$r/r_0$", fontsize=16, labelpad=10)
-    ax.set_ylabel(r"$\mu$", fontsize=16, labelpad=10)
-    ax.set_zlabel(f"Tumor Density ({scale_str})", fontsize=14, labelpad=10)
+    ax.set_ylabel(r"$P_{\rm death}$", fontsize=16, labelpad=10)
+    ax.set_zlabel(f"Tumor Density ({scale_str})", fontsize=14, labelpad=18)
 
     ax.set_xlim(min(x_new), max(x_new))
     ax.set_ylim(min(y_spline), max(y_spline) * 1.5)
     ax.set_zlim(0, max(td) * 1.1)
 
     ax.tick_params(axis="both", labelsize=12)
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
+    ax.zaxis.set_major_locator(MaxNLocator(nbins=5))
+    
+    def format_sci(x, pos):
+        if abs(x) < 1e-9:
+            return "0"
+        s = f"{x:.1e}"
+        return s.replace("e-0", "e-").replace("e+0", "e+")
+    ax.zaxis.set_major_formatter(FuncFormatter(format_sci))
+    
+    # Rotate Z-axis tick labels and add padding to avoid superposition with grid/label
+    ax.tick_params(axis="z", pad=10)
+    plt.setp(ax.get_zticklabels(), rotation=15, ha='right')
+    
     ax.xaxis.set_pane_color((0.95, 0.95, 0.95, 0.3))
     ax.yaxis.set_pane_color((0.95, 0.95, 0.95, 0.3))
     for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
@@ -257,7 +288,11 @@ fig_3dt = _3d_plot(pts_t, td_t, spl, x_new, lim=700,
 
 fig_3dh.savefig(out_dir / "single_trajectory_3d_health.png", dpi=150,
                 bbox_inches="tight")
+fig_3dh.savefig(out_dir / "single_trajectory_3d_health.svg",
+                bbox_inches="tight")
 fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.png",  dpi=150,
                 bbox_inches="tight")
-print(f"Saved 3-D figures → {out_dir}")
+fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.svg",
+                bbox_inches="tight")
+print(f"Saved 3-D figures (PNG and SVG) → {out_dir}")
 plt.show()
