@@ -132,7 +132,9 @@ plt.tight_layout()
 
 out_dir = Path(__file__).resolve().parents[2] / "outputs" / "figures"
 out_dir.mkdir(parents=True, exist_ok=True)
-out_path = out_dir / "phase_diagram.png"
-plt.savefig(out_path, dpi=150, bbox_inches="tight")
-print(f"Saved → {out_path}")
+out_path_png = out_dir / "phase_diagram.png"
+out_path_svg = out_dir / "phase_diagram.svg"
+plt.savefig(out_path_png, dpi=150, bbox_inches="tight")
+plt.savefig(out_path_svg, bbox_inches="tight")
+print(f"Saved →\n  - {out_path_png}\n  - {out_path_svg}")
 plt.show()

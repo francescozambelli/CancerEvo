@@ -116,7 +116,12 @@ def load_ensemble(
     """
     summary = load_ensemble_csv(ensemble_dir)
     if outcome_filter is not None:
-        summary = summary[summary["outcome"] == outcome_filter].reset_index(drop=True)
+        if outcome_filter == "Tumor":
+            summary = summary[summary["outcome"] != "Health"].reset_index(drop=True)
+        elif outcome_filter == "Health":
+            summary = summary[summary["outcome"] == "Health"].reset_index(drop=True)
+        else:
+            summary = summary[summary["outcome"] == outcome_filter].reset_index(drop=True)
     if max_sims is not None:
         summary = summary.iloc[:max_sims]
 

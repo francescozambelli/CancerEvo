@@ -75,6 +75,8 @@ fig.legend(handles=legend_patches, loc="lower center", ncol=3, fontsize=12, bbox
 plt.suptitle("Spatial Transitions at High Mutation Rate (dmu = 0.0030)", fontsize=15, fontweight="bold", y=0.98)
 plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
-fig_path = FIG_DIR / "high_dmu_transition.png"
-plt.savefig(fig_path, dpi=200, bbox_inches="tight")
-print(f"Saved high dmu comparison figure to: {fig_path}")
+fig_path_png = FIG_DIR / "high_dmu_transition.png"
+fig_path_svg = FIG_DIR / "high_dmu_transition.svg"
+plt.savefig(fig_path_png, dpi=200, bbox_inches="tight")
+plt.savefig(fig_path_svg, bbox_inches="tight")
+print(f"Saved high dmu comparison figures to:\n  - {fig_path_png}\n  - {fig_path_svg}")

@@ -78,6 +78,8 @@ fig.legend(handles=legend_patches, loc="lower center", ncol=3, fontsize=12, bbox
 plt.suptitle("Spatial Evolution Comparison: Peak vs Decreasing Regimes", fontsize=16, fontweight="bold", y=0.98)
 plt.tight_layout(rect=[0, 0.04, 1, 0.96])
 
-fig_path = FIG_DIR / "spatial_comparison.png"
-plt.savefig(fig_path, dpi=200, bbox_inches="tight")
-print(f"Saved spatial comparison figure to: {fig_path}")
+fig_path_png = FIG_DIR / "spatial_comparison.png"
+fig_path_svg = FIG_DIR / "spatial_comparison.svg"
+plt.savefig(fig_path_png, dpi=200, bbox_inches="tight")
+plt.savefig(fig_path_svg, bbox_inches="tight")
+print(f"Saved spatial comparison figures to:\n  - {fig_path_png}\n  - {fig_path_svg}")
