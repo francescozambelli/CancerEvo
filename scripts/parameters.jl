@@ -1,6 +1,6 @@
 #### Optimized Simulation Parameters ####
 
-N_CHR = 2
+N_CHR = 4
 N_I   = 10
 N_O   = 10
 N_S   = 10
