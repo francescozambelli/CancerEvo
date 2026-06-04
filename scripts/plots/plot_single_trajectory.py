@@ -222,13 +222,21 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
     # Green region (healthy, above curve)
     verts_g = list(zip(x_new, y_spline)) + list(zip(x_new[::-1], np.full_like(x_new, max(y_spline) * 1.5)))
     ax.add_collection3d(Poly3DCollection([[(x, y, z_min) for x, y in verts_g]],
-                                          alpha=0.18, facecolor="green"))
+                                          alpha=0.05, facecolor="k"))
 
     # Red region (tumor, below curve)
     verts_r = list(zip(x_new, np.full_like(x_new, min(y_spline)))) + \
               list(zip(x_new[::-1], y_spline[::-1]))
     ax.add_collection3d(Poly3DCollection([[(x, y, z_min) for x, y in verts_r]],
-                                          alpha=0.18, facecolor="red"))
+                                          alpha=0.3, facecolor="k"))
+
+    bbox_props = dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.55)
+    
+    ax.text(1.8, 0.0, z_min, "Expansion", color="black", fontsize=9,
+            ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
+
+    ax.text(1.2, 0.35, z_min, "Collapse", color="black", fontsize=9,
+            ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
 
     # Shadow on the floor
     ax.scatter(pts[:, 0], pts[:, 1], zs=0, zdir="z",
@@ -274,7 +282,7 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
         )
 
     ax.set_box_aspect(None, zoom=0.8)
-    fig.suptitle(title, fontsize=14, fontweight="bold")
+    #fig.suptitle(title, fontsize=14, fontweight="bold")
     return fig
 
 
@@ -294,4 +302,4 @@ fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.png",  dpi=150,
 fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.svg",
                 bbox_inches="tight")
 print(f"Saved 3-D figures (PNG and SVG) → {out_dir}")
-plt.show()
+#plt.show()

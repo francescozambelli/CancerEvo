@@ -50,6 +50,7 @@ if not liquid_available:
 df_liquid = pd.read_csv(liquid_path)
 df_liquid["rmax_norm"] = df_liquid["rmax"] / r0
 
+XMIN = 1.2
 XMAX = 7.0
 
 # ── Process Solid Boundary ──────────────────────────────────────────────────
@@ -118,20 +119,20 @@ plt.rcParams.update({
     "axes.spines.right": False,
 })
 
-fig_mpl, ax_mpl = plt.subplots(figsize=(9, 7))
+fig_mpl, ax_mpl = plt.subplots(figsize=(12, 7))
 
 # Plot regimes shading
 if solid_available:
     # 1. Global Collapse (above liquid boundary)
-    ax_mpl.fill_between(r_smooth_l, liquid_med_smooth, YMAX, alpha=0.10, color="#E63946", label="Global Collapse")
+    ax_mpl.fill_between(r_smooth_l, liquid_med_smooth, YMAX, alpha=0.10, color="#E63946")
     
     # 2. Liquid-Only Tumorigenic (between solid and liquid boundaries)
     # We interpolate the solid boundary onto the liquid rmax grid to fill cleanly
     solid_interp = np.interp(r_smooth_l, r_smooth_s, solid_med_smooth)
-    ax_mpl.fill_between(r_smooth_l, solid_interp, liquid_med_smooth, alpha=0.12, color="#E9C46A", label="Liquid-Only Tumorigenic")
+    ax_mpl.fill_between(r_smooth_l, solid_interp, liquid_med_smooth, alpha=0.12, color="#E9C46A")
     
     # 3. Solid & Liquid Expansion (below solid boundary)
-    ax_mpl.fill_between(r_smooth_s, -0.01, solid_med_smooth, alpha=0.12, color="#2A9D8F", label="Solid & Liquid Expansion")
+    ax_mpl.fill_between(r_smooth_s, -0.01, solid_med_smooth, alpha=0.12, color="#2A9D8F")
 
 # Theory solid boundary
 ax_mpl.plot(theory_rmax_norm, p_star_theory, color="blue", ls="--", lw=1.5, alpha=0.6, zorder=3, label="Theory (Solid critical boundary)")
@@ -139,44 +140,47 @@ ax_mpl.plot(theory_rmax_norm, p_star_theory, color="blue", ls="--", lw=1.5, alph
 # Solid Simulation boundary
 if solid_available:
     ax_mpl.plot(r_smooth_s, solid_med_smooth, color="black", lw=2.5, zorder=5, label="Solid Tumor (Sim.)")
-    ax_mpl.scatter(r_unique_s, solid_med, color="gray", s=40, zorder=10, edgecolor="black", linewidths=0.8)
+    ax_mpl.scatter(r_unique_s, solid_med, color="gray", s=80, zorder=10, edgecolor="black", linewidths=1.5)
 
 # Liquid Simulation boundary
 ax_mpl.plot(r_smooth_l, liquid_med_smooth, color="#D62728", lw=3.0, zorder=6, label="Liquid Tumor (Sim.)")
-ax_mpl.scatter(r_unique_l, liquid_med, color="#FF9896", s=50, zorder=11, edgecolor="#D62728", linewidths=1.0)
+ax_mpl.scatter(r_unique_l, liquid_med, color="#FF9896", s=80, zorder=11, edgecolor="#D62728", linewidths=1.5)
 
 # Asymptotic saturations
-ax_mpl.axhline(p_star_sat_s, color="orange", ls="--", lw=1.5, alpha=0.6, zorder=3)
-ax_mpl.text(XMAX * 0.98, p_star_sat_s + 0.005, 
-            f"$P_{{death, \\infty}}^* \\approx {p_star_sat_s:.3f}$ (Solid)", 
-            color="orange", ha="right", va="bottom", fontsize=11)
+#ax_mpl.axhline(p_star_sat_s, color="orange", ls="--", lw=1.5, alpha=0.6, zorder=3)
+#ax_mpl.text(XMAX * 0.98, p_star_sat_s + 0.005, 
+#            f"$P_{{death, \\infty}}^* \\approx {p_star_sat_s:.3f}$ (Solid)", 
+#            color="orange", ha="right", va="bottom", fontsize=11)
 
-ax_mpl.axhline(p_star_sat_l, color="purple", ls="--", lw=1.5, alpha=0.6, zorder=3)
-ax_mpl.text(XMAX * 0.98, p_star_sat_l + 0.005, 
-            f"$P_{{death, \\infty}}^* \\approx {p_star_sat_l:.3f}$ (Liquid)", 
-            color="purple", ha="right", va="bottom", fontsize=11)
+#ax_mpl.axhline(p_star_sat_l, color="purple", ls="--", lw=1.5, alpha=0.6, zorder=3)
+#ax_mpl.text(XMAX * 0.98, p_star_sat_l + 0.005, 
+#            f"$P_{{death, \\infty}}^* \\approx {p_star_sat_l:.3f}$ (Liquid)", 
+#            color="purple", ha="right", va="bottom", fontsize=11)
 
 # Annotate regimes (centered in white boxes)
-ax_mpl.text(4.0, 0.92, "Global Collapse\n(Mutational Meltdown)",
+fontsize_reg = 18
+ax_mpl.text(3.0, 0.92, "Global Collapse)",
             bbox=dict(facecolor="white", edgecolor="#E63946", boxstyle="round,pad=0.3", alpha=0.9),
-            fontsize=11, ha="center")
-ax_mpl.text(4.0, 0.65, "Liquid Expansion / Solid Collapse\n(Spatial Constraint Suppression)",
+            fontsize=fontsize_reg, ha="center")
+ax_mpl.text(4.0, 0.65, "Liquid Expansion / Solid Collapse",
             bbox=dict(facecolor="white", edgecolor="#E9C46A", boxstyle="round,pad=0.3", alpha=0.9),
-            fontsize=11, ha="center")
-ax_mpl.text(4.0, 0.15, "Solid & Liquid Expansion\n(Tumorigenic Regime)",
+            fontsize=fontsize_reg, ha="center")
+ax_mpl.text(3.0, 0.15, "Solid & Liquid Expansion",
             bbox=dict(facecolor="white", edgecolor="#2A9D8F", boxstyle="round,pad=0.3", alpha=0.9),
-            fontsize=11, ha="center")
+            fontsize=fontsize_reg, ha="center")
 
 # Labels & Bounds
-ax_mpl.set_xlabel(r"Normalized Division Rate ($r_{\mathrm{max}} / r_0$)", fontsize=15)
-ax_mpl.set_ylabel(r"Critical Death Probability ($P_{\mathrm{death}}$)", fontsize=15)
-ax_mpl.set_title(r"Phase Boundary Comparison: Solid vs. Liquid Tumor Stability", 
-                 fontsize=15, fontweight="bold", pad=15)
+fontsize_lab = 20
+fontsize_title = 25
+ax_mpl.set_xlabel(r"Normalized Division Rate ($r_{\mathrm{max}} / r_0$)", fontsize=fontsize_lab)
+ax_mpl.set_ylabel(r"Death Probability ($P_{\mathrm{death}}$)", fontsize=fontsize_lab)
+#ax_mpl.set_title(r"Phase Boundary Comparison: Solid vs. Liquid Tumor Stability", 
+#                 fontsize=fontsize_title, fontweight="bold", pad=15)
 
-ax_mpl.set_xlim(1.0, XMAX)
+ax_mpl.set_xlim(XMIN, XMAX)
 ax_mpl.set_ylim(-0.005, YMAX)
 ax_mpl.yaxis.grid(True, ls=":", alpha=0.5)
-ax_mpl.legend(fontsize=11, loc="lower right", framealpha=0.9)
+ax_mpl.legend(fontsize=18, loc="lower right", framealpha=0.9)
 
 plt.tight_layout()
 

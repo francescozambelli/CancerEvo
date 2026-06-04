@@ -167,7 +167,7 @@ def _four_panel(pts, sim, td, spl_s, spl_l, x_new, title, color):
     ax[3].set_xlabel("Time", fontsize=fs)
     ax[3].set_ylabel(r"$p_{\rm death,crit} - p_{\rm death}$", fontsize=fs)
 
-    fig.suptitle(title, fontsize=16, fontweight="bold")
+    #fig.suptitle(title, fontsize=16, fontweight="bold")
     plt.tight_layout()
     return fig
 
@@ -181,6 +181,8 @@ out_dir.mkdir(parents=True, exist_ok=True)
 
 fig_h.savefig(out_dir / "single_trajectory_4panel_health_liquid.png", dpi=150, bbox_inches="tight")
 fig_t.savefig(out_dir / "single_trajectory_4panel_tumor_liquid.png", dpi=150, bbox_inches="tight")
+fig_h.savefig(out_dir / "single_trajectory_4panel_health_liquid.svg", dpi=150, bbox_inches="tight")
+fig_t.savefig(out_dir / "single_trajectory_4panel_tumor_liquid.svg", dpi=150, bbox_inches="tight")
 plt.close(fig_h)
 plt.close(fig_t)
 print("Saved 4-panel diagnostic figures.")
@@ -213,17 +215,36 @@ def _3d_plot(pts, td, spl_s, spl_l, x_new, title="", scale_str="×10⁻³"):
     # Green region (Solid & Liquid Expansion)
     verts_g = list(zip(x_new, np.full_like(x_new, -0.05))) + list(zip(x_new[::-1], y_spline_s[::-1]))
     ax.add_collection3d(Poly3DCollection([[(x, y, z_min) for x, y in verts_g]],
-                                          alpha=0.18, facecolor="green"))
+                                          alpha=0.05, facecolor="k"))
 
     # Yellow region (Liquid-Only Expansion)
     verts_y = list(zip(x_new, y_spline_s)) + list(zip(x_new[::-1], y_spline_l[::-1]))
     ax.add_collection3d(Poly3DCollection([[(x, y, z_min) for x, y in verts_y]],
-                                          alpha=0.18, facecolor="yellow"))
+                                          alpha=0.25, facecolor="k"))
 
     # Red region (Global Collapse)
     verts_r = list(zip(x_new, y_spline_l)) + list(zip(x_new[::-1], np.full_like(x_new, 1.05)))
     ax.add_collection3d(Poly3DCollection([[(x, y, z_min) for x, y in verts_r]],
-                                          alpha=0.18, facecolor="red"))
+                                          alpha=0.4, facecolor="k"))
+
+    # Place region names in the z=0 shaded plane
+    x_lbl = 1.8
+    y_s_val = float(spl_s(x_lbl))
+    y_l_val = float(spl_l(x_lbl))
+    
+    y_g = (-0.05 + y_s_val) / 2.0
+    y_y = (y_s_val + y_l_val) / 2.0
+    y_r = (y_l_val + 1.05) / 2.0
+    
+    bbox_props = dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.55)
+    
+    ax.text(x_lbl, y_g, z_min, "Solid & Liquid\nExpansion", color="black", fontsize=9,
+            ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
+    ax.text(x_lbl, y_y-0.1, z_min, "Liquid Expansion\nSolid Collapse", color="black", fontsize=9,
+            ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
+    ax.text(x_lbl-0.5, y_r, z_min, "Global\nCollapse", color="black", fontsize=9,
+            ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
+
 
     # Shadow on the floor
     ax.scatter(pts[:, 0], pts[:, 1], zs=0, zdir="z",
@@ -273,14 +294,16 @@ def _3d_plot(pts, td, spl_s, spl_l, x_new, title="", scale_str="×10⁻³"):
     return fig
 
 fig_3dh = _3d_plot(pts_h, td_h, spl_s, spl_l, x_new,
-                   title="Health trajectory in phase space (sim 81) - Liquid Model",
+                   title=None,#"Health trajectory in phase space (sim 81) - Liquid Model",
                    scale_str="×10⁻³")
 fig_3dt = _3d_plot(pts_t, td_t, spl_s, spl_l, x_new,
-                   title="Tumor trajectory in phase space (sim 43) - Liquid Model",
+                   title=None,#"Tumor trajectory in phase space (sim 43) - Liquid Model",
                    scale_str="×10⁻¹")
 
 fig_3dh.savefig(out_dir / "single_trajectory_3d_health_liquid.png", dpi=150, bbox_inches="tight")
 fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor_liquid.png", dpi=150, bbox_inches="tight")
+fig_3dh.savefig(out_dir / "single_trajectory_3d_health_liquid.svg", dpi=150, bbox_inches="tight")
+fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor_liquid.svg", dpi=150, bbox_inches="tight")
 plt.close(fig_3dh)
 plt.close(fig_3dt)
 
