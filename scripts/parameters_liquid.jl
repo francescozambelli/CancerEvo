@@ -17,7 +17,7 @@ N_HK  = 10
 #### Tissue / rate parameters ####
 L     = 200
 mu0   = 0.0
-dmu   = 1.5e-2
+dmu   = 4.5e-2
 r0    = 1.5e-1
 dr    = 0.8e-2
 rmax  = 2 * r0
