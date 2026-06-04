@@ -2,7 +2,7 @@
 
 **Project:** CancerEvo  
 **Date:** 2026-06-03  
-**Scripts:** `scripts/stability_sweep.jl`, `scripts/plots/plot_stability_sweep.py`
+**Scripts:** `scripts/solid/stability_sweep.jl`, `scripts/plots/solid/plot_stability_sweep.py`
 
 ---
 
@@ -83,7 +83,7 @@ The adaptive stability sweep (`stability_results_adaptive.csv`) produces the fol
 
 **Shape:** Monotonically increasing, saturating near $\delta\mu^* \approx 0.006$ for large $r_{\max}/r_0$.
 
-![Phase boundary diagram](figures/stability_sweep.png)
+![Phase boundary diagram](figures/solid/stability_sweep.png)
 
 ---
 
@@ -159,7 +159,7 @@ To confirm the phase boundary interpretation, we ran spatial simulations at $r_{
 
 The three regimes are clearly distinguishable spatially:
 
-![Spatial comparison of the three boundary regimes](figures/spatial_comparison.png)
+![Spatial comparison of the three boundary regimes](figures/solid/spatial_comparison.png)
 
 ---
 
@@ -170,7 +170,7 @@ At $\delta\mu = 0.0030$ (high mutation rate), two scenarios illustrate how $r_{\
 - **Fast Increase** ($r_{\max} = 0.3153$): $\delta\mu < \delta\mu^*$, tumor grows as a solid expanding mass. Density crosses the upper limit at step 150.
 - **Fast Decrease** ($r_{\max} = 0.8480$): the initial burst of divisions causes ~26% of cells to immediately acquire lethal HK mutations. Cancer density drops from 20% to ~14% within 2 steps, triggering extinction via the healthy-cell check.
 
-![Fast increase vs. fast decrease at high dmu](figures/high_dmu_transition.png)
+![Fast increase vs. fast decrease at high dmu](figures/solid/high_dmu_transition.png)
 
 The fast-decrease scenario illustrates the **initial mutational shock**: at high $r_{\max}$, cancer cells are so proliferative that the first step kills a significant fraction, and the healthy cell fraction rises above 0.84 before recovery is possible.
 

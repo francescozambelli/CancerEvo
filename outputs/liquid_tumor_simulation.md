@@ -2,7 +2,7 @@
 
 > **Status:** Implemented — June 2026  
 > **Relevant files:** `src/utils_liquid.jl`, `src/simulation_liquid.jl`,
-> `scripts/simulation_liquid.jl`, `scripts/ensemble_run_liquid.jl`
+> `scripts/liquid/simulation_liquid.jl`, `scripts/liquid/ensemble_run_liquid.jl`
 
 ---
 
@@ -143,8 +143,8 @@ several measurable consequences:
 src/utils.jl           ← shared structs, gene masks, mutation, death, rate update
   └── src/utils_liquid.jl   ← adds substitute_liquid!
         └── src/simulation_liquid.jl  ← simulation_liquid() loop
-              └── scripts/simulation_liquid.jl     (single run)
-              └── scripts/ensemble_run_liquid.jl   (parallel ensemble)
+              └── scripts/liquid/simulation_liquid.jl     (single run)
+              └── scripts/liquid/ensemble_run_liquid.jl   (parallel ensemble)
 ```
 
 `utils_liquid.jl` uses `include("utils.jl")` so all data structures
@@ -176,14 +176,14 @@ reused by pointing to the new data path.
 
 ```bash
 # Single exploratory run (with progress bar)
-julia scripts/simulation_liquid.jl
+julia scripts/liquid/simulation_liquid.jl
 
 # Ensemble of 100 runs, all available threads
-julia --threads auto scripts/ensemble_run_liquid.jl 100
+julia --threads auto scripts/liquid/ensemble_run_liquid.jl 100
 ```
 
-Parameters are controlled via `scripts/parameters_liquid.jl` (mirrors
-`scripts/parameters.jl`).  Key knobs for comparing solid vs. liquid behaviour:
+Parameters are controlled via `scripts/liquid/parameters_liquid.jl` (mirrors
+`scripts/solid/parameters.jl`).  Key knobs for comparing solid vs. liquid behaviour:
 
 | Parameter | Variable | Default |
 |-----------|----------|---------|
