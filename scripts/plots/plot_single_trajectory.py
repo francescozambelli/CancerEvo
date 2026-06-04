@@ -54,7 +54,7 @@ plt.rcParams.update({
 # ---------------------------------------------------------------------------
 # Parameters
 # ---------------------------------------------------------------------------
-ENSEMBLE_DIR = "ensemble_results_2CHR"
+ENSEMBLE_DIR = "ensemble_results_D"
 R0 = 0.15        # baseline reproduction rate
 N_HK = 10        # number of HK genes
 
@@ -80,23 +80,21 @@ spl = make_smoothing_spline(r_prop_list, p_die_data, lam=0.001)
 x_new = np.linspace(0.8, 2.2, 200)
 
 # ---------------------------------------------------------------------------
-# Pick one Health and one Tumor trajectory
+# Load reproducible Health and Tumor trajectories
 # ---------------------------------------------------------------------------
-summary = load_ensemble_csv(ENSEMBLE_DIR)
-# Prefer longer trajectories for visual clarity
-min_len = 200
-idx_h = summary[
-    (summary["outcome"] == "Health") & (summary["steps"] > min_len)
-].index[4]          # 5th qualifying health run
-idx_t = summary[
-    (summary["outcome"] != "Health")  & (summary["steps"] > min_len)
-].index[0]
+repo_root = Path(__file__).resolve().parents[2]
+path_h = repo_root / "data" / "simulations" / "spatial_run" / "health_results.npz"
+path_t = repo_root / "data" / "simulations" / "spatial_run" / "tumor_results.npz"
 
-sid_h = summary.loc[idx_h, "sim_id"]
-sid_t = summary.loc[idx_t, "sim_id"]
+if not path_h.exists() or not path_t.exists():
+    print("Could not find health_results.npz or tumor_results.npz in data/simulations/spatial_run/")
+    sys.exit(1)
 
-sim_h = load_sim(sid_h, ENSEMBLE_DIR)
-sim_t = load_sim(sid_t, ENSEMBLE_DIR)
+sim_h = {k: v for k, v in np.load(path_h).items()}
+sim_t = {k: v for k, v in np.load(path_t).items()}
+
+sid_h = "9 (reproducible)"
+sid_t = "1 (reproducible)"
 
 print(f"Health run: sim_{sid_h}  ({len(sim_h['r'])} steps)")
 print(f"Tumor  run: sim_{sid_t}  ({len(sim_t['r'])} steps)")
@@ -231,7 +229,7 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
                                           alpha=0.3, facecolor="k"))
 
     bbox_props = dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.55)
-    
+
     ax.text(1.8, 0.0, z_min, "Expansion", color="black", fontsize=9,
             ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
 
