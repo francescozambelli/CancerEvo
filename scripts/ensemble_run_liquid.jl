@@ -59,7 +59,7 @@ function run_ensemble_liquid(num_sims=50, misseg_mech=misseg_type)
 
     println("--- Liquid-Tumor Ensemble Runner ---")
     println("Running $num_sims simulations on $(Threads.nthreads()) threads.")
-    println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR, misseg_type=$misseg_mech")
+    println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR, misseg_type=$misseg_mech, dmu=$dmu, mu0=$mu0, r0=$r0, dr=$dr, rmax=$rmax, dm=$dm")
     println("Substitution kernel: LIQUID (global random placement)")
     println("Initial seed:        $n_seed cells at random positions")
 
