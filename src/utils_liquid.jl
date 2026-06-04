@@ -30,7 +30,7 @@ Target-selection rule (mirrors solid-model priority):
 
 Missegregation logic is identical to the solid model.
 """
-function substitute_liquid!(tiss::OptimizedTissue, n_chrs_init::Int)
+function substitute_liquid!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_type::String="whole")
     N = tiss.L * tiss.L
     repro_indices, _ = sample_reproducers(tiss.r)
 
@@ -121,17 +121,58 @@ function substitute_liquid!(tiss::OptimizedTissue, n_chrs_init::Int)
             if rand() < mother_m && tiss.n_chrs[i] > 0
                 chr_idx = rand(1:tiss.n_chrs[i])
                 chr_to_move = tiss.chromosomes[chr_idx, i]
-                # Pop from mother
-                for k in chr_idx:(tiss.n_chrs[i]-1)
-                    tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
+                
+                if misseg_type == "chunk"
+                    # Chunk-based chromosome missegregation (aneuploid scenario)
+                    N_genes = tiss.N_genes
+                    len_cut = rand(0:N_genes)
+                    if len_cut >= 3 && len_cut <= N_genes - 3
+                        # Contiguous bitwise slice with wrap-around
+                        start_bit = rand(0:(N_genes - 1))
+                        slice_mask = UInt64(0)
+                        for bit_idx in 0:(len_cut - 1)
+                            bit = (start_bit + bit_idx) % N_genes
+                            slice_mask |= (UInt64(1) << bit)
+                        end
+                        
+                        # Extract chunk mutations
+                        chunk_muts = chr_to_move & slice_mask
+                        
+                        # Remove chunk mutations from mother
+                        tiss.chromosomes[chr_idx, i] &= ~slice_mask
+                        
+                        # Push chunk to daughter as new chromosome
+                        if tiss.n_chrs[target_idx] < 6
+                            tiss.n_chrs[target_idx] += 1
+                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chunk_muts
+                        end
+                    else
+                        # Fallback to transferring whole chromosome
+                        for k in chr_idx:(tiss.n_chrs[i]-1)
+                            tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
+                        end
+                        tiss.chromosomes[tiss.n_chrs[i], i] = 0
+                        tiss.n_chrs[i] -= 1
+                        
+                        if tiss.n_chrs[target_idx] < 6
+                            tiss.n_chrs[target_idx] += 1
+                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
+                        end
+                    end
+                else
+                    # Default: whole chromosome missegregation (polyploid scenario)
+                    for k in chr_idx:(tiss.n_chrs[i]-1)
+                        tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
+                    end
+                    tiss.chromosomes[tiss.n_chrs[i], i] = 0
+                    tiss.n_chrs[i] -= 1
+                    
+                    if tiss.n_chrs[target_idx] < 6
+                        tiss.n_chrs[target_idx] += 1
+                        tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
+                    end
                 end
-                tiss.chromosomes[tiss.n_chrs[i], i] = 0
-                tiss.n_chrs[i] -= 1
-                # Push to daughter
-                if tiss.n_chrs[target_idx] < 6
-                    tiss.n_chrs[target_idx] += 1
-                    tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
-                end
+                
                 # Re-check death after chromosome transfer
                 for idx in (i, target_idx)
                     if check_death_optimized(tiss, idx)

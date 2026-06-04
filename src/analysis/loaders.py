@@ -60,9 +60,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SIM_DIR = _REPO_ROOT / "data" / "simulations"
 
 ENSEMBLE_DIRS: Dict[str, str] = {
-    "Diploid":   "ensemble_results_2CHR",
-    "Aneuploid": "ensemble_results_2CHR_recomb",
-    "Polyploid": "ensemble_results_4CHR",
+    "Diploid":   "ensemble_results_D",
+    "Aneuploid": "ensemble_results_A",
+    "Polyploid": "ensemble_results_P",
 }
 
 # Default (largest) ensemble

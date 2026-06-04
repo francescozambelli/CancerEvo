@@ -14,13 +14,14 @@ dmu   = 1.5e-2
 r0    = 1.5e-1
 dr    = 0.8e-2
 rmax  = 2 * r0
-dm    = 0.0 #1e-2 # Missegregation rate
+dm    = 1e-2 # Missegregation rate
 
 # Simulation control
 n_steps    = 2500
 n_it_store = 100
 limit      = 0.5 # Tumor size limit to stop simulation
 r_pert     = 0.005 # Perturbation radius
+misseg_type = "whole" # "whole" or "chunk" chromosome missegregation
 
 # Initial perturbation: which genes are mutated in the first cancer cells?
 # Bit 0 is the 1st gene. 

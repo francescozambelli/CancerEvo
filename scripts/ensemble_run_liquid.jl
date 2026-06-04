@@ -50,7 +50,7 @@ end
 Runs `num_sims` liquid-tumor simulations in parallel (one per thread).
 Each simulation is seeded independently for reproducibility.
 """
-function run_ensemble_liquid(num_sims=50)
+function run_ensemble_liquid(num_sims=50, misseg_mech=misseg_type)
     ensemble_dir = joinpath(dirname(@__DIR__), "data", "simulations_liquid", "ensemble_results")
     if !isdir(ensemble_dir); mkpath(ensemble_dir); end
     output_file = joinpath(ensemble_dir, "ensemble_results.csv")
@@ -59,7 +59,7 @@ function run_ensemble_liquid(num_sims=50)
 
     println("--- Liquid-Tumor Ensemble Runner ---")
     println("Running $num_sims simulations on $(Threads.nthreads()) threads.")
-    println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR")
+    println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR, misseg_type=$misseg_mech")
     println("Substitution kernel: LIQUID (global random placement)")
     println("Initial seed:        $n_seed cells at random positions")
 
@@ -72,7 +72,7 @@ function run_ensemble_liquid(num_sims=50)
         tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
         perturb_liquid!(tiss, n_seed, pert_chrs)
 
-        res = simulation_liquid(tiss, N_CHR, n_steps, n_it_store, false, limit)
+        res = simulation_liquid(tiss, N_CHR, n_steps, n_it_store, false, limit, 0.0, misseg_mech)
 
         save_results_npz_liquid(joinpath(ensemble_dir, "sim_$(i).npz"), res)
 
@@ -115,7 +115,11 @@ end
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
-if !isempty(ARGS)
+if length(ARGS) >= 2
+    n = parse(Int, ARGS[1])
+    m_mech = ARGS[2]
+    run_ensemble_liquid(n, m_mech)
+elseif length(ARGS) == 1
     n = parse(Int, ARGS[1])
     run_ensemble_liquid(n)
 else
