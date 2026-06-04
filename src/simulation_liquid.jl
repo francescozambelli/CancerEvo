@@ -14,7 +14,7 @@ Run the liquid-tumor variant of the lattice simulation.
 All arguments and return types are identical to `simulation_optimized`.
 """
 function simulation_liquid(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int,
-                           n_it_store::Int, bar=true, limit=0.5, lower_limit=0.0)
+                           n_it_store::Int, bar=true, limit=0.5, lower_limit=0.0, misseg_type::String="whole")
     res = OptimizedResults(
         "Done",
         Float64[], # mu
@@ -29,7 +29,7 @@ function simulation_liquid(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int,
 
     @showprogress enabled=bar for k in 1:n_steps
         # ---- LIQUID substitution (global random placement) ----
-        substitute_liquid!(tiss, n_chr_init)
+        substitute_liquid!(tiss, n_chr_init, misseg_type)
 
         # ---- Metric extraction (identical to solid model) ----
         cancer_idx = findall(tiss.state .== 1)

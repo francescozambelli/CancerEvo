@@ -40,7 +40,7 @@ Returns a `SpatialResults` with:
 """
 function simulation_liquid_spatial(tiss::OptimizedTissue, n_chr_init::Int,
                                    n_steps::Int, n_snapshots::Int=10,
-                                   bar=true, limit=0.5, lower_limit=0.0)
+                                   bar=true, limit=0.5, lower_limit=0.0, misseg_type::String="whole")
 
     L = tiss.L
     N = L * L
@@ -68,7 +68,7 @@ function simulation_liquid_spatial(tiss::OptimizedTissue, n_chr_init::Int,
     )
 
     @showprogress enabled=bar for k in 1:n_steps
-        substitute_liquid!(tiss, n_chr_init)
+        substitute_liquid!(tiss, n_chr_init, misseg_type)
 
         # ---- Aggregate metrics (identical to simulation_liquid) ----
         cancer_idx = findall(tiss.state .== 1)

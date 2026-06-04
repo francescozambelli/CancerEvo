@@ -2,7 +2,7 @@
 
 include("utils.jl")
 
-function simulation_optimized(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int, n_it_store::Int, bar=true, limit=0.5, lower_limit=0.0)
+function simulation_optimized(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int, n_it_store::Int, bar=true, limit=0.5, lower_limit=0.0, misseg_type::String="whole")
     res = OptimizedResults(
         "Done",
         Float64[], # mu
@@ -16,7 +16,7 @@ function simulation_optimized(tiss::OptimizedTissue, n_chr_init::Int, n_steps::I
     )
 
     @showprogress enabled=bar for k in 1:n_steps
-        substitute_optimized!(tiss, n_chr_init)
+        substitute_optimized!(tiss, n_chr_init, misseg_type)
         
         # Extract metrics
         cancer_idx = findall(tiss.state .== 1)

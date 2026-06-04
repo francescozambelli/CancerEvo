@@ -29,6 +29,7 @@ n_it_store = 100
 limit      = 0.5    # Stop when WT density falls below (1 - limit)
 n_seed     = 10     # Number of randomly scattered cancer seed cells
                     # (replaces the r_pert circular cluster of the solid model)
+misseg_type = "whole" # "whole" or "chunk" chromosome missegregation
 
 #### Initial perturbation ####
 # Which genes are mutated in the seed cancer cells?

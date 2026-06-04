@@ -25,8 +25,8 @@ function run_full_simulation_liquid()
     println("Seeding $n_seed cancer cells at random positions (liquid perturbation)...")
     perturb_liquid!(tiss, n_seed, pert_chrs)
 
-    println("Running simulation loop...")
-    results = simulation_liquid(tiss, N_CHR, n_steps, n_it_store, true, limit)
+    println("Running simulation loop with missegregation mechanism: ", misseg_type)
+    results = simulation_liquid(tiss, N_CHR, n_steps, n_it_store, true, limit, 0.0, misseg_type)
 
     # ---- Storage ----
     output_dir = joinpath(dirname(@__DIR__), "data", "simulations_liquid")

@@ -18,8 +18,8 @@ function run_full_simulation()
     println("Applying initial perturbation...")
     perturb_optimized!(tiss, r_pert, pert_chrs)
     
-    println("Running simulation loop...")
-    results = simulation_optimized(tiss, N_CHR, n_steps, n_it_store, true, limit)
+    println("Running simulation loop with missegregation mechanism: ", misseg_type)
+    results = simulation_optimized(tiss, N_CHR, n_steps, n_it_store, true, limit, 0.0, misseg_type)
     
     # Storage
     output_dir = joinpath(dirname(@__DIR__), "data", "simulations")

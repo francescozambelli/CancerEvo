@@ -32,7 +32,7 @@ end
 Runs multiple simulations in parallel using Julia's multi-threading.
 Tracks whether the tumor reached the size limit, died out, or reached max steps.
 """
-function run_ensemble(num_sims=50)
+function run_ensemble(num_sims=50, misseg_mech=misseg_type)
     # Ensure output directory exists
     ensemble_dir = joinpath(dirname(@__DIR__), "data", "simulations", "ensemble_results")
     if !isdir(ensemble_dir); mkpath(ensemble_dir); end
@@ -42,7 +42,7 @@ function run_ensemble(num_sims=50)
     
     println("--- Ensemble Runner ---")
     println("Running $num_sims simulations on $(Threads.nthreads()) threads.")
-    println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR")
+    println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR, misseg_type=$misseg_mech, dmu=$dmu, mu0=$mu0, r0=$r0, dr=$dr, rmax=$rmax, dm=$dm")
     
     progress_lock = ReentrantLock()
     completed = 0
@@ -57,7 +57,7 @@ function run_ensemble(num_sims=50)
         perturb_optimized!(tiss, r_pert, pert_chrs)
         
         # Run simulation (bar=false to keep terminal clean)
-        res = simulation_optimized(tiss, N_CHR, n_steps, n_it_store, false, limit)
+        res = simulation_optimized(tiss, N_CHR, n_steps, n_it_store, false, limit, 0.0, misseg_mech)
         
         # Save full NPZ result for this individual simulation
         save_results_npz(joinpath(ensemble_dir, "sim_$(i).npz"), res)
@@ -98,8 +98,11 @@ function run_ensemble(num_sims=50)
     println("Results saved to: $output_file")
 end
 
-# Check if arguments are passed via command line
-if !isempty(ARGS)
+if length(ARGS) >= 2
+    n = parse(Int, ARGS[1])
+    m_mech = ARGS[2]
+    run_ensemble(n, m_mech)
+elseif length(ARGS) == 1
     n = parse(Int, ARGS[1])
     run_ensemble(n)
 else
