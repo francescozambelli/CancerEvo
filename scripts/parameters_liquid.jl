@@ -21,7 +21,7 @@ dmu   = 4.5e-2
 r0    = 1.5e-1
 dr    = 0.8e-2
 rmax  = 2 * r0
-dm    = 0.0   # Missegregation rate (set > 0 to enable)
+dm    = 1e-2 # Missegregation rate (set > 0 to enable)
 
 #### Simulation control ####
 n_steps    = 2500

@@ -138,7 +138,7 @@ def reconstruct_mean_curve(means: np.ndarray, interv: np.ndarray) -> np.ndarray:
 # Plot
 # ---------------------------------------------------------------------------
 fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-fig.suptitle("Ensemble Tumor Dynamics", fontsize=16, fontweight="bold", y=1.02)
+#fig.suptitle("Ensemble Tumor Dynamics", fontsize=16, fontweight="bold", y=1.02)
 
 interv = np.linspace(0, DENSITY_MAX, N_BINS)
 
@@ -172,7 +172,7 @@ ax.grid(False)
 # - We then use plot_stats_elementwise to compute and plot the median and the
 #   16th-84th percentile confidence bands across runs.
 ax = axes[1]
-SKIP_SMOOTH = 50    # running-slope half-window
+SKIP_SMOOTH = 10    # running-slope half-window
 WIN_AVG     = 50   # running average smoothing window
 
 def get_smooth_slope(td, skip, win_avg):
@@ -207,4 +207,4 @@ out_path_svg = out_dir / "ensemble_trajectories.svg"
 plt.savefig(out_path_png, dpi=150, bbox_inches="tight")
 plt.savefig(out_path_svg, bbox_inches="tight")
 print(f"\nSaved →\n  - {out_path_png}\n  - {out_path_svg}")
-plt.show()
+#plt.show()
