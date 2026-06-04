@@ -266,8 +266,10 @@ end
 Create the output CSV with a header if it does not already exist.
 """
 function init_output(path::String)
-    open(path, "w") do io
-        println(io, "rmax,stable_dmu")
+    if !isfile(path)
+        open(path, "w") do io
+            println(io, "rmax,stable_dmu")
+        end
     end
 end
 
@@ -300,6 +302,9 @@ function run_stability_sweep(; n_rmax::Int = N_RMAX_DEFAULT, dry_run::Bool = fal
     println("═══════════════════════════════════════════════════")
     println("Loading prior data...")
     prior = load_prior_data(data_dir)
+    if nrow(prior) == 0
+        prior = DataFrame(rmax=Float64[], stable_dmu=Float64[])
+    end
     println("  Total prior points: $(nrow(prior))")
 
     # ── 2. Fit boundary model ─────────────────────────────────────────────────

@@ -275,7 +275,6 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
 
     ax.set_box_aspect(None, zoom=0.8)
     fig.suptitle(title, fontsize=14, fontweight="bold")
-    plt.tight_layout()
     return fig
 
 

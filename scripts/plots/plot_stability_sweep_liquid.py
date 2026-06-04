@@ -59,12 +59,12 @@ if solid_available:
     r_unique_s = np.array(sorted(df_solid_clip["rmax_norm"].unique()))
     
     solid_med_mu = grp_s.median().values * 10
-    solid_med = dyn_state(0.0, 1.0, solid_med_mu, 0.0, N_HK)[1]
+    solid_med = dyn_state(0.0, 1.0, solid_med_mu, 0.5, N_HK)[1]
     
     solid_lo_mu = grp_s.quantile(0.25).values * 10
     solid_hi_mu = grp_s.quantile(0.75).values * 10
-    solid_lo = dyn_state(0.0, 1.0, solid_lo_mu, 0.0, N_HK)[1]
-    solid_hi = dyn_state(0.0, 1.0, solid_hi_mu, 0.0, N_HK)[1]
+    solid_lo = dyn_state(0.0, 1.0, solid_lo_mu, 0.5, N_HK)[1]
+    solid_hi = dyn_state(0.0, 1.0, solid_hi_mu, 0.5, N_HK)[1]
     
     spl_s = make_smoothing_spline(r_unique_s, solid_med, lam=0.0001)
     r_smooth_s = np.linspace(r_unique_s.min(), XMAX, 300)
@@ -78,12 +78,12 @@ grp_l = df_liquid_clip.groupby("rmax_norm")["stable_dmu"]
 r_unique_l = np.array(sorted(df_liquid_clip["rmax_norm"].unique()))
 
 liquid_med_mu = grp_l.median().values * 10
-liquid_med = dyn_state(0.0, 1.0, liquid_med_mu, 0.0, N_HK)[1]
+liquid_med = dyn_state(0.0, 1.0, liquid_med_mu, 0.5, N_HK)[1]
 
 liquid_lo_mu = grp_l.quantile(0.25).values * 10
 liquid_hi_mu = grp_l.quantile(0.75).values * 10
-liquid_lo = dyn_state(0.0, 1.0, liquid_lo_mu, 0.0, N_HK)[1]
-liquid_hi = dyn_state(0.0, 1.0, liquid_hi_mu, 0.0, N_HK)[1]
+liquid_lo = dyn_state(0.0, 1.0, liquid_lo_mu, 0.5, N_HK)[1]
+liquid_hi = dyn_state(0.0, 1.0, liquid_hi_mu, 0.5, N_HK)[1]
 
 spl_l = make_smoothing_spline(r_unique_l, liquid_med, lam=0.0001)
 r_smooth_l = np.linspace(r_unique_l.min(), XMAX, 300)
@@ -94,18 +94,18 @@ theory_rmax_norm = np.linspace(1.001, XMAX, 600)
 theory_rmax_abs  = theory_rmax_norm * r0
 P_s_star         = (1.0 + r0 / theory_rmax_abs) / 2.0
 mu_star          = 1.0 - P_s_star ** (1.0 / N_HK)
-p_star_theory    = dyn_state(0.0, 1.0, mu_star, 0.0, N_HK)[1]
+p_star_theory    = dyn_state(0.0, 1.0, mu_star, 0.5, N_HK)[1]
 
 # Asymptotic Saturation
 dmu_star_sat_s = float((1.0 - 0.5 ** (1.0 / N_HK)) / N_I)
 mu_star_sat_s = dmu_star_sat_s * N_I
-p_star_sat_s = dyn_state(0.0, 1.0, mu_star_sat_s, 0.0, N_HK)[1]
+p_star_sat_s = dyn_state(0.0, 1.0, mu_star_sat_s, 0.5, N_HK)[1]
 
 # Empirical Liquid Saturation (median of the flat asymptotic part rmax_norm >= 5)
 p_star_sat_l = np.median(liquid_med[r_unique_l >= 5.0])
 
 # Maximum Y value for plot
-YMAX = 0.35
+YMAX = 1.05
 
 # ---------------------------------------------------------------------------
 # 1. Generate Static Figure (Matplotlib)
@@ -157,13 +157,13 @@ ax_mpl.text(XMAX * 0.98, p_star_sat_l + 0.005,
             color="purple", ha="right", va="bottom", fontsize=11)
 
 # Annotate regimes (centered in white boxes)
-ax_mpl.text(4.0, 0.31, "Global Collapse\n(Mutational Meltdown)",
+ax_mpl.text(4.0, 0.92, "Global Collapse\n(Mutational Meltdown)",
             bbox=dict(facecolor="white", edgecolor="#E63946", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=11, ha="center")
-ax_mpl.text(4.0, 0.14, "Liquid Expansion / Solid Collapse\n(Spatial Constraint Suppression)",
+ax_mpl.text(4.0, 0.65, "Liquid Expansion / Solid Collapse\n(Spatial Constraint Suppression)",
             bbox=dict(facecolor="white", edgecolor="#E9C46A", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=11, ha="center")
-ax_mpl.text(4.0, 0.015, "Solid & Liquid Expansion\n(Tumorigenic Regime)",
+ax_mpl.text(4.0, 0.15, "Solid & Liquid Expansion\n(Tumorigenic Regime)",
             bbox=dict(facecolor="white", edgecolor="#2A9D8F", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=11, ha="center")
 

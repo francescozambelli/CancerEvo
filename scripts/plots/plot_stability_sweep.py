@@ -42,7 +42,7 @@ N_HK = 10
 N_I  = 10
 
 # Maximum mutation rate to plot was 0.072, convert it to p_death space
-YMAX = dyn_state(0.0, 1.0, 0.072, 0.0, N_HK)[1]
+YMAX = dyn_state(0.0, 1.0, 0.072, 0.5, N_HK)[1]
 
 # ── Adaptive boundary: per-rmax_norm statistics ──────────────────────────────
 if adaptive_available:
@@ -51,17 +51,17 @@ if adaptive_available:
     r_unique  = np.array(sorted(dfa_clip["rmax_norm"].unique()))
     adapt_med_mu = grp.median().values * 10
     
-    # Map raw mutation rate to p_death space using dyn_state with k=0
-    adapt_med = dyn_state(0.0, 1.0, adapt_med_mu, 0.0, N_HK)[1]
+    # Map raw mutation rate to p_death space using dyn_state with k=0.5
+    adapt_med = dyn_state(0.0, 1.0, adapt_med_mu, 0.5, N_HK)[1]
     
     adapt_lo_mu  = grp.quantile(0.25).values * 10
     adapt_hi_mu  = grp.quantile(0.75).values * 10
     adapt_rmax_raw = dfa_clip["rmax_norm"].values
     adapt_dmu_raw_mu  = dfa_clip["stable_dmu"].values * 10
     
-    adapt_lo = dyn_state(0.0, 1.0, adapt_lo_mu, 0.0, N_HK)[1]
-    adapt_hi = dyn_state(0.0, 1.0, adapt_hi_mu, 0.0, N_HK)[1]
-    adapt_dmu_raw = dyn_state(0.0, 1.0, adapt_dmu_raw_mu, 0.0, N_HK)[1]
+    adapt_lo = dyn_state(0.0, 1.0, adapt_lo_mu, 0.5, N_HK)[1]
+    adapt_hi = dyn_state(0.0, 1.0, adapt_hi_mu, 0.5, N_HK)[1]
+    adapt_dmu_raw = dyn_state(0.0, 1.0, adapt_dmu_raw_mu, 0.5, N_HK)[1]
 
     # Fit a smoothing spline on the median points to draw a smooth boundary
     # lam=0.0001 handles the small deviations to give a clean smooth curve
@@ -76,12 +76,12 @@ theory_rmax_norm = np.linspace(1.001, XMAX, 600)
 theory_rmax_abs  = theory_rmax_norm * r0
 P_s_star         = (1.0 + r0 / theory_rmax_abs) / 2.0
 mu_star          = 1.0 - P_s_star ** (1.0 / N_HK)
-p_star_theory    = dyn_state(0.0, 1.0, mu_star, 0.0, N_HK)[1]
+p_star_theory    = dyn_state(0.0, 1.0, mu_star, 0.5, N_HK)[1]
 
 # Asymptotic saturation (multiplied by N_I to get mu saturation)
 dmu_star_sat = float((1.0 - 0.5 ** (1.0 / N_HK)) / N_I)
 mu_star_sat = dmu_star_sat * N_I
-p_star_sat = dyn_state(0.0, 1.0, mu_star_sat, 0.0, N_HK)[1]
+p_star_sat = dyn_state(0.0, 1.0, mu_star_sat, 0.5, N_HK)[1]
 
 
 # ---------------------------------------------------------------------------
@@ -113,15 +113,15 @@ if adaptive_available:
 
 # Asymptotic saturation
 ax_mpl.axhline(p_star_sat, color="orange", ls="--", lw=1.5, alpha=0.6, zorder=3)
-ax_mpl.text(XMAX * 0.98, p_star_sat + 0.0008, 
-            r"$P_{\rm death, \infty}^* \approx 0.044$", 
+ax_mpl.text(XMAX * 0.98, p_star_sat + 0.01, 
+            r"$P_{\rm death, \infty}^* \approx " + f"{p_star_sat:.3f}$", 
             color="orange", ha="right", va="bottom", fontsize=11)
 
 # Annotate regimes (centered in white boxes matching phase_diagram.png)
-ax_mpl.text(2.0, 0.032, "Tumor Collapse",
+ax_mpl.text(2.0, 0.40, "Tumor Collapse",
             bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=12, ha="center")
-ax_mpl.text(3.5, 0.008, "Tumor Expansion",
+ax_mpl.text(3.5, 0.15, "Tumor Expansion",
             bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=12, ha="center")
 
