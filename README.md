@@ -27,10 +27,21 @@ CancerEvo/
 │   └── interventions.jl    # Therapeutic intervention functions
 │
 ├── scripts/                # Runnable entry points
-│   ├── parameters.jl       # Centralized parameter configuration
-│   ├── simulation.jl       # Single simulation run → saves results.npz
-│   ├── ensemble_run.jl     # Parallel ensemble of simulations
-│   └── stability_sweep.jl  # Parameter sweep over rmax × dmu
+│   ├── solid/              # Solid-tumor simulation scripts
+│   │   ├── parameters.jl       # Centralized parameter configuration
+│   │   ├── simulation.jl       # Single simulation run → saves results.npz
+│   │   ├── ensemble_run.jl     # Parallel ensemble of simulations
+│   │   └── stability_sweep.jl  # Parameter sweep over rmax × dmu
+│   │
+│   ├── liquid/             # Liquid-tumor simulation scripts
+│   │   ├── parameters_liquid.jl   # Centralized parameter configuration
+│   │   ├── simulation_liquid.jl   # Single simulation run
+│   │   ├── ensemble_run_liquid.jl # Parallel ensemble of simulations
+│   │   └── stability_sweep_liquid.jl # Parameter sweep
+│   │
+│   └── plots/              # Python plotting scripts
+│       ├── solid/          # Solid-tumor plotting scripts
+│       └── liquid/         # Liquid-tumor plotting scripts
 │
 ├── notebooks/              # Exploratory Jupyter notebooks (sandbox)
 │
@@ -56,25 +67,19 @@ Core reusable library modules.
   - `int_d_optimized!`: Globally changes `dmu` and recomputes all cell rates.
 
 ### `scripts/`
-Runnable entry points. Each script loads `../src/` modules and `parameters.jl`.
+Runnable entry points, organized into `solid/` and `liquid/` subfolders. Each script loads `../../src/` modules.
 
-- **`parameters.jl`**: Edit this file to configure a simulation run. Key parameters:
-  | Parameter | Default | Description |
-  |-----------|---------|-------------|
-  | `L` | 200 | Lattice side length (grid is L×L) |
-  | `N_CHR` | 2 | Initial number of chromosomes per cell |
-  | `mu0` | 0.0 | Baseline mutation rate |
-  | `dmu` | 0.015 | Mutation rate increment per activated I gene |
-  | `r0` | 0.15 | Baseline replication rate |
-  | `dr` | 0.008 | Replication rate increment per activated O/S gene |
-  | `rmax` | 2×r0 | Maximum replication rate cap |
-  | `dm` | 0.0 | Missegregation rate |
-  | `n_steps` | 2500 | Max simulation iterations |
-  | `limit` | 0.5 | Upper tumour density limit to stop simulation |
+#### Solid Tumor (`scripts/solid/`)
+- **`parameters.jl`**: Edit this file to configure solid-tumor simulation parameters (lattice size, baseline rates, steps, etc.).
+- **`simulation.jl`**: Runs a single solid-tumor simulation and saves all time-series to `data/simulations/results.npz`.
+- **`ensemble_run.jl`**: Runs `N` independent parallel simulations using `Base.Threads`. Saves per-simulation NPZ files and a summary CSV.
+- **`stability_sweep.jl`**: Sweeps `rmax` and `dmu` to identify the stability boundary for solid tumors.
 
-- **`simulation.jl`**: Runs a single simulation and saves all time-series to `data/simulations/results.npz`.
-- **`ensemble_run.jl`**: Runs `N` independent parallel simulations using `Base.Threads`. Saves per-simulation NPZ files and a `ensemble_results.csv` summary with columns `sim_id, outcome, steps, final_size`.
-- **`stability_sweep.jl`**: Sweeps `rmax` (20 steps, r0 to 2r0) and `dmu` for a single-chromosome, fully-mutated initial condition to find which `dmu` values keep the tumour density within ±20% of the target density for 500 steps. Saves results to `data/stability_results.csv`.
+#### Liquid Tumor (`scripts/liquid/`)
+- **`parameters_liquid.jl`**: Configure parameters for the liquid-tumor (global placement Moran process) model.
+- **`simulation_liquid.jl`**: Runs a single liquid-tumor simulation.
+- **`ensemble_run_liquid.jl`**: Runs parallel ensembles of liquid-tumor simulations.
+- **`stability_sweep_liquid.jl`**: Sweeps parameter space to find the liquid-tumor stability boundary.
 
 ---
 
@@ -130,17 +135,29 @@ Pkg.instantiate()
 
 ### Run a Single Simulation
 ```bash
-julia scripts/simulation.jl
+# Solid
+julia scripts/solid/simulation.jl
+
+# Liquid
+julia scripts/liquid/simulation_liquid.jl
 ```
 
 ### Run a Parallel Ensemble (e.g. 50 simulations)
 ```bash
-julia -t auto scripts/ensemble_run.jl 50
+# Solid
+julia -t auto scripts/solid/ensemble_run.jl 50
+
+# Liquid
+julia -t auto scripts/liquid/ensemble_run_liquid.jl 50
 ```
 
 ### Run the Stability Parameter Sweep
 ```bash
-julia -t auto scripts/stability_sweep.jl
+# Solid
+julia -t auto scripts/solid/stability_sweep.jl
+
+# Liquid
+julia -t auto scripts/liquid/stability_sweep_liquid.jl
 ```
 
-> **Tip:** Edit `scripts/parameters.jl` before running to configure the physical parameters of the simulation.
+> **Tip:** Edit configuration parameters in `scripts/solid/parameters.jl` or `scripts/liquid/parameters_liquid.jl` before running.
