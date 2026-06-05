@@ -88,32 +88,28 @@ function substitute_liquid!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_type
             tiss.r[target_idx]           = tiss.r[i]
             tiss.m[target_idx]           = tiss.m[i]
 
-            # ── Mutate and update DAUGHTER only ──────────────────────────
-            # The mother (i) retains its current mutation state — mutations
-            # arise in newborn cells, not retroactively in the parent.
-            # (In the solid model the spatial gate limits how often each
-            # cancer cell acts, so mother mutation there is less impactful;
-            # here all cancer cells divide at full rate, so mutating the
-            # mother would cause excessive accumulation.)
-            mutate_optimized!(tiss, target_idx)
+            # ── Mutate and update both cells (symmetric division model) ──
+            for idx in (i, target_idx)
+                mutate_optimized!(tiss, idx)
 
-            # State transition to cancer (daughter only)
-            if tiss.state[target_idx] == 0
-                has_mut = false
-                for c in 1:tiss.n_chrs[target_idx]
-                    if tiss.chromosomes[c, target_idx] != 0
-                        has_mut = true; break
+                # State transition to cancer
+                if tiss.state[idx] == 0
+                    has_mut = false
+                    for c in 1:tiss.n_chrs[idx]
+                        if tiss.chromosomes[c, idx] != 0
+                            has_mut = true; break
+                        end
+                    end
+                    if has_mut || tiss.n_chrs[idx] != n_chrs_init
+                        tiss.state[idx] = 1
                     end
                 end
-                if has_mut || tiss.n_chrs[target_idx] != n_chrs_init
-                    tiss.state[target_idx] = 1
-                end
-            end
 
-            if check_death_optimized(tiss, target_idx)
-                push!(new_dead_indices, target_idx)
-            else
-                update_cell_rates_optimized!(tiss, target_idx)
+                if check_death_optimized(tiss, idx)
+                    push!(new_dead_indices, idx)
+                else
+                    update_cell_rates_optimized!(tiss, idx)
+                end
             end
 
             # ── Missegregation (mother → daughter) ────────────────────────

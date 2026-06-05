@@ -250,6 +250,26 @@ def load_adaptive_stability_results() -> pd.DataFrame:
     return df
 
 
+def load_adaptive_stability_results_liquid() -> pd.DataFrame:
+    """
+    Load ``data/stability_results_liquid_adaptive.csv`` produced by the adaptive
+    sweep script for the liquid model. Returns an empty DataFrame if the file does not yet exist.
+
+    Adds a ``rmax_norm`` column (rmax / r0).
+    """
+    path = _REPO_ROOT / "data" / "stability_results_liquid_adaptive.csv"
+    if not path.exists():
+        import warnings
+        warnings.warn(
+            f"{path.name} not found – run scripts/liquid/stability_sweep_liquid.jl first.",
+            stacklevel=2,
+        )
+        return pd.DataFrame(columns=["rmax", "stable_dmu", "rmax_norm"])
+    df = pd.read_csv(path)
+    df["rmax_norm"] = df["rmax"] / _R0
+    return df
+
+
 def load_all_stability_results() -> pd.DataFrame:
     """
     Merge all stability CSV files (prior + adaptive) into one DataFrame.

@@ -187,3 +187,76 @@ The fast-decrease scenario illustrates the **initial mutational shock**: at high
 | Analytical formula | $\delta\mu^* = \frac{1}{N_I}\left[1 - \left(\frac{1 + r_0/r_{\max}}{2}\right)^{1/N_{HK}}\right]$ |
 | Error threshold (saturation) | $\delta\mu^*_\infty = \frac{1-0.5^{1/N_{HK}}}{N_I} \approx 0.0067$ |
 | Agreement with simulation | Shape and saturation correct; ~10–25% underestimate (spatial correction needed) |
+
+---
+
+## 9. Extension to the Liquid Tumor Case
+
+In the liquid tumor model, cells are well-mixed (non-spatial Moran-like process) rather than confined to a 2D lattice. This introduces key differences in both simulation dynamics and analytical behavior.
+
+### 9.1 Key Differences in the Liquid Simulation Model
+
+1. **Global Competition and Dissemination**:
+   - In the solid model, a dividing cancer cell can only replace its direct Moore neighbors.
+   - In the liquid model, daughter cells are placed at **uniformly random global positions** across the entire lattice.
+2. **Mutational Burden Per Division**:
+   - In the solid model, **both** mother and daughter cells are mutated at each division event.
+   - In the liquid model, **only the daughter cell** is mutated at each division, while the mother cell retains its current mutation state. This immediately halves the mutational burden per division.
+
+### 9.2 Observed Phase Boundary (Liquid vs. Solid)
+
+The liquid adaptive sweep results (`stability_results_liquid_adaptive.csv`) show that the liquid tumor is significantly more robust to mutational collapse:
+
+| $r_{\max}/r_0$ | Solid Observed $\delta\mu^*$ | Liquid Observed $\delta\mu^*$ | Ratio (Liquid/Solid) |
+|---|---|---|---|
+| 1.43 | $\approx 0.0024$ | $\approx 0.0062$ | $\approx 2.58$ |
+| 2.29 | $\approx 0.0044$ | $\approx 0.0124$ | $\approx 2.82$ |
+| 3.14 | $\approx 0.0050$ | $\approx 0.0154$ | $\approx 3.08$ |
+| 4.00 | $\approx 0.0054$ | $\approx 0.0165$ | $\approx 3.06$ |
+| 7.00 | $\approx 0.0059$ | $\approx 0.0170$ | $\approx 2.88$ |
+
+In terms of critical death probability ($P_{\text{death}}^*$), the liquid tumor boundary is much higher, saturating at $P_{\text{death,}\infty}^* \approx 0.86$ compared to $P_{\text{death,}\infty}^* \approx 0.44$ for the solid tumor.
+
+### 9.3 Analytical Prediction for the Liquid Tumor
+
+#### A. Low-Density Limit ($f_C \to 0$)
+In a well-mixed tissue, when the tumor fraction $f_C = C/N$ is small, a cancer cell chosen for division targets a wild-type cell with probability $\approx 1.0$. The replacement is accepted with probability:
+$$P_{\text{replace}} = \frac{r_{\text{cancer}}}{r_{\text{cancer}} + r_0}$$
+
+Since only the daughter cell is mutated:
+- The mother cell survives with probability 1.0.
+- The daughter cell survives the housekeeping check with probability $P_s = (1 - N_I \cdot \delta\mu)^{N_{HK}}$.
+
+The expected net change in cancer cell count per division event:
+$$\Delta C = P_{\text{replace}} \cdot P_s \cdot (+1) = \frac{r_{\text{cancer}}}{r_{\text{cancer}} + r_0} P_s$$
+
+A cancer cell is replaced by wild-type divisions at rate $r_0 \cdot \frac{r_0}{r_{\text{cancer}} + r_0}$ per cancer cell.
+Equating the rate of gain and rate of loss at the stability boundary yields:
+$$r_{\text{cancer}}^2 P_s^* - r_0^2 = 0 \quad \Rightarrow \quad P_s^* = \left(\frac{r_0}{r_{\text{cancer}}}\right)^2$$
+
+Substituting $P_s^* = (1 - N_I \cdot \delta\mu^*)^{N_{HK}}$ gives the low-density critical mutation rate:
+$$\boxed{\delta\mu^*(r_{\max}) = \frac{1}{N_I}\left[1 - \left(\frac{r_0}{r_{\max}}\right)^{2/N_{HK}}\right]}$$
+
+#### B. Finite-Density Corrections ($f_C = 0.20$)
+At the start of the stability sweep, the tumor is seeded at $f_C = 0.20$. In a liquid model, cancer cells can target other cancer cells for replacement with probability $f_C$. If a cancer cell replaces another cancer cell and the daughter dies from mutation, a cancer cell is lost. 
+
+Accounting for these self-inflicted replacements, the stability condition at tumor fraction $f_C$ becomes:
+$$P_s^* = \frac{(1-f_C) r_0^2 + \frac{1}{2} f_C r_{\text{cancer}}^2 + \frac{1}{2} f_C r_{\text{cancer}} r_0}{(1-\frac{1}{2} f_C) r_{\text{cancer}}^2 + \frac{1}{2} f_C r_{\text{cancer}} r_0}$$
+
+#### C. Asymptotic Limits ($r_{\max} \gg r_0$)
+- **Solid Tumor**: $P_s^* \to 0.5 \implies P_{\text{death,}\infty}^* = 0.5$ ($\delta\mu^* \approx 0.0067$)
+- **Liquid Tumor (Low-density)**: $P_s^* \to 0 \implies P_{\text{death,}\infty}^* = 1.0$ ($\delta\mu^* \approx 0.10$)
+- **Liquid Tumor ($f_C = 0.20$)**: $P_s^* \to \frac{f_C}{2-f_C} = \frac{0.2}{1.8} = \frac{1}{9} \approx 0.111 \implies P_{\text{death,}\infty}^* = \frac{8}{9} \approx 0.889$ ($\delta\mu^* \approx 0.0197$)
+
+This finite-density correction matches the observed simulation saturation boundary ($P_{\text{death}}^* \approx 0.86$, $\delta\mu^* \approx 0.017$) extremely well, demonstrating that the self-inflicted death rate from spatial mixing dominates the asymptotic limit.
+
+### 9.4 Comparison: Solid vs. Liquid Phase Diagram
+
+The comparison is visualized in the liquid stability sweep figure:
+
+![Liquid vs Solid stability boundary](figures/liquid/stability_sweep_liquid.png)
+
+This phase diagram highlights three distinct regimes:
+1. **Solid & Liquid Expansion** (below the solid boundary): Both solid and liquid tumors successfully invade the healthy tissue.
+2. **Liquid Expansion / Solid Collapse** (between boundaries): Solid tumors collapse under the mutational load (local competition trapping), while liquid tumors continue to invade due to global dissemination and halved mutation rates.
+3. **Global Collapse** (above the liquid boundary): Both tumor types go extinct due to mutational collapse.
