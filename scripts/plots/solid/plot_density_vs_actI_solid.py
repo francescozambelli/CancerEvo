@@ -89,7 +89,7 @@ plt.rcParams.update({
     "lines.linewidth":   1.8,
     "axes.spines.top":   False,
     "axes.spines.right": False,
-    "axes.grid":         True,
+    "axes.grid":         False,
     "grid.color":        "#e0e0e0",
     "grid.linewidth":    0.5,
     "figure.facecolor":  "white",
@@ -100,13 +100,17 @@ cmap   = cm.viridis
 colors = [cmap(k / N_I) for k in range(N_CLASSES)]
 active_classes = [k for k in range(N_CLASSES) if actI_dist[:, k].max() > 1e-4]
 tail_start = int(0.70 * T)
+legend_fontsize = 12
+label_fontsize=15
+ticks_fontsize=13
+letter_fontsize=17
 
 # ---------------------------------------------------------------------------
-# Figure layout  (3-panel mosaic)
+# Figure layout  (4-panel mosaic)
 # ---------------------------------------------------------------------------
 fig, ax_dict = plt.subplot_mosaic(
-    [["A", "B"], ["C", "C"]],
-    figsize=(12, 9),
+    [["A", "B"], ["C", "D"]],
+    figsize=(14, 7),
     gridspec_kw={"hspace": 0.42, "wspace": 0.30},
 )
 
@@ -115,27 +119,31 @@ ax_A = ax_dict["A"]
 for k in active_classes:
     ax_A.plot(steps, actI_dist[:, k], color=colors[k], lw=1.5, alpha=0.9,
               label=f"$k={k}$")
-ax_A.set_xlabel("Simulation step")
-ax_A.set_ylabel("Subpopulation fraction $x_k$")
-ax_A.set_title("Per-class subpopulation fraction $x_k(t)$  [sum = 1 at each step]")
+ax_A.set_xlabel("Simulation step", fontsize=label_fontsize)
+ax_A.set_ylabel("Subpopulation fraction $x_k$", fontsize=label_fontsize)
+#ax_A.set_title("Per-class subpopulation fraction $x_k(t)$  [sum = 1 at each step]")
 ax_A.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=5))
-ax_A.legend(loc="upper left", ncol=3, framealpha=0.6, title="$n_{\\rm act,I}$")
-ax_A.text(-0.13, 1.05, "a", transform=ax_A.transAxes,
-          fontsize=13, fontweight="bold", va="top")
+ax_A.legend(loc="upper right", ncol=3, framealpha=0.6, title="$n_{\\rm act,I}$", fontsize=legend_fontsize-2)
+ax_A.tick_params(axis="both", labelsize=ticks_fontsize)
+ax_A.text(-0.05, 1.12, "a", transform=ax_A.transAxes,
+          fontsize=letter_fontsize, fontweight="bold", va="top")
 
 # ── Panel B: μ(t) ───────────────────────────────────────────────────────────
 ax_B = ax_dict["B"]
 ax_B.plot(steps, mu, color="#2A9D8F", lw=1.8, label=r"$\mu(t)$")
-ax_B.axhspan(MU_BAND_LO, MU_BAND_HI, color="#E63946", alpha=0.15,
-             label=f"Target [{MU_BAND_LO}, {MU_BAND_HI}]")
-ax_B.axvline(tail_start, color="grey", ls="--", lw=1.0, label="Tail region start")
-ax_B.set_xlabel("Simulation step")
-ax_B.set_ylabel(r"Mutation rate $\mu$")
-ax_B.set_title(r"Stabilisation of $\mu$")
+#ax_B.axhspan(MU_BAND_LO, MU_BAND_HI, color="#E63946", alpha=0.15,
+#             label=f"Target [{MU_BAND_LO}, {MU_BAND_HI}]")
+#ax_B.axvline(tail_start, color="grey", ls="--", lw=1.0, label="Tail region start")
+ax_B.axhline(y=mu_theory, color="k", lw=1.8, label=r"$\mu_\infty$", ls="--")
+
+ax_B.set_xlabel("Simulation step", fontsize=label_fontsize)
+ax_B.set_ylabel(r"Mutation rate $\mu$", fontsize=label_fontsize)
+#ax_B.set_title(r"Stabilisation of $\mu$")
 ax_B.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=5))
-ax_B.legend(loc="upper left", framealpha=0.6)
-ax_B.text(-0.13, 1.05, "b", transform=ax_B.transAxes,
-          fontsize=13, fontweight="bold", va="top")
+ax_B.legend(loc="lower right", framealpha=0.6, fontsize=legend_fontsize)
+ax_B.tick_params(axis="both", labelsize=ticks_fontsize)
+ax_B.text(-0.13, 1.12, "b", transform=ax_B.transAxes,
+          fontsize=letter_fontsize, fontweight="bold", va="top")
 
 # ── Panel C: stationary distribution + theory overlay ───────────────────────
 ax_C = ax_dict["C"]
@@ -149,48 +157,62 @@ bar_colors = [colors[k] for k in k_vals]
 
 ax_C.bar(k_vals, xk_tail_mean, color=bar_colors, alpha=0.80,
          edgecolor="white", linewidth=0.5, zorder=3,
-         label="Simulation (tail mean)")
+         label="Tumor spatial simulation")
 ax_C.errorbar(k_vals, xk_tail_mean, yerr=xk_tail_std,
               fmt="none", color="black", capsize=4, lw=1.2, zorder=4)
-
-# Annotations
-for k, (frac, std) in enumerate(zip(xk_tail_mean, xk_tail_std)):
-    if frac > 0.005:
-        ax_C.text(k, frac + std + xk_tail_mean.max() * 0.015,
-                  f"{frac:.2f}", ha="center", va="bottom", fontsize=8,
-                  color="dimgrey")
 
 # Theory overlay
 ax_C.plot(theory_k, theory_x, color="#E76F51", lw=2.0, ls="--",
           marker="D", ms=7, mec="white", mew=0.8, zorder=5,
-          label=rf"Theory $x_k^*$ (ME, $\mu_\infty={mu_theory:.4f}$)")
+          label=rf"Theory $x_k^*$")
 
-ax_C.set_xlabel(r"$k$ — number of active instability genes per cell")
-ax_C.set_ylabel(r"Subpopulation fraction $x_k^*$")
-ax_C.set_title(
-    r"Stationary subpopulation distribution $x_k^*$ (tail mean $\pm\,1\sigma$)"
-)
+ax_C.text(-0.05, 1.12, "c", transform=ax_C.transAxes,
+          fontsize=letter_fontsize, fontweight="bold", va="top")
+ax_C.set_xlabel(r"$k$ — number of active instability genes per cell", fontsize=label_fontsize)
+ax_C.set_ylabel(r"Subpopulation fraction $x_k^*$", fontsize=label_fontsize)
+#ax_C.set_title(r"Stationary subpopulation distribution $x_k^*$")
 ax_C.set_xticks(k_vals)
 ax_C.set_xlim(-0.6, N_I + 0.6)
 ax_C.set_axisbelow(True)
-ax_C.legend(loc="upper right", framealpha=0.8)
+ax_C.legend(loc="upper right", framealpha=0.8, fontsize=legend_fontsize)
+ax_C.tick_params(axis="both", labelsize=ticks_fontsize)
 
-# Colorbar
-sm = cm.ScalarMappable(cmap=cmap, norm=mcolors.Normalize(vmin=0, vmax=N_I))
-sm.set_array([])
-cbar = fig.colorbar(sm, ax=ax_C, orientation="vertical",
-                    fraction=0.015, pad=0.01, shrink=0.9)
-cbar.set_label(r"$k = n_{\rm act,I}$", fontsize=10)
-cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+# ── Panel D: pdie & pmut vs k ───────────────────────────────────────────────
+ax_D = ax_dict["D"]
 
-ax_C.text(-0.06, 1.05, "c", transform=ax_C.transAxes,
-          fontsize=13, fontweight="bold", va="top")
+def pdie(mu, ni, N_HK):
+    return 1.0 - (1.0 - ni * mu) ** N_HK
 
-fig.suptitle(
-    rf"Subpopulation fractions by $n_{{\rm act,I}}$ — solid tumor"
-    rf" ($\mu_\infty \approx {MU_LABEL}$, Tumor$_{{\rm Max}}$)",
-    fontsize=13, fontweight="bold", y=1.01
-)
+def pmut(mu, ni, N_I, chroms=2):
+    return 1.0 - (1.0 - ni * mu) ** (chroms * (N_I - ni))
+
+mu_val = float(MU_LABEL)
+k_range = np.arange(1, N_I + 1)
+p_die_vals = [pdie(mu_val, k, N_H) for k in k_range]
+p_mut_vals = [pmut(mu_val, k, N_I, chroms=2) for k in k_range]
+
+ax_D.plot(k_range, p_die_vals, label=r"$p_{\rm die}$", color="purple", lw=2)
+ax_D.scatter(k_range, p_die_vals, color=[colors[k] for k in k_range], zorder=3, s=50, edgecolors="white", linewidths=0.5)
+
+ax_D.plot(k_range, p_mut_vals, label=r"$p_{\rm mut}$", color="darkorange", lw=2)
+ax_D.scatter(k_range, p_mut_vals, color=[colors[k] for k in k_range], zorder=3, s=50, edgecolors="white", linewidths=0.5)
+
+ax_D.set_xlabel(r"$k$ — number of active instability genes", fontsize=label_fontsize)
+ax_D.set_ylabel("Probability", fontsize=label_fontsize)
+#ax_D.set_title(rf"Death & Mutation Probabilities ($\mu = {mu_val:.4f}$)")
+ax_D.set_xticks(k_range)
+ax_D.set_xlim(0.4, N_I + 0.6)
+ax_D.set_ylim(-0.05, 1.05)
+ax_D.legend(loc="lower center", framealpha=0.6, fontsize=legend_fontsize)
+ax_D.tick_params(axis="both", labelsize=ticks_fontsize)
+ax_D.text(-0.13, 1.12, "d", transform=ax_D.transAxes,
+          fontsize=letter_fontsize, fontweight="bold", va="top")
+
+#fig.suptitle(
+#    rf"Subpopulation fractions by $n_{{\rm act,I}}$ — solid tumor"
+#    rf" ($\mu_\infty \approx {MU_LABEL}$, Tumor$_{{\rm Max}}$)",
+#    fontsize=13, fontweight="bold", y=1.01
+#)
 
 # ---------------------------------------------------------------------------
 # Save
