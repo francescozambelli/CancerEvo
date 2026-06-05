@@ -99,18 +99,26 @@ def compute_asymptotic_limit(N_I: int, N_H: int, dmu: float, remove_lower: int =
         x_numerical = -x_numerical
     x_numerical = x_numerical / np.sum(x_numerical)
 
-    # 4. Compute expected mutation levels, mutation rates and death probabilities
-    classes = np.arange(c, N_I + 1)
-    class_mus = classes * dmu
+    # 4. Embed into the full class structure (1 to N_I), setting removed classes to 0.0
+    full_classes = np.arange(1, N_I + 1)
+    full_class_mus = full_classes * dmu
     
-    asymp_level_analytical = np.sum(x_analytical * classes)
-    asymp_level_numerical = np.sum(x_numerical * classes)
+    x_analytical_full = np.zeros(N_I)
+    x_numerical_full = np.zeros(N_I)
+    x_analytical_full[remove_lower:] = x_analytical
+    x_numerical_full[remove_lower:] = x_numerical
     
-    asymp_mu_analytical = np.sum(x_analytical * class_mus)
-    asymp_mu_numerical = np.sum(x_numerical * class_mus)
+    asymp_level_analytical = np.sum(x_analytical_full * full_classes)
+    asymp_level_numerical = np.sum(x_numerical_full * full_classes)
     
-    asymp_pd_analytical = np.sum(x_analytical * p_d[c:])
-    asymp_pd_numerical = np.sum(x_numerical * p_d[c:])
+    asymp_mu_analytical = np.sum(x_analytical_full * full_class_mus)
+    asymp_mu_numerical = np.sum(x_numerical_full * full_class_mus)
+    
+    # Pad p_d and p_mu with zeros for removed classes to keep array lengths consistent
+    p_d_full = np.zeros(N_I)
+    p_mu_full = np.zeros(N_I)
+    p_d_full[remove_lower:] = p_d[c:]
+    p_mu_full[remove_lower:] = p_mu[c:]
     
     max_diff = np.max(np.abs(x_analytical - x_numerical))
     
@@ -119,18 +127,18 @@ def compute_asymptotic_limit(N_I: int, N_H: int, dmu: float, remove_lower: int =
         "N_H": N_H,
         "dmu": dmu,
         "remove_lower": remove_lower,
-        "classes": classes.tolist(),
-        "class_mus": class_mus.tolist(),
-        "p_d": p_d[c:].tolist(),
-        "p_mu": p_mu[c:].tolist(),
-        "x_analytical": x_analytical.tolist(),
-        "x_numerical": x_numerical.tolist(),
+        "classes": full_classes.tolist(),
+        "class_mus": full_class_mus.tolist(),
+        "p_d": p_d_full.tolist(),
+        "p_mu": p_mu_full.tolist(),
+        "x_analytical": x_analytical_full.tolist(),
+        "x_numerical": x_numerical_full.tolist(),
         "asymp_level_analytical": float(asymp_level_analytical),
         "asymp_level_numerical": float(asymp_level_numerical),
         "asymp_mu_analytical": float(asymp_mu_analytical),
         "asymp_mu_numerical": float(asymp_mu_numerical),
-        "asymp_pd_analytical": float(asymp_pd_analytical),
-        "asymp_pd_numerical": float(asymp_pd_numerical),
+        "asymp_pd_analytical": float(np.sum(x_analytical_full * p_d[1:])),
+        "asymp_pd_numerical": float(np.sum(x_numerical_full * p_d[1:])),
         "max_diff": float(max_diff),
         "eigenvalues": np.real(eigenvalues).tolist(),
         "principal_eigenval": float(np.real(eigenvalues[principal_idx]))
