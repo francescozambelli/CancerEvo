@@ -28,7 +28,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.interpolate import make_smoothing_spline
 from matplotlib.ticker import MaxNLocator, FuncFormatter
 
-from src.analysis.loaders import load_sim, load_all_stability_results
+from src.analysis.loaders import load_sim, load_all_stability_results, load_adaptive_stability_results_liquid
 from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
@@ -49,13 +49,10 @@ solid_med = dyn_state(0.0, 1.0, solid_med_mu, 0.5, N_HK)[1]
 spl_s = make_smoothing_spline(r_unique_s, solid_med, lam=0.0001)
 
 # Load liquid stability boundary
-liquid_path = Path(__file__).resolve().parents[3] / "data" / "stability_results_liquid_adaptive.csv"
-if not liquid_path.exists():
-    print(f"Liquid stability sweep file not found: {liquid_path}")
+dfl = load_adaptive_stability_results_liquid()
+if dfl.empty:
+    print("Liquid stability sweep file not found or empty.")
     sys.exit(1)
-
-dfl = pd.read_csv(liquid_path)
-dfl["rmax_norm"] = dfl["rmax"] / R0
 # We clip rmax_norm > 1.0 because boundary starts above 1.0 (at 1.0 any mutation is unstable)
 df_liquid_clip = dfl[dfl["rmax_norm"] > 1.0].copy()
 grp_l = df_liquid_clip.groupby("rmax_norm")["stable_dmu"]

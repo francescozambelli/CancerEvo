@@ -170,10 +170,16 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
         neighs = tiss.neighbors[i]
         neigh_states = tiss.state[neighs]
         
-        if !all(neigh_states .== 0) # If not all neighbors are wild-type
-            # Weighted choice of neighbor to replace (inverse rate)
+        # A cell can divide only if it has at least one neighbor that is NOT wild-type
+        # (either cancer or dead). If it is completely isolated (surrounded only by WT cells),
+        # the division event is skipped. Interior cancer cells (surrounded by other cancer cells)
+        # can freely divide and replace their neighbors.
+        if !all(neigh_states .== 0) 
+            # Select which neighbor to replace:
+            # 1. Prioritize replacing dead neighbors (r = 0.0) to avoid dead-site accumulation.
+            # 2. Otherwise, select a neighbor with probability inversely proportional to its
+            #    replication rate (inv_rates = 1.0 ./ neigh_r).
             neigh_r = tiss.r[neighs]
-            # Replace dead (r=0) first, then weighted
             target_idx = -1
             dead_neighs = findall(neigh_r .== 0.0)
             if !isempty(dead_neighs)
@@ -191,7 +197,13 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
             tiss.r[target_idx] = tiss.r[i]
             tiss.m[target_idx] = tiss.m[i]
             
-            # Mutate and finalize both
+            # Mutate and finalize both cells (i = mother, target_idx = daughter).
+            # Note: In the solid model, both cells undergo mutation. This represents:
+            # 1. A symmetric cell division model, where both resulting cells are new
+            #    and undergo DNA replication (leading to potential errors in both).
+            # 2. Prevent boundary stagnation: Since boundary cells drive the expansion
+            #    into wild-type tissue, mutating the parent ensures that the active
+            #    expanding front evolves and adapts over successive divisions.
             for idx in (i, target_idx)
                 mutate_optimized!(tiss, idx)
                 

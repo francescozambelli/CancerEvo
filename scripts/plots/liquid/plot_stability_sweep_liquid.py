@@ -11,6 +11,7 @@ outputs/figures/stability_sweep_liquid.png    ← static snapshot (Matplotlib)
 outputs/figures/stability_sweep_liquid.svg    ← static vector (Matplotlib)
 """
 
+from scipy.stats import expon
 import sys
 from pathlib import Path
 
@@ -23,7 +24,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from scipy.interpolate import make_smoothing_spline
 
-from src.analysis.loaders import load_all_stability_results
+from src.analysis.loaders import load_all_stability_results, load_adaptive_stability_results_liquid
 from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
@@ -39,16 +40,13 @@ df_solid = merged_solid[merged_solid["source"] == "adaptive"]
 solid_available = not df_solid.empty
 
 # Load liquid sweep data
-liquid_path = Path(__file__).resolve().parents[3] / "data" / "stability_results_liquid_adaptive.csv"
-liquid_available = liquid_path.exists()
+df_liquid = load_adaptive_stability_results_liquid()
+liquid_available = not df_liquid.empty
 
 if not liquid_available:
-    print(f"Liquid results not found at: {liquid_path}")
-    print("Please run scripts/stability_sweep_liquid.jl first.")
+    print("Liquid results not found or empty.")
+    print("Please run scripts/liquid/stability_sweep_liquid.jl first.")
     sys.exit(1)
-
-df_liquid = pd.read_csv(liquid_path)
-df_liquid["rmax_norm"] = df_liquid["rmax"] / r0
 
 XMIN = 1.2
 XMAX = 7.0
@@ -97,6 +95,15 @@ P_s_star         = (1.0 + r0 / theory_rmax_abs) / 2.0
 mu_star          = 1.0 - P_s_star ** (1.0 / N_HK)
 p_star_theory    = dyn_state(0.0, 1.0, mu_star, 0.5, N_HK)[1]
 
+# ── Theoretical Liquid Boundary (finite tumor fraction f_C = 0.20) ───────────
+f_C = 0.20
+r_c = theory_rmax_abs
+num = (1.0 - f_C) * r0**2 + 0.5 * f_C * r_c**2 + 0.5 * f_C * r_c * r0
+den = (1.0 - 0.5 * f_C) * r_c**2 + 0.5 * f_C * r_c * r0
+P_s_star_l = np.clip(num / den, 0.0, 1.0)
+mu_star_l  = 1.0 - P_s_star_l ** (1.0 / N_HK)
+p_star_theory_l = dyn_state(0.0, 1.0, mu_star_l, 0.5, N_HK)[1]
+
 # Asymptotic Saturation
 dmu_star_sat_s = float((1.0 - 0.5 ** (1.0 / N_HK)) / N_I)
 mu_star_sat_s = dmu_star_sat_s * N_I
@@ -134,8 +141,9 @@ if solid_available:
     # 3. Solid & Liquid Expansion (below solid boundary)
     ax_mpl.fill_between(r_smooth_s, -0.01, solid_med_smooth, alpha=0.05, color="k")
 
-# Theory solid boundary
-ax_mpl.plot(theory_rmax_norm, p_star_theory, color="blue", ls="--", lw=2.5, alpha=0.6, zorder=3, label="Theory (Solid critical boundary)")
+# Theory boundaries
+ax_mpl.plot(theory_rmax_norm, p_star_theory, color="blue", ls="--", lw=2.5, alpha=0.6, zorder=3, label="Theory (Solid boundary)")
+ax_mpl.plot(theory_rmax_norm, p_star_theory_l, color="red", ls="--", lw=2.5, alpha=0.6, zorder=3, label="Theory (Liquid boundary)")
 
 # Solid Simulation boundary
 if solid_available:
@@ -159,7 +167,7 @@ ax_mpl.scatter(r_unique_l, liquid_med, color="#FF9896", s=80, zorder=11, edgecol
 
 # Annotate regimes (centered in white boxes)
 fontsize_reg = 18
-ax_mpl.text(3.0, 0.92, "Global Collapse)",
+ax_mpl.text(3.0, 0.92, "Global Collapse",
             bbox=dict(facecolor="white", edgecolor="#E63946", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=fontsize_reg, ha="center")
 ax_mpl.text(4.0, 0.65, "Liquid Expansion / Solid Collapse",
@@ -177,7 +185,7 @@ ax_mpl.set_ylabel(r"Death Probability ($P_{\mathrm{death}}$)", fontsize=fontsize
 #ax_mpl.set_title(r"Phase Boundary Comparison: Solid vs. Liquid Tumor Stability", 
 #                 fontsize=fontsize_title, fontweight="bold", pad=15)
 
-ax_mpl.set_xlim(XMIN, XMAX)
+ax_mpl.set_xlim(1, XMAX)
 ax_mpl.set_ylim(-0.005, YMAX)
 ax_mpl.yaxis.grid(True, ls=":", alpha=0.5)
 ax_mpl.legend(fontsize=18, loc="lower right", framealpha=0.9)
@@ -235,6 +243,16 @@ fig_plotly.add_trace(go.Scatter(
     name="Theory (Solid boundary)",
     line=dict(color="blue", width=1.5, dash="dash"),
     hovertemplate="rmax/r0: %{x:.3f}<br>P_death theory: %{y:.5f}<extra>Theory Solid</extra>"
+))
+
+# Add Theory Liquid Curve
+fig_plotly.add_trace(go.Scatter(
+    x=theory_rmax_norm,
+    y=p_star_theory_l,
+    mode="lines",
+    name="Theory (Liquid boundary)",
+    line=dict(color="red", width=1.5, dash="dash"),
+    hovertemplate="rmax/r0: %{x:.3f}<br>P_death theory: %{y:.5f}<extra>Theory Liquid</extra>"
 ))
 
 # Add Saturation Lines
