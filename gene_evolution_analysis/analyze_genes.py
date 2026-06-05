@@ -24,7 +24,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Data directories
 SOLID_DIR = REPO_ROOT / "data" / "simulations" / "ensemble_results_D"
-LIQUID_DIR = REPO_ROOT / "data" / "simulations_liquid" / "ensemble_results"
+LIQUID_DIR = REPO_ROOT / "data" / "simulations_liquid" / "ensemble_results_D"
 
 GENE_TYPES = ["I", "O", "S", "M", "HK"]
 GENE_LABELS = {
