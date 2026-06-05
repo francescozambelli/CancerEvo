@@ -58,6 +58,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SIM_DIR = _REPO_ROOT / "data" / "simulations"
+_SIM_DIR_LIQUID = _REPO_ROOT / "data" / "simulations_liquid"
 
 ENSEMBLE_DIRS: Dict[str, str] = {
     "Diploid":   "ensemble_results_D",
@@ -73,16 +74,27 @@ DEFAULT_ENSEMBLE = "ensemble_results"
 # Low-level loader
 # ---------------------------------------------------------------------------
 
-def load_sim(sim_id: int, ensemble_dir: str = DEFAULT_ENSEMBLE) -> dict:
+def load_sim(
+    sim_id: int,
+    ensemble_dir: str = DEFAULT_ENSEMBLE,
+    *,
+    sim_dir: Optional[Path] = None,
+) -> dict:
     """Load a single simulation NPZ and return it as a plain dict of arrays."""
-    path = _SIM_DIR / ensemble_dir / f"sim_{sim_id}.npz"
+    base_dir = sim_dir if sim_dir is not None else _SIM_DIR
+    path = base_dir / ensemble_dir / f"sim_{sim_id}.npz"
     with np.load(path) as f:
         return {k: f[k] for k in f.files}
 
 
-def load_ensemble_csv(ensemble_dir: str = DEFAULT_ENSEMBLE) -> pd.DataFrame:
+def load_ensemble_csv(
+    ensemble_dir: str = DEFAULT_ENSEMBLE,
+    *,
+    sim_dir: Optional[Path] = None,
+) -> pd.DataFrame:
     """Load the ensemble summary CSV for *ensemble_dir*."""
-    path = _SIM_DIR / ensemble_dir / "ensemble_results.csv"
+    base_dir = sim_dir if sim_dir is not None else _SIM_DIR
+    path = base_dir / ensemble_dir / "ensemble_results.csv"
     return pd.read_csv(path)
 
 
@@ -95,6 +107,7 @@ def load_ensemble(
     *,
     outcome_filter: Optional[str] = None,
     max_sims: Optional[int] = None,
+    sim_dir: Optional[Path] = None,
 ) -> Tuple[pd.DataFrame, List[dict]]:
     """
     Load ensemble summary + all trajectory NPZ files.
@@ -102,19 +115,21 @@ def load_ensemble(
     Parameters
     ----------
     ensemble_dir:
-        Subdirectory of ``data/simulations/``.
+        Subdirectory of the simulation directory.
     outcome_filter:
         If given (e.g. ``"Tumor"`` or ``"Health"``), only return rows with
         that outcome.
     max_sims:
         Limit the number of simulations loaded (useful for quick tests).
+    sim_dir:
+        Base simulation directory (default is solid simulations).
 
     Returns
     -------
     summary : pd.DataFrame
     trajs   : list[dict]  – parallel to summary rows
     """
-    summary = load_ensemble_csv(ensemble_dir)
+    summary = load_ensemble_csv(ensemble_dir, sim_dir=sim_dir)
     if outcome_filter is not None:
         if outcome_filter == "Tumor":
             summary = summary[summary["outcome"] != "Health"].reset_index(drop=True)
@@ -127,9 +142,24 @@ def load_ensemble(
 
     trajs = []
     for sid in summary["sim_id"]:
-        trajs.append(load_sim(sid, ensemble_dir))
+        trajs.append(load_sim(sid, ensemble_dir, sim_dir=sim_dir))
 
     return summary, trajs
+
+
+def load_ensemble_liquid(
+    ensemble_dir: str = ENSEMBLE_DIRS["Diploid"],
+    *,
+    outcome_filter: Optional[str] = None,
+    max_sims: Optional[int] = None,
+) -> Tuple[pd.DataFrame, List[dict]]:
+    """Load a specific liquid simulation ensemble (summary + trajectory NPZ files)."""
+    return load_ensemble(
+        ensemble_dir,
+        outcome_filter=outcome_filter,
+        max_sims=max_sims,
+        sim_dir=_SIM_DIR_LIQUID,
+    )
 
 
 def load_all_ploidy(
@@ -138,7 +168,7 @@ def load_all_ploidy(
     max_sims: Optional[int] = None,
 ) -> Dict[str, Tuple[pd.DataFrame, List[dict]]]:
     """
-    Load data for all three ploidy conditions.
+    Load data for all three ploidy conditions (solid simulations).
 
     Returns
     -------
@@ -151,6 +181,30 @@ def load_all_ploidy(
             edir,
             outcome_filter=outcome_filter,
             max_sims=max_sims,
+        )
+    return result
+
+
+def load_all_ploidy_liquid(
+    *,
+    outcome_filter: Optional[str] = None,
+    max_sims: Optional[int] = None,
+) -> Dict[str, Tuple[pd.DataFrame, List[dict]]]:
+    """
+    Load data for all three ploidy conditions (liquid simulations).
+
+    Returns
+    -------
+    dict with keys ``"Diploid"``, ``"Aneuploid"``, ``"Polyploid"``,
+    each value is ``(summary_df, trajs_list)``.
+    """
+    result = {}
+    for label, edir in ENSEMBLE_DIRS.items():
+        result[label] = load_ensemble(
+            edir,
+            outcome_filter=outcome_filter,
+            max_sims=max_sims,
+            sim_dir=_SIM_DIR_LIQUID,
         )
     return result
 
