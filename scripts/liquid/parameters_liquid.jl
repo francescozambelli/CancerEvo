@@ -17,9 +17,9 @@ N_HK  = 10
 #### Tissue / rate parameters ####
 L     = 200
 mu0   = 0.0
-dmu   = 4.5e-2
+dmu   = 2.3e-2
 r0    = 1.5e-1
-dr    = 0.8e-2
+dr    = 0.5e-2
 rmax  = 2 * r0
 dm    = 0.0 #1e-2 # Missegregation rate (set > 0 to enable)
 
