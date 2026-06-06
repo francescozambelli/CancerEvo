@@ -28,13 +28,22 @@ plt.rcParams.update({
     "axes.spines.right": False,
 })
 
+fontsize_ticks = 20
+fontsize_labels = 23
+fontsize_cbar = 20
+fontsize_legend = 20
+
+
 def plot_heatmap():
     project_root = Path(__file__).resolve().parents[3]
     csv_path = project_root / "data" / "parameter_phase_diagram_results.csv"
     output_dir = project_root / "outputs" / "figures" / "solid"
     output_dir.mkdir(parents=True, exist_ok=True)
+    root_dir = output_dir.parent
     output_path_png = output_dir / "parameter_phase_diagram.png"
     output_path_svg = output_dir / "parameter_phase_diagram.svg"
+    output_path_png_root = root_dir / "parameter_phase_diagram.png"
+    output_path_svg_root = root_dir / "parameter_phase_diagram.svg"
 
 
     if not csv_path.exists():
@@ -75,9 +84,9 @@ def plot_heatmap():
     im = ax.pcolormesh(dmu_edges, dr_edges, z, cmap="plasma", vmin=0.0, vmax=1.0, edgecolors='face', linewidths=0, rasterized=True)
     
     # Labeling
-    ax.set_xlabel(r"Mutation rate increment ($d\mu$)", fontsize=16, labelpad=10)
-    ax.set_ylabel(r"Division rate increment ($dr$)", fontsize=16, labelpad=10)
-    ax.set_title("Tumor Progression / Persistence Fraction", fontsize=18, fontweight="bold", pad=15)
+    ax.set_xlabel(r"Mutation rate increment ($d\mu$)", fontsize=fontsize_labels, labelpad=10)
+    ax.set_ylabel(r"Division rate increment ($dr$)", fontsize=fontsize_labels, labelpad=10)
+    #ax.set_title("Tumor Progression / Persistence Fraction", fontsize=18, fontweight="bold", pad=15)
     
     # Automatically locate and format ticks dynamically (reducing number of ticks)
     import matplotlib.ticker as ticker
@@ -85,13 +94,13 @@ def plot_heatmap():
     ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=6))
     ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
-    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize_ticks)
     ax.grid(False)
 
     # Add colorbar
     cbar = fig.colorbar(im, ax=ax, pad=0.03)
-    cbar.set_label("Fraction of runs ending with tumor present", fontsize=14, labelpad=12)
-    cbar.ax.tick_params(labelsize=12)
+    cbar.set_label("Fraction of runs ending with tumor present", fontsize=fontsize_cbar, labelpad=12)
+    cbar.ax.tick_params(labelsize=fontsize_ticks)
 
 
     # Highlight default settings from parameters.jl if within sweep range
@@ -100,12 +109,19 @@ def plot_heatmap():
     if dmu_vals.min() <= default_dmu <= dmu_vals.max() and dr_vals.min() <= default_dr <= dr_vals.max():
         ax.scatter(default_dmu, default_dr, color='cyan', marker='*', s=150, edgecolors='black', 
                    linewidths=1.5, zorder=10, label=f"Default Parameters\n(dmu={default_dmu}, dr={default_dr})")
-        ax.legend(loc="upper left", framealpha=0.9, facecolor='white', edgecolor='none')
+        ax.legend(loc="upper left", framealpha=0.9, facecolor='white', edgecolor='none', fontsize=fontsize_legend)
+    else:
+        # If outside the sweep range, add text to show default params
+        ax.text(0.97, 0.95, f"Default parameters outside sweep:\ndmu = {default_dmu}, dr = {default_dr}", 
+                transform=ax.transAxes, color='white', fontsize=11, fontweight='semibold',
+                ha='right', va='top', bbox=dict(facecolor='black', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.4'))
 
     plt.tight_layout()
     plt.savefig(output_path_png, dpi=200, bbox_inches="tight")
     plt.savefig(output_path_svg, bbox_inches="tight")
-    print(f"Plot saved successfully to:\n  - {output_path_png}\n  - {output_path_svg}")
+    plt.savefig(output_path_png_root, dpi=200, bbox_inches="tight")
+    plt.savefig(output_path_svg_root, bbox_inches="tight")
+    print(f"Plot saved successfully to:\n  - {output_path_png}\n  - {output_path_svg}\n  - {output_path_png_root}\n  - {output_path_svg_root}")
 
 if __name__ == "__main__":
     plot_heatmap()
