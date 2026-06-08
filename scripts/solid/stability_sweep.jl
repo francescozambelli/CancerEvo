@@ -204,15 +204,50 @@ end
 
 
 """
+    simulation_solid_stability(tiss, n_chr_init, n_steps, limit, lower_limit)
+
+Lightweight simulation loop for stability sweeps that terminates based directly
+on living tumor_density (ignoring dead cells to prevent false triggers).
+"""
+function simulation_solid_stability(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int,
+                                     limit::Float64, lower_limit::Float64)
+    state = "Done"
+    final_density = 0.0
+    N = tiss.L * tiss.L
+    for k in 1:n_steps
+        substitute_optimized!(tiss, n_chr_init)
+        n_canc = count(tiss.state .== 1)
+        if n_canc == 0
+            state = "Health"
+            final_density = 0.0
+            break
+        end
+        n_wt = count(tiss.state .== 0)
+        wt_density = n_wt / N
+        final_density = n_canc / N
+        if wt_density < (1.0 - limit)
+            state = "Tumor_Max"
+            break
+        end
+        if wt_density > (1.0 - lower_limit) && k > 1
+            state = "Tumor_Min"
+            break
+        end
+    end
+    return state, final_density
+end
+
+
+"""
     probe(rmax, dmu) → (state::String, final_density::Float64)
 
 Run one stability simulation and return the terminal state + final density.
 """
 function probe(rmax::Float64, dmu::Float64)
     tiss = make_tissue(rmax, dmu)
-    res  = simulation_optimized(tiss, N_CHR_STAB, MAX_STEPS_STABILITY,
-                                 100, false, UPPER_LIMIT, LOWER_LIMIT)
-    return res.state, res.tumor_density[end]
+    state, final_density = simulation_solid_stability(tiss, N_CHR_STAB, MAX_STEPS_STABILITY,
+                                                       UPPER_LIMIT, LOWER_LIMIT)
+    return state, final_density
 end
 
 
@@ -226,7 +261,8 @@ function coarse_scan(rmax::Float64, lo::Float64, hi::Float64, n::Int)
     states    = Vector{String}(undef, n)
     densities = Vector{Float64}(undef, n)
 
-    @showprogress desc="    coarse scan rmax=$(round(rmax,digits=4))" for i in 1:n
+    # Parallelize the simulation sweeps across available threads
+    @threads for i in 1:n
         states[i], densities[i] = probe(rmax, dmu_vals[i])
     end
     return dmu_vals, states, densities

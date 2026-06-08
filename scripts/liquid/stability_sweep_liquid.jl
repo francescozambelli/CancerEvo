@@ -91,8 +91,8 @@ end
 
 function fit_boundary_model(prior::DataFrame)
     if nrow(prior) < 2
-        # Use 0.0125 as a realistic default estimate for the liquid dmu* boundary
-        fallback = isempty(prior) ? 0.0125 : mean(prior.stable_dmu)
+        # Use 0.004 as the default estimate for the liquid dmu* boundary (aligned with actual stable range)
+        fallback = isempty(prior) ? 0.004 : mean(prior.stable_dmu)
         @warn "Too few prior points for regression; using constant predictor dmu* ≈ $(round(fallback, sigdigits=3))"
         return _ -> fallback
     end

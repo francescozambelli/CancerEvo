@@ -16,6 +16,41 @@ struct SimOutcome
     steps::Int
 end
 
+"""
+    simulation_solid_sweep(tiss, n_chr_init, n_steps, limit)
+
+Highly optimized, lightweight simulation loop for parameter sweeps.
+Avoids expensive step-by-step metric calculations (mutations, activations, mean values)
+and allocates no intermediate vectors for metrics, only tracking final outcome and steps.
+"""
+function simulation_solid_sweep(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int, limit::Float64)
+    state = "Done"
+    step_count = n_steps
+    N = tiss.L * tiss.L
+    for k in 1:n_steps
+        substitute_optimized!(tiss, n_chr_init)
+        
+        # count cancer cells - non-allocating count
+        n_canc = count(==(1), tiss.state)
+        
+        if n_canc == 0
+            state = "Health"
+            step_count = k
+            break
+        end
+        
+        # count wild-type cells - non-allocating count
+        n_wt = count(==(0), tiss.state)
+        wt_density = n_wt / N
+        if wt_density < (1.0 - limit)
+            state = "Tumor_Max"
+            step_count = k
+            break
+        end
+    end
+    return (state=state, steps=step_count)
+end
+
 function run_parameter_sweep(n_grid=20, reps=50)
     # Output file
     output_dir = joinpath(dirname(dirname(@__DIR__)), "data")
@@ -69,10 +104,10 @@ function run_parameter_sweep(n_grid=20, reps=50)
         )
         perturb_optimized!(tiss, r_pert_sweep, pert_chrs)
         
-        # Run simulation with bar=false to prevent log cluttering
-        res = simulation_optimized(tiss, N_CHR, n_steps_sweep, n_it_store, false, limit)
+        # Run simulation with the highly optimized sweep loop
+        res = simulation_solid_sweep(tiss, N_CHR, n_steps_sweep, limit)
         
-        results[i] = SimOutcome(t.dmu, t.dr, t.rep, res.state, length(res.tumor_density))
+        results[i] = SimOutcome(t.dmu, t.dr, t.rep, res.state, res.steps)
         
         lock(progress_lock) do
             completed += 1
