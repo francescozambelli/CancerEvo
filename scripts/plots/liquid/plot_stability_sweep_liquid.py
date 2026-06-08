@@ -53,14 +53,11 @@ grp_l = df_liquid_clip.groupby("rmax_norm")["stable_dmu"]
 r_unique_l = np.array(sorted(df_liquid_clip["rmax_norm"].unique()))
 
 liquid_med_mu = grp_l.median().values * 10
-liquid_med = dyn_state(0.0, 1.0, liquid_med_mu, 0.5, N_HK)[1]
 
 liquid_lo_mu = grp_l.quantile(0.25).values * 10
 liquid_hi_mu = grp_l.quantile(0.75).values * 10
-liquid_lo = dyn_state(0.0, 1.0, liquid_lo_mu, 0.5, N_HK)[1]
-liquid_hi = dyn_state(0.0, 1.0, liquid_hi_mu, 0.5, N_HK)[1]
 
-spl_l = make_smoothing_spline(r_unique_l, liquid_med, lam=0.0001)
+spl_l = make_smoothing_spline(r_unique_l, liquid_med_mu, lam=0.0001)
 r_smooth_l = np.linspace(XMIN, XMAX, 300)
 liquid_med_smooth = spl_l(r_smooth_l)
 
@@ -72,13 +69,12 @@ r_c = theory_rmax_abs
 P_s_star_l = (1.0 + f_C + (1.0 - f_C) * (r0 / r_c)**2) / 2.0
 P_s_star_l = np.clip(P_s_star_l, 0.0, 1.0)
 mu_star_l  = 1.0 - P_s_star_l ** (1.0 / N_HK)
-p_star_theory_l = dyn_state(0.0, 1.0, mu_star_l, 0.5, N_HK)[1]
 
 # Empirical Liquid Saturation (median of the flat asymptotic part rmax_norm >= 5)
-p_star_sat_l = np.median(liquid_med[r_unique_l >= 5.0])
+mu_star_sat_l = np.median(liquid_med_mu[r_unique_l >= 5.0])
 
 # Maximum Y value for plot
-YMAX = 0.6
+YMAX = 0.08
 
 # ---------------------------------------------------------------------------
 # 1. Generate Static Figure (Matplotlib)
@@ -95,37 +91,37 @@ fig_mpl, ax_mpl = plt.subplots(figsize=(9, 7))
 
 # Regimes shading
 ax_mpl.fill_between(r_smooth_l, liquid_med_smooth, YMAX, alpha=0.2, color="#E63946")
-ax_mpl.fill_between(r_smooth_l, -0.005, liquid_med_smooth, alpha=0.1, color="#E63946")
+ax_mpl.fill_between(r_smooth_l, -0.001, liquid_med_smooth, alpha=0.1, color="#E63946")
 
 # Theory boundary
-ax_mpl.plot(theory_rmax_norm, p_star_theory_l, color="red", ls="--", lw=2.5, alpha=0.6, zorder=3, label="Theory (Liquid boundary)")
+ax_mpl.plot(theory_rmax_norm, mu_star_l, color="red", ls="--", lw=2.5, alpha=0.6, zorder=3, label="Theory (Liquid boundary)")
 
 # Liquid Simulation boundary
 ax_mpl.plot(r_smooth_l, liquid_med_smooth, color="#D62728", lw=3.0, zorder=6, label="Liquid Tumor (Sim.)")
-ax_mpl.scatter(r_unique_l, liquid_med, color="#FF9896", s=80, zorder=11, edgecolor="#D62728", linewidths=1.5, label="Sim. data")
+ax_mpl.scatter(r_unique_l, liquid_med_mu, color="#FF9896", s=80, zorder=11, edgecolor="#D62728", linewidths=1.5, label="Sim. data")
 
 # Asymptotic saturation
-# ax_mpl.axhline(p_star_sat_l, color="purple", ls="--", lw=1.5, alpha=0.6, zorder=3)
-# ax_mpl.text(XMAX * 0.98, p_star_sat_l + 0.01, 
-#             r"$P_{\rm death, \infty}^* \approx " + f"{p_star_sat_l:.3f}$", 
+# ax_mpl.axhline(mu_star_sat_l, color="purple", ls="--", lw=1.5, alpha=0.6, zorder=3)
+# ax_mpl.text(XMAX * 0.98, mu_star_sat_l + 0.001, 
+#             r"$\mu_{\infty}^* \approx " + f"{mu_star_sat_l:.3f}$", 
 #             color="purple", ha="right", va="bottom", fontsize=11)
 
 # Annotate regimes (centered in white boxes)
 fontsize_reg = 22
-ax_mpl.text(3.0, 0.55, "Tumor Collapse",
+ax_mpl.text(3.0, 0.073, "Tumor Collapse",
             bbox=dict(facecolor="white", edgecolor="#E63946", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=fontsize_reg, ha="center")
-ax_mpl.text(3.0, 0.15, "Tumor Expansion",
+ax_mpl.text(3.0, 0.02, "Tumor Expansion",
             bbox=dict(facecolor="white", edgecolor="#E63946", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=fontsize_reg, ha="center")
 
 # Labels & Bounds
 fontsize_lab = 20
 ax_mpl.set_xlabel(r"Normalized Division Rate ($r_{\mathrm{max}} / r_0$)", fontsize=fontsize_lab)
-ax_mpl.set_ylabel(r"Death Probability ($P_{\mathrm{death}}$)", fontsize=fontsize_lab)
+ax_mpl.set_ylabel(r"Mutation Rate ($\mu$)", fontsize=fontsize_lab)
 
 ax_mpl.set_xlim(1.0, XMAX)
-ax_mpl.set_ylim(-0.005, YMAX)
+ax_mpl.set_ylim(-0.001, YMAX)
 ax_mpl.yaxis.grid(True, ls=":", alpha=0.5)
 ax_mpl.legend(fontsize=18, loc="lower right", framealpha=0.9)
 
@@ -148,28 +144,28 @@ fig_plotly.add_trace(go.Scatter(
 ))
 fig_plotly.add_trace(go.Scatter(
     x=r_unique_l,
-    y=liquid_med,
+    y=liquid_med_mu,
     mode="markers",
     name="Sim. data",
     marker=dict(size=8, color="#FF9896", line=dict(color="#D62728", width=1.0)),
-    hovertemplate="rmax/r0: %{x:.3f}<br>P_death: %{y:.5f}<extra>Liquid Sim</extra>"
+    hovertemplate="rmax/r0: %{x:.3f}<br>mu: %{y:.5f}<extra>Liquid Sim</extra>"
 ))
 
 # Add Theory Liquid Curve
 fig_plotly.add_trace(go.Scatter(
     x=theory_rmax_norm,
-    y=p_star_theory_l,
+    y=mu_star_l,
     mode="lines",
     name="Theory (Liquid boundary)",
     line=dict(color="red", width=2.5, dash="dash"),
-    hovertemplate="rmax/r0: %{x:.3f}<br>P_death theory: %{y:.5f}<extra>Theory Liquid</extra>"
+    hovertemplate="rmax/r0: %{x:.3f}<br>mu theory: %{y:.5f}<extra>Theory Liquid</extra>"
 ))
 
 # Add Saturation Line
 fig_plotly.add_hline(
-    y=p_star_sat_l,
+    y=mu_star_sat_l,
     line=dict(color="purple", width=1.5, dash="dash"),
-    annotation_text=f"Liquid Saturation ≈ {p_star_sat_l:.3f}",
+    annotation_text=f"Liquid Saturation &mu; ≈ {mu_star_sat_l:.3f}",
     annotation_position="top right",
     annotation_font=dict(size=11, color="purple")
 )
@@ -177,7 +173,7 @@ fig_plotly.add_hline(
 # Layout
 fig_plotly.update_layout(
     title=dict(
-        text="Phase Boundary: Critical Death Probability P<sub>death</sub>*(r<sub>max</sub>) (Liquid Model)",
+        text="Phase Boundary: Critical Mutation Rate &mu;*(r<sub>max</sub>) (Liquid Model)",
         font=dict(size=18),
         x=0.5,
     ),
@@ -188,7 +184,7 @@ fig_plotly.update_layout(
         gridcolor="#e0e0e0",
     ),
     yaxis=dict(
-        title=dict(text="Critical Death Probability P<sub>death</sub>", font=dict(size=15)),
+        title=dict(text="Critical Mutation Rate &mu;", font=dict(size=15)),
         range=[0, YMAX],
         showgrid=True,
         gridcolor="#e0e0e0",
