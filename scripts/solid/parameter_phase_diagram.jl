@@ -64,7 +64,8 @@ function run_parameter_sweep(n_grid=20, reps=50)
     # Setup optimized local parameters to override the default ones
     L_sweep = 80
     n_steps_sweep = 1000
-    r_pert_sweep = 0.03 # Yields 17 cells to prevent stochastic extinction
+    r_pert_sweep = 0.25 # Yields 17 cells to prevent stochastic extinction
+    limit=0.9
     
     # Flatten the grid tasks
     tasks = []
@@ -90,6 +91,7 @@ function run_parameter_sweep(n_grid=20, reps=50)
     progress_lock = ReentrantLock()
     completed = 0
     start_time = time()
+    
 
     @threads for i in 1:num_sims
         t = tasks[i]

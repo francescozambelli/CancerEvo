@@ -26,7 +26,7 @@ end
 # Main function
 # ---------------------------------------------------------------------------
 """
-    simulation_liquid_spatial(tiss, n_chr_init, n_steps, n_snapshots, bar, limit, lower_limit)
+    simulation_liquid_spatial(tiss, n_chr_init, n_steps, n_snapshots, bar, limit, lower_limit, misseg_type)
 
 Run the liquid-tumor simulation and record `n_snapshots` spatially-resolved
 lattice frames distributed uniformly across the run.
@@ -38,12 +38,12 @@ Returns a `SpatialResults` with:
 - `.snapshots_mu`    : vector of L×L Float64 matrices (mutation rate per cell)
 - `.snapshots_r`     : vector of L×L Float64 matrices (division rate per cell)
 """
-function simulation_liquid_spatial(tiss::OptimizedTissue, n_chr_init::Int,
+function simulation_liquid_spatial(tiss::LiquidTissue, n_chr_init::Int,
                                    n_steps::Int, n_snapshots::Int=10,
                                    bar=true, limit=0.5, lower_limit=0.0, misseg_type::String="whole")
 
-    L = tiss.L
-    N = L * L
+    N = tiss.N
+    L = round(Int, sqrt(N))
 
     # Fire a snapshot every snap_interval steps.
     # We use n_steps ÷ (n_snapshots * 8) so that even if the run terminates early

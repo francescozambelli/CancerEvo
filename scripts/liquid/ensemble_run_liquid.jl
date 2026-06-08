@@ -69,7 +69,7 @@ function run_ensemble_liquid(num_sims=50, misseg_mech=misseg_type)
     @threads for i in 1:num_sims
         Random.seed!(time_ns() + i * 1_000_003)  # independent per-thread seeds
 
-        tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
+        tiss = LiquidTissue(L * L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
         perturb_liquid!(tiss, n_seed, pert_chrs)
 
         res = simulation_liquid(tiss, N_CHR, n_steps, n_it_store, false, limit, 0.0, misseg_mech)
