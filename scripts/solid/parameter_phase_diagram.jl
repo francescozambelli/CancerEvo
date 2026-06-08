@@ -65,7 +65,7 @@ function run_parameter_sweep(n_grid=20, reps=50)
     L_sweep = 80
     n_steps_sweep = 1000
     r_pert_sweep = 0.25 # Yields 17 cells to prevent stochastic extinction
-    limit=0.9
+    limit=0.7
     
     # Flatten the grid tasks
     tasks = []

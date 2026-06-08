@@ -267,3 +267,117 @@ This yields two physical crossover points:
 The phase diagram comparison is visualized below:
 
 ![Liquid vs Solid stability boundary](figures/liquid/stability_sweep_liquid.png)
+
+---
+
+## 10. Master Equation Framework for Stability Boundaries
+
+The mean-field derivations in Section 5 and Section 9 assume that all cancer cells reside in a single instability class (specifically the maximum class $N_I = 10$, where $\mu = 10 \cdot \delta\mu$). However, a realistic tumor is a heterogeneous population consisting of multiple instability classes $i \in \{1, 2, \dots, N_I\}$, where each class has a distinct mutation rate $\mu_i = i \cdot \delta\mu$ and a distinct housekeeping death probability:
+$$p_{d, i} = 1 - (1 - i \cdot \delta\mu)^{N_{HK}}$$
+
+Here, we reformulate the stability boundary problem using the multi-class Master Equation (ME) framework.
+
+### 10.1 Multi-Class Subpopulation Dynamics
+
+Let $x_i(t)$ be the fraction of cancer cells in instability class $i$. The subpopulation fractions evolve according to the replication-mutation Master Equation:
+$$\frac{d\mathbf{x}}{dt} = r \mathbf{T} \mathbf{x} - \Phi \mathbf{x}$$
+where $\mathbf{T}$ is the lower bidiagonal transition matrix with elements:
+$$\mathbf{T}_{i, j} = \begin{cases} (1 - p_{\mu, j})(1 - p_{d, j}) & \text{if } i = j \\ p_{\mu, j}(1 - p_{d, i}) & \text{if } i = j+1 \\ 0 & \text{otherwise} \end{cases}$$
+and the transition probability to the next class is $p_{\mu, j} = 1 - (1 - j \cdot \delta\mu)^{N_I - j}$ (for $j < N_I$, and $p_{\mu, N_I} = 0$). The term $\Phi = r \sum_{j=1}^{N_I} x_j S_j$ is the average fitness (effective birth rate) of the tumor population that enforces the normalization constraint $\sum x_i = 1$, where $S_j = \sum_{i=1}^{N_I} \mathbf{T}_{i, j} = (1 - p_{\mu, j})(1 - p_{d, j}) + p_{\mu, j}(1 - p_{d, j+1})$ represents the expected survival probability of daughter cells produced by a parent cell of class $j$ (and $S_{N_I} = 1 - p_{d, N_I}$).
+
+Because $\mathbf{T}$ is lower triangular, its eigenvalues are its diagonal entries:
+$$\lambda_j = \mathbf{T}_{j, j} = (1 - p_{\mu, j})(1 - p_{d, j})$$
+Under the stationary distribution $\mathbf{x}^*$, the population converges to the principal eigenvector associated with the largest eigenvalue $\lambda_{\max}$. Since the death rate $p_{d, j}$ and transition rate $p_{\mu, j}$ both increase with $j$, the largest eigenvalue is typically the first diagonal element:
+$$\lambda_{\max} = \lambda_1 = (1 - p_{\mu, 1})(1 - p_{d, 1})$$
+
+A fundamental mathematical identity relates the principal eigenvalue to the average daughter survival probability $\langle S \rangle^*$ at stationarity:
+$$\langle S \rangle^* = \sum_{j=1}^{N_I} x_j^* S_j = \sum_{j=1}^{N_I} x_j^* \left( \sum_{i=1}^{N_I} \mathbf{T}_{i, j} \right) = \sum_{i=1}^{N_I} (\mathbf{T} \mathbf{x}^*)_{i} = \sum_{i=1}^{N_I} \lambda_{\max} x_i^* = \lambda_{\max}$$
+Thus:
+$$\boxed{\langle S \rangle^* = \lambda_{\max}}$$
+At stationarity, the average survival probability of the daughter cells is exactly the principal eigenvalue of the transition matrix.
+
+
+### 10.2 Absolute Population Dynamics and Stability Conditions
+
+To determine stability (invasion vs. extinction), we must track the absolute numbers of cancer cells in each class $C_i(t)$. In a well-mixed (liquid) Moran process, the expected rate of change of $C_i(t)$ is given by:
+$$\frac{dC_i}{dt} = \sum_{j=1}^{N_I} \mathbf{M}^{\text{eff}}_{i, j} C_j$$
+where the effective transition and growth matrix $\mathbf{M}^{\text{eff}}$ accounts for cancer cell division, mutations, and competitive replacement.
+
+#### A. Low-Density Limit ($f_C \to 0$)
+In the low-density limit, the effective matrix is lower bidiagonal with elements:
+$$\mathbf{M}^{\text{eff}}_{i, j} = 2 \frac{r_j^2}{r_j + r_0} \mathbf{T}_{i, j} - \frac{r_j^2 + r_0^2}{r_j + r_0} \delta_{i, j}$$
+The tumor is stable if the largest eigenvalue of $\mathbf{M}^{\text{eff}}$ is positive. Because $\mathbf{M}^{\text{eff}}$ is lower bidiagonal, its eigenvalues are its diagonal entries:
+$$\Lambda_j = \mathbf{M}^{\text{eff}}_{j, j} = 2 \frac{r_j^2}{r_j + r_0} \mathbf{T}_{j, j} - \frac{r_j^2 + r_0^2}{r_j + r_0}$$
+At the stability boundary, the critical condition for class $j$ is $\Lambda_j = 0$, which yields:
+$$\boxed{\mathbf{T}_{j, j}^* = \frac{1 + (r_0/r_j)^2}{2}}$$
+Substituting the definition of $\mathbf{T}_{j, j}$, the critical housekeeping death probability $p_{d, j}^*$ is:
+$$1 - p_{d, j}^* = \frac{1 + (r_0/r_j)^2}{2 (1 - p_{\mu, j})}$$
+
+#### B. Finite-Density Case ($f_C > 0$)
+Incorporating self-replacement terms when the tumor fraction is $f_C$, the diagonal elements of the effective matrix become:
+$$\Lambda_j = 2 \left[ r_j (1-f_C) \frac{r_j}{r_j + r_0} + \frac{1}{2} r_j f_C \right] \mathbf{T}_{j, j} - \left[ r_j (1-f_C) \frac{r_j}{r_j + r_0} + r_j f_C + r_0 (1-f_C) \frac{r_0}{r_j + r_0} \right]$$
+Setting $\Lambda_j = 0$ yields the critical self-preservation probability:
+$$\boxed{\mathbf{T}_{j, j}^* = \frac{1 + f_C (r_0/r_j) + (1-f_C)(r_0/r_j)^2}{2 - f_C + f_C (r_0/r_j)}}$$
+
+#### C. Solid Tumor Mapping
+For the solid tumor model (boundary-dominated growth), the equivalent stability condition is:
+$$\boxed{\mathbf{T}_{j, j}^* = \frac{1 + r_0/r_j}{2}}$$
+which leads to:
+$$1 - p_{d, j}^* = \frac{1 + r_0/r_j}{2 (1 - p_{\mu, j})}$$
+
+### 10.3 The Leakage Cost of Mutational Evolution
+
+Comparing the Master Equation stability condition to the single-class model highlights a fundamental biological trade-off:
+- In the single-class limit, cells cannot mutate out of their class ($p_{\mu, j} = 0$). The survival condition is simply $1 - p_{d, j}^* = P_s^*$.
+- In the Master Equation framework, mutation-induced transitions out of class $j$ act as a "leakage" loss term ($1 - p_{\mu, j} < 1$).
+- Because of this leakage, the critical death probability $p_{d, j}^*$ must be smaller to sustain the population:
+  $$p_{d, j}^* = 1 - \frac{P_s^*}{1 - p_{\mu, j}} < 1 - P_s^*$$
+This explains why the critical mutation rate boundary $\delta\mu^*$ is shifted downwards in the presence of mutational progression: the tumor pays a survival cost ("mutational leakage") to generate more mutated cells. Only when the selection pressure is sufficiently strong (high $r_{\max}$) can the tumor tolerate both housekeeping death and the leaky mutational flux.
+
+
+---
+
+## 11. Three-Population Master Equation Model (WT, Cancer, Dead)
+
+To analyze the tumor dynamics in a well-mixed liquid environment, we can set up a Master Equation for a 3-population system consisting of:
+*   **Wild-Type (Healthy) Cells ($W$):** divide at rate $r_0$, do not mutate.
+*   **Cancer Cells ($C$):** divide at rate $r_{\max}$, undergo symmetric division with a constant mutation rate $\mu = N_I \cdot \delta\mu$.
+*   **Dead Cells ($D$):** cannot divide ($r_{\text{dead}} = 0$).
+
+Let the densities (fractions) of the three populations be $w = W/N$, $c = C/N$, and $d = D/N$, where $w + c + d = 1$ and $N$ is the constant total cell count of the Moran process.
+
+### 11.1 Division and Survival Logic
+During a cancer division event, both daughters mutate and survive housekeeping checks with probability:
+$$P_s = (1 - \mu)^{N_{HK}} = (1 - N_I \cdot \delta\mu)^{N_{HK}}$$
+If a cell fails this check, it becomes a dead cell. 
+
+At each step of the Moran process:
+1.  A cell is chosen to divide with probability proportional to its birth rate:
+    *   WT: $\Pi_W = \frac{r_0 w}{r_0 w + r_{\max} c}$
+    *   Cancer: $\Pi_C = \frac{r_{\max} c}{r_0 w + r_{\max} c}$
+2.  The divider targets a cell in the tissue. In the priority-targeting Moran process, dead cells are replaced first (with probability $d$). If no dead cells exist (with probability $1-d$), the divider targets a random living cell, and replacement is accepted with Moran probability $\frac{r_{\text{divider}}}{r_{\text{divider}} + r_{\text{target}}}$.
+
+### 11.2 Master Equation Formulation
+By evaluating all transition events and their net changes, we obtain the following system of differential equations:
+
+#### Healthy Cell Dynamics
+$$\frac{dw}{dt} = w \left[ r_0 d + (r_0 - r_{\max}) c \right]$$
+
+#### Cancer Cell Dynamics
+$$\frac{dc}{dt} = c \left[ - \frac{r_0^2}{r_0 + r_{\max}} w + (2P_s - 1) \left( \frac{r_{\max}^2}{r_0 + r_{\max}} w + r_{\max} d \right) + (P_s - 1) r_{\max} c \right]$$
+
+#### Dead Cell Dynamics
+$$\frac{dd}{dt} = - \frac{dw}{dt} - \frac{dc}{dt}$$
+
+### 11.3 Stability Boundary Condition
+The tumor stability boundary is defined by the critical condition where the initial cancer growth rate is zero:
+$$\left. \frac{dc}{dt} \right|_{t=0} = 0$$
+Assuming the tumor is seeded at an initial fraction $c(0) = c_0$ into a healthy tissue ($w(0) = 1 - c_0$ and $d(0) = 0$), setting the growth rate to zero yields:
+$$- \frac{r_0^2}{r_0 + r_{\max}} (1 - c_0) + (2P_s^* - 1) \frac{r_{\max}^2}{r_0 + r_{\max}} (1 - c_0) + (P_s^* - 1) r_{\max} c_0 = 0$$
+
+Solving for the critical survival probability $P_s^*$ gives:
+$$\boxed{P_s^* = \frac{1 + c_0 (r_0 / r_{\max}) + (1 - c_0) (r_0 / r_{\max})^2}{2 - c_0 + c_0 (r_0 / r_{\max})}}$$
+
+This exact theoretical boundary matches the finite-density liquid boundary sweep results with $c_0 = 0.20$ as shown in Section 9.3.B and Section 10.2.B.
+
+
