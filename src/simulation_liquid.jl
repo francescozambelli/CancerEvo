@@ -8,12 +8,12 @@
 include("utils_liquid.jl")
 
 """
-    simulation_liquid(tiss, n_chr_init, n_steps, n_it_store, bar, limit, lower_limit)
+    simulation_liquid(tiss, n_chr_init, n_steps, n_it_store, bar, limit, lower_limit, misseg_type)
 
-Run the liquid-tumor variant of the lattice simulation.
+Run the liquid-tumor variant of the simulation.
 All arguments and return types are identical to `simulation_optimized`.
 """
-function simulation_liquid(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int,
+function simulation_liquid(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int,
                            n_it_store::Int, bar=true, limit=0.5, lower_limit=0.0, misseg_type::String="whole")
     res = OptimizedResults(
         "Done",
@@ -31,15 +31,15 @@ function simulation_liquid(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int,
         # ---- LIQUID substitution (global random placement) ----
         substitute_liquid!(tiss, n_chr_init, misseg_type)
 
-        # ---- Metric extraction (identical to solid model) ----
+        # ---- Metric extraction ----
         cancer_idx = findall(tiss.state .== 1)
         dead_idx   = findall(tiss.state .== 2)
         n_canc     = length(cancer_idx)
         n_dead     = length(dead_idx)
 
-        density = n_canc / (tiss.L^2)
+        density = n_canc / tiss.N
         push!(res.tumor_density, density)
-        push!(res.dcells_density, n_dead / (tiss.L^2))
+        push!(res.dcells_density, n_dead / tiss.N)
 
         if n_canc > 0
             push!(res.mu, mean(tiss.mu[cancer_idx]))
@@ -91,7 +91,7 @@ function simulation_liquid(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int,
             break
         end
         n_wt     = count(tiss.state .== 0)
-        wt_density = n_wt / (tiss.L^2)
+        wt_density = n_wt / tiss.N
         if wt_density < (1.0 - limit)
             println("Over")
             res.state = "Tumor_Max"

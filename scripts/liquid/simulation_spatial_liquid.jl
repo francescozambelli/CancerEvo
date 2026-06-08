@@ -25,7 +25,7 @@ function run_spatial_simulation(n_snapshots=12)
 
     Random.seed!(time_ns())
 
-    tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
+    tiss = LiquidTissue(L * L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
     println("Seeding $n_seed cancer cells at random positions...")
     perturb_liquid!(tiss, n_seed, pert_chrs)
 

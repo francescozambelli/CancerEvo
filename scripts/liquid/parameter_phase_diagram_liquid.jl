@@ -23,10 +23,10 @@ Highly optimized, lightweight simulation loop for parameter sweeps.
 Avoids expensive step-by-step metric calculations (mutations, activations, mean values)
 and allocates no intermediate vectors for metrics, only tracking final outcome and steps.
 """
-function simulation_liquid_sweep(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int, limit::Float64)
+function simulation_liquid_sweep(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int, limit::Float64)
     state = "Done"
     step_count = n_steps
-    N = tiss.L * tiss.L
+    N = tiss.N
     for k in 1:n_steps
         substitute_liquid!(tiss, n_chr_init)
         
@@ -63,9 +63,10 @@ function run_parameter_sweep(n_grid=20, reps=50)
 
     # Setup optimized local parameters to override the default ones
     L_sweep = 80
-    n_steps_sweep = 1000
+    n_steps_sweep = 1280
     n_seed_sweep = 10 # Seeding 10 cells at random global positions
-    
+    limit=0.9
+        
     # Flatten the grid tasks
     tasks = []
     for dmu_val in dmu_range
@@ -98,8 +99,8 @@ function run_parameter_sweep(n_grid=20, reps=50)
         Random.seed!(time_ns() + i)
         
         # Initialize fresh tissue
-        tiss = OptimizedTissue(
-            L_sweep, N_I, N_O, N_S, N_M, N_HK, 
+        tiss = LiquidTissue(
+            L_sweep * L_sweep, N_I, N_O, N_S, N_M, N_HK, 
             mu0, t.dmu, r0, t.dr, rmax, dm, N_CHR
         )
         perturb_liquid!(tiss, n_seed_sweep, pert_chrs)

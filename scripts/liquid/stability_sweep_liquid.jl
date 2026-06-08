@@ -24,40 +24,19 @@ using Random, Statistics, Base.Threads, NPZ, ProgressMeter, CSV, DataFrames
 # ── Configuration ────────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Prior data files for the liquid model
-const PRIOR_FILES = ["stability_results_liquid.csv", "stability_results_liquid_adaptive.csv"]
+# Absolute search limits for dmu
+const DMU_MIN = 1e-6
+const DMU_MAX = 0.02
+const N_BISECT = 14  # 14 iterations gives accuracy of ~1.2e-6
 
-# Skip rmax if this many prior stable points already fall within SKIP_TOLERANCE
-const MIN_PRIOR_HITS  = 2
-const SKIP_TOLERANCE  = 2e-4     # absolute dmu
-
-# Adaptive window: ± WINDOW_FRAC of the predicted dmu* around the prediction
-const WINDOW_FRAC     = 0.50     # 50 %
-const WINDOW_ABS_MIN  = 5e-5     # never narrower than this absolute half-width
-
-# Scan / bisection resolution
-const N_COARSE        = 16       # points per coarse window scan
-const N_BISECT        = 7        # bisection refinement steps
-
-# Fallback when no stable region found in coarse scan
-const FALLBACK_MULTIPLIER = 2.0  # widen window factor for the next rmax
-
-# New sweep grid (rmax in absolute units; r0 = 0.15)
-const RMAX_MIN_MULT   = 1.0      # rmax_min = RMAX_MIN_MULT * r0
-const RMAX_MAX_MULT   = 7.0      # rmax_max = RMAX_MAX_MULT * r0
-const N_RMAX_DEFAULT  = 50       # grid points
-
-# Simulation limits
+const N_RMAX_DEFAULT      = 50
 const TARGET_DENSITY      = 0.2
 const STABILITY_TOLERANCE = 0.2
 const LOWER_LIMIT         = TARGET_DENSITY * (1 - STABILITY_TOLERANCE)
 const UPPER_LIMIT         = TARGET_DENSITY * (1 + STABILITY_TOLERANCE)
 const MAX_STEPS_STABILITY = 500
+const OUTPUT_FILE         = "stability_results_liquid_adaptive.csv"
 
-# Output file
-const OUTPUT_FILE = "stability_results_liquid_adaptive.csv"
-
-# ── Initial perturbation (all I / O / S genes mutated, 1 chromosome) ─────────
 const N_CHR_STAB = 1
 function get_initial_stab_mask()
     m = UInt64(0)
@@ -68,87 +47,16 @@ function get_initial_stab_mask()
 end
 const PERT_CHR_STAB = [get_initial_stab_mask()]
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# ── Prior data utilities ──────────────────────────────────────────────────────
-# ═══════════════════════════════════════════════════════════════════════════════
-
-function load_prior_data(data_dir::String)::DataFrame
-    frames = DataFrame[]
-    for fname in PRIOR_FILES
-        p = joinpath(data_dir, fname)
-        if isfile(p)
-            df = CSV.read(p, DataFrame)
-            push!(frames, df)
-            println("  Loaded prior: $fname ($(nrow(df)) rows)")
-        else
-            println("  Prior file not found, skipping: $p")
-        end
-    end
-
-    isempty(frames) && return DataFrame(rmax=Float64[], stable_dmu=Float64[])
-    return vcat(frames...; cols=:intersect)
-end
-
-function fit_boundary_model(prior::DataFrame)
-    if nrow(prior) < 2
-        # Use 0.004 as the default estimate for the liquid dmu* boundary (aligned with actual stable range)
-        fallback = isempty(prior) ? 0.004 : mean(prior.stable_dmu)
-        @warn "Too few prior points for regression; using constant predictor dmu* ≈ $(round(fallback, sigdigits=3))"
-        return _ -> fallback
-    end
-
-    sorted_prior = sort(prior, :rmax)
-
-    return rmax -> begin
-        if rmax <= sorted_prior.rmax[1]
-            return sorted_prior.stable_dmu[1]
-        elseif rmax >= sorted_prior.rmax[end]
-            return sorted_prior.stable_dmu[end]
-        else
-            idx = findlast(sorted_prior.rmax .<= rmax)
-            r1 = sorted_prior.rmax[idx]
-            r2 = sorted_prior.rmax[idx+1]
-            y1 = sorted_prior.stable_dmu[idx]
-            y2 = sorted_prior.stable_dmu[idx+1]
-            return y1 + (y2 - y1) * (rmax - r1) / (r2 - r1)
-        end
-    end
-end
-
-function is_well_sampled(rmax::Float64, prior::DataFrame;
-                          tol::Float64 = SKIP_TOLERANCE,
-                          min_hits::Int = MIN_PRIOR_HITS)::Bool
-    nearby = prior[abs.(prior.rmax .- rmax) .<= tol, :]
-    nrow(nearby) < min_hits && return false
-    spread = maximum(nearby.stable_dmu) - minimum(nearby.stable_dmu)
-    return spread <= tol
-end
-
-function adaptive_window(rmax::Float64, predict, prior::DataFrame)
-    pred = predict(rmax)
-
-    nearby = prior[abs.(prior.rmax .- rmax) .<= 4 * SKIP_TOLERANCE, :]
-    if nrow(nearby) >= 2
-        σ = std(nearby.stable_dmu)
-        half = max(2σ, WINDOW_ABS_MIN)
-    else
-        half = max(WINDOW_FRAC * pred, WINDOW_ABS_MIN)
-    end
-
-    lo = max(pred - half, 1e-6)
-    hi = pred + half
-    return lo, hi
-end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Simulation helpers ────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
-function make_tissue(rmax::Float64, dmu::Float64)::OptimizedTissue
+function make_tissue(rmax::Float64, dmu::Float64)::LiquidTissue
     dr   = rmax / 10
-    tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK,
+    tiss = LiquidTissue(L * L, N_I, N_O, N_S, N_M, N_HK,
                             mu0, dmu, r0, dr, rmax, 0.0, N_CHR_STAB)
-    N = tiss.L * tiss.L
+    N = tiss.N
     perturb_liquid!(tiss, round(Int, TARGET_DENSITY * N), PERT_CHR_STAB)
     return tiss
 end
@@ -159,11 +67,11 @@ end
 Lightweight simulation loop for stability sweeps that terminates based directly
 on living tumor_density (ignoring dead cells to prevent false triggers).
 """
-function simulation_liquid_stability(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int,
+function simulation_liquid_stability(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int,
                                      limit::Float64, lower_limit::Float64)
     state = "Done"
     final_density = 0.0
-    N = tiss.L * tiss.L
+    N = tiss.N
     for k in 1:n_steps
         substitute_liquid!(tiss, n_chr_init)
         n_canc = count(tiss.state .== 1)

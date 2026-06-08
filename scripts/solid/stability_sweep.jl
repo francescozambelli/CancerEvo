@@ -34,42 +34,20 @@ using Random, Statistics, Base.Threads, NPZ, ProgressMeter, CSV, DataFrames
 # ── Configuration ────────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Prior data files (relative to data/)
-const PRIOR_FILES = ["stability_results.csv", "stability_results_1.csv"]
+# Absolute search limits for dmu
+const DMU_MIN = 1e-6
+const DMU_MAX = 0.02
+const N_BISECT = 14  # 14 iterations gives accuracy of ~1.2e-6
 
-# Skip rmax if this many prior stable points already fall within SKIP_TOLERANCE
-# of each other (boundary already pinned)
-const MIN_PRIOR_HITS  = 2
-const SKIP_TOLERANCE  = 2e-4     # absolute dmu
-
-# Adaptive window: ± WINDOW_FRAC of the predicted dmu* around the prediction
-const WINDOW_FRAC     = 0.50     # 50 % → window spans [0.5·pred, 1.5·pred]
-const WINDOW_ABS_MIN  = 5e-5     # never narrower than this absolute half-width
-
-# Scan / bisection resolution
-const N_COARSE        = 16       # points per coarse window scan
-const N_BISECT        = 7        # bisection refinement steps
-
-# Fallback when no stable region found in coarse scan
-const FALLBACK_MULTIPLIER = 2.0  # widen window factor for the next rmax
-
-# New sweep grid  (rmax in absolute units; r0 = 0.15)
-const RMAX_MIN_MULT   = 1.0      # rmax_min = RMAX_MIN_MULT * r0
-const RMAX_MAX_MULT   = 7.0      # rmax_max = RMAX_MAX_MULT * r0
-const N_RMAX_DEFAULT  = 50       # grid points (override with --n-rmax N)
-
-# Simulation limits (kept consistent with original script)
+const N_RMAX_DEFAULT      = 50
 const TARGET_DENSITY      = 0.2
 const STABILITY_TOLERANCE = 0.2
 const LOWER_LIMIT         = TARGET_DENSITY * (1 - STABILITY_TOLERANCE)
 const UPPER_LIMIT         = TARGET_DENSITY * (1 + STABILITY_TOLERANCE)
 const R_PERT_STABILITY    = sqrt(TARGET_DENSITY / pi)
 const MAX_STEPS_STABILITY = 500
+const OUTPUT_FILE         = "stability_results_adaptive.csv"
 
-# Output file
-const OUTPUT_FILE = "stability_results_adaptive.csv"
-
-# ── Initial perturbation (all I / O / S genes mutated, 1 chromosome) ─────────
 const N_CHR_STAB = 1
 function get_initial_stab_mask()
     m = UInt64(0)
@@ -80,110 +58,6 @@ function get_initial_stab_mask()
 end
 const PERT_CHR_STAB = [get_initial_stab_mask()]
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# ── Prior data utilities ──────────────────────────────────────────────────────
-# ═══════════════════════════════════════════════════════════════════════════════
-
-"""
-    load_prior_data(data_dir) → DataFrame
-
-Read and vertically concatenate all PRIOR_FILES from data_dir.
-Returns a DataFrame with columns :rmax and :stable_dmu (any extra columns
-are silently kept).
-"""
-function load_prior_data(data_dir::String)::DataFrame
-    frames = DataFrame[]
-    for fname in PRIOR_FILES
-        p = joinpath(data_dir, fname)
-        if isfile(p)
-            df = CSV.read(p, DataFrame)
-            push!(frames, df)
-            println("  Loaded prior: $fname ($(nrow(df)) rows)")
-        else
-            println("  Prior file not found, skipping: $p")
-        end
-    end
-
-    isempty(frames) && return DataFrame(rmax=Float64[], stable_dmu=Float64[])
-    return vcat(frames...; cols=:intersect)
-end
-
-
-"""
-    fit_boundary_model(prior::DataFrame) → Function
-
-Fit a linear interpolation model with flat extrapolation to the prior data and
-return a closure  rmax → dmu_predicted.
-
-If fewer than 2 unique rmax values are available, falls back to the mean
-of all observed dmu values (constant predictor).
-"""
-function fit_boundary_model(prior::DataFrame)
-    if nrow(prior) < 2
-        fallback = isempty(prior) ? 1e-3 : mean(prior.stable_dmu)
-        @warn "Too few prior points for regression; using constant predictor dmu* ≈ $(round(fallback, sigdigits=3))"
-        return _ -> fallback
-    end
-
-    sorted_prior = sort(prior, :rmax)
-
-    return rmax -> begin
-        if rmax <= sorted_prior.rmax[1]
-            return sorted_prior.stable_dmu[1]
-        elseif rmax >= sorted_prior.rmax[end]
-            return sorted_prior.stable_dmu[end]
-        else
-            idx = findlast(sorted_prior.rmax .<= rmax)
-            r1 = sorted_prior.rmax[idx]
-            r2 = sorted_prior.rmax[idx+1]
-            y1 = sorted_prior.stable_dmu[idx]
-            y2 = sorted_prior.stable_dmu[idx+1]
-            return y1 + (y2 - y1) * (rmax - r1) / (r2 - r1)
-        end
-    end
-end
-
-
-"""
-    is_well_sampled(rmax, prior; tol, min_hits) → Bool
-
-Return true if there are already MIN_PRIOR_HITS or more prior points with
-|prior.rmax - rmax| ≤ SKIP_TOLERANCE and their dmu* values cluster within
-tol of each other (boundary pinned).
-"""
-function is_well_sampled(rmax::Float64, prior::DataFrame;
-                          tol::Float64 = SKIP_TOLERANCE,
-                          min_hits::Int = MIN_PRIOR_HITS)::Bool
-    nearby = prior[abs.(prior.rmax .- rmax) .<= tol, :]
-    nrow(nearby) < min_hits && return false
-    # Check that the spread of dmu values in the cluster is tight
-    spread = maximum(nearby.stable_dmu) - minimum(nearby.stable_dmu)
-    return spread <= tol
-end
-
-
-"""
-    adaptive_window(rmax, predict, prior) → (lo, hi)
-
-Compute a dmu search window centred on the predicted boundary.
-Narrows when prior data is nearby; widens when far from any prior point.
-"""
-function adaptive_window(rmax::Float64, predict, prior::DataFrame)
-    pred = predict(rmax)
-
-    # Refine half-width using nearby prior variance if available
-    nearby = prior[abs.(prior.rmax .- rmax) .<= 4 * SKIP_TOLERANCE, :]
-    if nrow(nearby) >= 2
-        σ = std(nearby.stable_dmu)
-        half = max(2σ, WINDOW_ABS_MIN)
-    else
-        half = max(WINDOW_FRAC * pred, WINDOW_ABS_MIN)
-    end
-
-    lo = max(pred - half, 1e-6)
-    hi = pred + half
-    return lo, hi
-end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Simulation helpers ────────────────────────────────────────────────────────
@@ -328,148 +202,75 @@ end
 # ── Main sweep ────────────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
-function run_stability_sweep(; n_rmax::Int = N_RMAX_DEFAULT, dry_run::Bool = false)
+function load_completed_rmaxs(path::String)::Set{Float64}
+    rmaxs = Set{Float64}()
+    if isfile(path)
+        try
+            df = CSV.read(path, DataFrame)
+            if !isempty(df) && :rmax in propertynames(df)
+                for r in df.rmax
+                    push!(rmaxs, r)
+                end
+            end
+        catch e
+        end
+    end
+    return rmaxs
+end
+
+function run_stability_sweep(; n_rmax::Int = 50, dry_run::Bool = false)
     data_dir    = joinpath(dirname(dirname(@__DIR__)), "data")
     output_path = joinpath(data_dir, OUTPUT_FILE)
 
-    # ── 1. Load prior data ────────────────────────────────────────────────────
     println("\n═══════════════════════════════════════════════════")
-    println("  Adaptive Stability Sweep")
+    println("  Direct Bisection Stability Sweep (Solid)")
     println("═══════════════════════════════════════════════════")
-    println("Loading prior data...")
-    prior = load_prior_data(data_dir)
-    if nrow(prior) == 0
-        prior = DataFrame(rmax=Float64[], stable_dmu=Float64[])
-    end
-    println("  Total prior points: $(nrow(prior))")
 
-    # ── 2. Fit boundary model ─────────────────────────────────────────────────
-    println("\nFitting boundary model...")
-    predict = fit_boundary_model(prior)
-
-    # ── 3. Build rmax grid ────────────────────────────────────────────────────
-    rmax_lo   = RMAX_MIN_MULT * r0
-    rmax_hi   = RMAX_MAX_MULT * r0
+    # ── 1. Build rmax grid ────────────────────────────────────────────────────
+    rmax_lo   = 1.0 * r0
+    rmax_hi   = 7.0 * r0
     rmax_grid = collect(range(rmax_lo, rmax_hi, length=n_rmax))
 
-    # ── 4. Dry-run: print plan ────────────────────────────────────────────────
+    # Load completed rmaxs for resumption
+    completed_rmaxs = load_completed_rmaxs(output_path)
+
+    # ── 2. Dry-run: print plan ────────────────────────────────────────────────
     println("\nSweep plan  ($(length(rmax_grid)) rmax values, $(dry_run ? "DRY RUN" : "LIVE")):")
     println("  rmax range : $(round(rmax_lo, sigdigits=3)) – $(round(rmax_hi, sigdigits=3))")
+    println("  dmu range  : $DMU_MIN – $DMU_MAX")
     for r in rmax_grid
-        skip = is_well_sampled(r, prior)
-        lo, hi = adaptive_window(r, predict, prior)
-        tag = skip ? " [SKIP – well sampled]" : " window=[$(round(lo,sigdigits=3)), $(round(hi,sigdigits=3))]"
+        skip = r in completed_rmaxs
+        tag = skip ? " [SKIP – already completed]" : ""
         println("    rmax=$(round(r,digits=4))$tag")
     end
     dry_run && return
 
-    # ── 5. Init output file ───────────────────────────────────────────────────
+    # ── 3. Init output file ───────────────────────────────────────────────────
     init_output(output_path)
     println("\nAppending results to: $output_path")
 
-    window_multiplier = 1.0   # widens after fallback, resets after success
-
-    # ── 6. Main loop ──────────────────────────────────────────────────────────
+    # ── 4. Main loop ──────────────────────────────────────────────────────────
     for (idx, r_max) in enumerate(rmax_grid)
         println("\n── rmax = $(round(r_max, digits=4))  [$(idx)/$(length(rmax_grid))] ──")
 
-        # Skip well-sampled rmax values
-        if is_well_sampled(r_max, prior)
-            println("  Already well-sampled. Skipping.")
+        if r_max in completed_rmaxs
+            println("  Already completed. Skipping.")
             continue
         end
 
-        # Compute adaptive window (apply any fallback widening)
-        lo_base, hi_base = adaptive_window(r_max, predict, prior)
-        lo = max(lo_base / sqrt(window_multiplier), 1e-6)
-        hi = hi_base * sqrt(window_multiplier)
+        # Verify bracket endpoints
+        state_lo, _ = probe(r_max, DMU_MIN)
+        state_hi, _ = probe(r_max, DMU_MAX)
 
-        # ── Coarse scan ───────────────────────────────────────────────────────
-        dmu_vals, states, _densities = coarse_scan(r_max, lo, hi, N_COARSE)
-
-        # Classify outcomes
-        stable_idxs   = findall(s -> s == "Done",      states)
-        max_idxs      = findall(s -> s == "Tumor_Max",  states)
-        min_idxs      = findall(s -> s == "Tumor_Min",  states)
-        health_idxs   = findall(s -> s == "Health",     states)
-
-        found_dmus = Float64[]
-
-        if !isempty(stable_idxs)
-            # ── Case A: stable region found ───────────────────────────────────
-            println("  Stable points found at dmu: $(round.(dmu_vals[stable_idxs], sigdigits=4))")
-
-            # Bisect the lower boundary (Tumor_Max → stable)
-            if !isempty(max_idxs) && minimum(max_idxs) < minimum(stable_idxs)
-                boundary_lo = dmu_vals[maximum(max_idxs)]
-                boundary_hi = dmu_vals[minimum(stable_idxs)]
-                println("  Refining lower boundary [$(round(boundary_lo,sigdigits=4)), $(round(boundary_hi,sigdigits=4))]...")
-                dmu_lower = bisect_boundary(r_max, boundary_lo, boundary_hi, N_BISECT)
-                push!(found_dmus, dmu_lower)
-                println("    → lower boundary dmu* ≈ $(round(dmu_lower, sigdigits=5))")
-            end
-
-            # Bisect the upper boundary (stable → Tumor_Min or Health)
-            upper_unstable = vcat(min_idxs, health_idxs)
-            if !isempty(upper_unstable) && maximum(stable_idxs) < minimum(upper_unstable)
-                boundary_lo2 = dmu_vals[maximum(stable_idxs)]
-                boundary_hi2 = dmu_vals[minimum(upper_unstable)]
-                println("  Refining upper boundary [$(round(boundary_lo2,sigdigits=4)), $(round(boundary_hi2,sigdigits=4))]...")
-                # For upper boundary: lo = stable, hi = unstable; we bisect from hi side
-                dmu_upper = boundary_lo2  # midpoint of the stable region edge
-                push!(found_dmus, (boundary_lo2 + boundary_hi2) / 2)
-                println("    → upper boundary dmu* ≈ $(round(found_dmus[end], sigdigits=5))")
-            end
-
-            # Also record the mean stable dmu from the coarse scan as a robust estimate
-            mean_stable = mean(dmu_vals[stable_idxs])
-            push!(found_dmus, mean_stable)
-
-            window_multiplier = 1.0   # reset
-
-        elseif !isempty(max_idxs) && !isempty(min_idxs)
-            # ── Case B: Tumor_Max ↔ Tumor_Min transition (no stable) ──────────
-            println("  No stable region. Detected Tumor_Max ↔ Tumor_Min transition.")
-            for i in 1:(N_COARSE - 1)
-                s1, s2 = states[i], states[i+1]
-                if (s1 == "Tumor_Max" && s2 == "Tumor_Min") ||
-                   (s1 == "Tumor_Min" && s2 == "Tumor_Max")
-                    boundary_lo = dmu_vals[i]
-                    boundary_hi = dmu_vals[i+1]
-                    println("  Refining transition boundary [$(round(boundary_lo,sigdigits=4)), $(round(boundary_hi,sigdigits=4))]...")
-                    dmu_star = bisect_boundary(r_max, boundary_lo, boundary_hi, N_BISECT)
-                    push!(found_dmus, dmu_star)
-                    println("    → transition boundary dmu* ≈ $(round(dmu_star, sigdigits=5))")
-                    break
-                end
-            end
-            window_multiplier = 1.0   # reset since we successfully found the boundary!
-
-        elseif !isempty(max_idxs) && isempty(min_idxs) && isempty(stable_idxs)
-            # ── Case C: all Tumor_Max → window too low, shift up ─────────────
-            println("  All Tumor_Max – window too low, widening upward.")
-            window_multiplier *= FALLBACK_MULTIPLIER
-
-        elseif (isempty(max_idxs)) && (!isempty(min_idxs) || !isempty(health_idxs))
-            # ── Case D: all Tumor_Min/Health → window too high, shift down ────
-            println("  All Tumor_Min/Health – window too high, widening downward.")
-            window_multiplier *= FALLBACK_MULTIPLIER
-
+        if state_lo == "Tumor_Max" && state_hi != "Tumor_Max"
+            println("  Transition bracketed. Starting bisection over [$DMU_MIN, $DMU_MAX]...")
+            dmu_star = bisect_boundary(r_max, DMU_MIN, DMU_MAX, N_BISECT)
+            append_results(output_path, r_max, [dmu_star])
+            println("    → boundary dmu* ≈ $(round(dmu_star, sigdigits=5))")
+            println("  Saved 1 boundary estimate for rmax=$(round(r_max, digits=4))")
         else
-            println("  Unexpected outcome pattern: $(unique(states)). Skipping.")
+            println("  No transition bracketed (lo state: $state_lo, hi state: $state_hi). Skipping.")
         end
-
-        # Deduplicate and append
-        unique!(sort!(found_dmus))
-        append_results(output_path, r_max, found_dmus)
-        println("  Saved $(length(found_dmus)) boundary estimate(s) for rmax=$(round(r_max, digits=4))")
-
-        # Update prior in memory so subsequent rmax values benefit immediately
-        for d in found_dmus
-            push!(prior, (rmax=r_max, stable_dmu=d))
-        end
-        # Re-fit the model with the freshly accumulated data
-        predict = fit_boundary_model(prior)
     end
 
     # ── 7. Summary ────────────────────────────────────────────────────────────

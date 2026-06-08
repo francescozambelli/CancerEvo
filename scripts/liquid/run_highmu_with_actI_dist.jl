@@ -35,7 +35,7 @@ println("Target mu range: [$MU_LO, $MU_HI]  →  $OUT_NAME")
 # Per-class act_I histogram for one timestep
 # Returns Float64 vector of length N_I+1, normalised (sum = 1)
 # ---------------------------------------------------------------------------
-function actI_class_fractions(tiss::OptimizedTissue, cancer_idx::Vector{Int}, N_I::Int)
+function actI_class_fractions(tiss::LiquidTissue, cancer_idx::Vector{Int}, N_I::Int)
     counts = zeros(Int, N_I + 1)
     mask   = tiss.mask_I
     for idx in cancer_idx
@@ -61,7 +61,7 @@ function run_until_highmu()
         println("Attempt $attempt …")
         Random.seed!(time_ns())
 
-        tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
+        tiss = LiquidTissue(L * L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
         perturb_liquid!(tiss, n_seed, pert_chrs)
 
         # ---- Pre-allocate accumulators ----
@@ -84,9 +84,9 @@ function run_until_highmu()
             dead_idx   = findall(tiss.state .== 2)
             n_canc     = length(cancer_idx)
 
-            density = n_canc / (tiss.L^2)
+            density = n_canc / tiss.N
             push!(tdensity_vec, density)
-            push!(ddensity_vec, length(dead_idx) / (tiss.L^2))
+            push!(ddensity_vec, length(dead_idx) / tiss.N)
 
             if n_canc > 0
                 push!(mu_vec,    mean(tiss.mu[cancer_idx]))
@@ -136,7 +136,7 @@ function run_until_highmu()
                 final_state = "Health"; break
             end
             n_wt = count(tiss.state .== 0)
-            if n_wt / (tiss.L^2) < (1.0 - limit)
+            if n_wt / tiss.N < (1.0 - limit)
                 final_state = "Tumor_Max"; break
             end
         end

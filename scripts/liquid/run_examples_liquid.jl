@@ -85,7 +85,7 @@ function run_examples(max_attempts=200, n_snapshots=12)
         end
 
         Random.seed!(time_ns() + attempt * 999_983)
-        tiss = OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
+        tiss = LiquidTissue(L * L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, N_CHR)
         perturb_liquid!(tiss, n_seed, pert_chrs)
 
         spatial = simulation_liquid_spatial(tiss, N_CHR, n_steps, n_snapshots, false, limit)
