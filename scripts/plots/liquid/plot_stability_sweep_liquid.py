@@ -66,7 +66,7 @@ theory_rmax_norm = np.linspace(XMIN, XMAX, 600)
 theory_rmax_abs  = theory_rmax_norm * r0
 f_C = 0.20
 r_c = theory_rmax_abs
-P_s_star_l = (1.0 + f_C + (1.0 - f_C) * (r0 / r_c)**2) / 2.0
+P_s_star_l = (1.0 + f_C * (r0 / r_c) + (1.0 - f_C) * (r0 / r_c)**2) / (2.0 - f_C + f_C * (r0 / r_c))
 P_s_star_l = np.clip(P_s_star_l, 0.0, 1.0)
 mu_star_l  = 1.0 - P_s_star_l ** (1.0 / N_HK)
 

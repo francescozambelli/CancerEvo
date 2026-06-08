@@ -152,126 +152,75 @@ end
 # ── Main sweep ────────────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
-function run_stability_sweep(; n_rmax::Int = N_RMAX_DEFAULT, dry_run::Bool = false)
+function load_completed_rmaxs(path::String)::Set{Float64}
+    rmaxs = Set{Float64}()
+    if isfile(path)
+        try
+            df = CSV.read(path, DataFrame)
+            if !isempty(df) && :rmax in propertynames(df)
+                for r in df.rmax
+                    push!(rmaxs, r)
+                end
+            end
+        catch e
+        end
+    end
+    return rmaxs
+end
+
+function run_stability_sweep(; n_rmax::Int = 50, dry_run::Bool = false)
     data_dir    = joinpath(dirname(dirname(@__DIR__)), "data")
     output_path = joinpath(data_dir, OUTPUT_FILE)
 
     println("\n═══════════════════════════════════════════════════")
-    println("  Liquid Stability Sweep")
+    println("  Direct Bisection Stability Sweep (Liquid)")
     println("═══════════════════════════════════════════════════")
-    println("Loading prior data...")
-    prior = load_prior_data(data_dir)
-    if nrow(prior) == 0
-        prior = DataFrame(rmax=Float64[], stable_dmu=Float64[])
-    end
-    println("  Total prior points: $(nrow(prior))")
 
-    println("\nFitting boundary model...")
-    predict = fit_boundary_model(prior)
-
-    rmax_lo   = RMAX_MIN_MULT * r0
-    rmax_hi   = RMAX_MAX_MULT * r0
+    # ── 1. Build rmax grid ────────────────────────────────────────────────────
+    rmax_lo   = 1.0 * r0
+    rmax_hi   = 7.0 * r0
     rmax_grid = collect(range(rmax_lo, rmax_hi, length=n_rmax))
 
+    # Load completed rmaxs for resumption
+    completed_rmaxs = load_completed_rmaxs(output_path)
+
+    # ── 2. Dry-run: print plan ────────────────────────────────────────────────
     println("\nSweep plan  ($(length(rmax_grid)) rmax values, $(dry_run ? "DRY RUN" : "LIVE")):")
     println("  rmax range : $(round(rmax_lo, sigdigits=3)) – $(round(rmax_hi, sigdigits=3))")
+    println("  dmu range  : $DMU_MIN – $DMU_MAX")
     for r in rmax_grid
-        skip = is_well_sampled(r, prior)
-        lo, hi = adaptive_window(r, predict, prior)
-        tag = skip ? " [SKIP – well sampled]" : " window=[$(round(lo,sigdigits=3)), $(round(hi,sigdigits=3))]"
+        skip = r in completed_rmaxs
+        tag = skip ? " [SKIP – already completed]" : ""
         println("    rmax=$(round(r,digits=4))$tag")
     end
     dry_run && return
 
+    # ── 3. Init output file ───────────────────────────────────────────────────
     init_output(output_path)
     println("\nAppending results to: $output_path")
 
-    window_multiplier = 1.0
-
+    # ── 4. Main loop ──────────────────────────────────────────────────────────
     for (idx, r_max) in enumerate(rmax_grid)
         println("\n── rmax = $(round(r_max, digits=4))  [$(idx)/$(length(rmax_grid))] ──")
 
-        if is_well_sampled(r_max, prior)
-            println("  Already well-sampled. Skipping.")
+        if r_max in completed_rmaxs
+            println("  Already completed. Skipping.")
             continue
         end
 
-        lo_base, hi_base = adaptive_window(r_max, predict, prior)
-        lo = max(lo_base / sqrt(window_multiplier), 1e-6)
-        hi = hi_base * sqrt(window_multiplier)
+        # Verify bracket endpoints
+        state_lo, _ = probe(r_max, DMU_MIN)
+        state_hi, _ = probe(r_max, DMU_MAX)
 
-        dmu_vals, states, _densities = coarse_scan(r_max, lo, hi, N_COARSE)
-
-        stable_idxs   = findall(s -> s == "Done",      states)
-        max_idxs      = findall(s -> s == "Tumor_Max",  states)
-        min_idxs      = findall(s -> s == "Tumor_Min",  states)
-        health_idxs   = findall(s -> s == "Health",     states)
-
-        found_dmus = Float64[]
-
-        if !isempty(stable_idxs)
-            println("  Stable points found at dmu: $(round.(dmu_vals[stable_idxs], sigdigits=4))")
-
-            if !isempty(max_idxs) && minimum(max_idxs) < minimum(stable_idxs)
-                boundary_lo = dmu_vals[maximum(max_idxs)]
-                boundary_hi = dmu_vals[minimum(stable_idxs)]
-                println("  Refining lower boundary [$(round(boundary_lo,sigdigits=4)), $(round(boundary_hi,sigdigits=4))]...")
-                dmu_lower = bisect_boundary(r_max, boundary_lo, boundary_hi, N_BISECT)
-                push!(found_dmus, dmu_lower)
-                println("    → lower boundary dmu* ≈ $(round(dmu_lower, sigdigits=5))")
-            end
-
-            upper_unstable = vcat(min_idxs, health_idxs)
-            if !isempty(upper_unstable) && maximum(stable_idxs) < minimum(upper_unstable)
-                boundary_lo2 = dmu_vals[maximum(stable_idxs)]
-                boundary_hi2 = dmu_vals[minimum(upper_unstable)]
-                println("  Refining upper boundary [$(round(boundary_lo2,sigdigits=4)), $(round(boundary_hi2,sigdigits=4))]...")
-                push!(found_dmus, (boundary_lo2 + boundary_hi2) / 2)
-                println("    → upper boundary dmu* ≈ $(round(found_dmus[end], sigdigits=5))")
-            end
-
-            mean_stable = mean(dmu_vals[stable_idxs])
-            push!(found_dmus, mean_stable)
-
-            window_multiplier = 1.0
-
-        elseif !isempty(max_idxs) && !isempty(min_idxs)
-            println("  No stable region. Detected Tumor_Max ↔ Tumor_Min transition.")
-            for i in 1:(N_COARSE - 1)
-                s1, s2 = states[i], states[i+1]
-                if (s1 == "Tumor_Max" && s2 == "Tumor_Min") ||
-                   (s1 == "Tumor_Min" && s2 == "Tumor_Max")
-                    boundary_lo = dmu_vals[i]
-                    boundary_hi = dmu_vals[i+1]
-                    println("  Refining transition boundary [$(round(boundary_lo,sigdigits=4)), $(round(boundary_hi,sigdigits=4))]...")
-                    dmu_star = bisect_boundary(r_max, boundary_lo, boundary_hi, N_BISECT)
-                    push!(found_dmus, dmu_star)
-                    println("    → transition boundary dmu* ≈ $(round(dmu_star, sigdigits=5))")
-                    break
-                end
-            end
-            window_multiplier = 1.0
-
-        elseif !isempty(max_idxs) && isempty(min_idxs) && isempty(stable_idxs)
-            println("  All Tumor_Max – window too low, widening upward.")
-            window_multiplier *= FALLBACK_MULTIPLIER
-
-        elseif (isempty(max_idxs)) && (!isempty(min_idxs) || !isempty(health_idxs))
-            println("  All Tumor_Min/Health – window too high, widening downward.")
-            window_multiplier *= FALLBACK_MULTIPLIER
-
+        if state_lo == "Tumor_Max" && state_hi != "Tumor_Max"
+            println("  Transition bracketed. Starting bisection over [$DMU_MIN, $DMU_MAX]...")
+            dmu_star = bisect_boundary(r_max, DMU_MIN, DMU_MAX, N_BISECT)
+            append_results(output_path, r_max, [dmu_star])
+            println("    → boundary dmu* ≈ $(round(dmu_star, sigdigits=5))")
+            println("  Saved 1 boundary estimate for rmax=$(round(r_max, digits=4))")
         else
-            println("  Unexpected outcome pattern: $(unique(states)). Skipping.")
+            println("  No transition bracketed (lo state: $state_lo, hi state: $state_hi). Skipping.")
         end
-
-        unique!(sort!(found_dmus))
-        append_results(output_path, r_max, found_dmus)
-        println("  Saved $(length(found_dmus)) boundary estimate(s) for rmax=$(round(r_max, digits=4))")
-
-        for d in found_dmus
-            push!(prior, (rmax=r_max, stable_dmu=d))
-        end
-        predict = fit_boundary_model(prior)
     end
 
     println("\n═══════════════════════════════════════════════════")

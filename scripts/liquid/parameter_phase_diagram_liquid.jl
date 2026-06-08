@@ -63,9 +63,9 @@ function run_parameter_sweep(n_grid=20, reps=50)
 
     # Setup optimized local parameters to override the default ones
     L_sweep = 80
-    n_steps_sweep = 1280
-    n_seed_sweep = 10 # Seeding 10 cells at random global positions
-    limit=0.9
+    n_steps_sweep = 1000
+    n_seed_sweep = 1280 # Seeding 10 cells at random global positions
+    limit=0.7
         
     # Flatten the grid tasks
     tasks = []
