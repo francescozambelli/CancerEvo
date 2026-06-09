@@ -76,47 +76,56 @@ gene_labels = {
 # 3. Create the Figure layout (1x4 horizontal line)
 fig, axes = plt.subplot_mosaic(
     [["A", "B", "C", "D"]],
-    figsize=(20, 5.0)
+    figsize=(22, 5.0)
 )
+
+fontsize_label = 22
+fontsize_letter = 28
+fontsize_ticks = 20
+fontsize_legend = 22
 
 # Helpers to plot trajectories (no internal legends)
 def plot_mutation_panel(ax, sim_data, label_letter):
     steps = np.arange(len(sim_data["tumor_density"]))
     
     # Plot mutation levels for each gene type (only I, O, HK)
+    
     for gtype in ["I", "O", "HK"]:
-        ax.plot(steps, sim_data[f"mut_{gtype}"], color=colors[gtype], lw=2.2, label=gene_labels[gtype])
+        ax.plot(steps, sim_data[f"mut_{gtype}"], color=colors[gtype], lw=2.5, label=gene_labels[gtype])
         
     # Draw theoretical limit for HK mutation level (0.5)
-    ax.axhline(hk_mut_limit, color=colors["HK"], linestyle="--", lw=1.8, alpha=0.8,
+    ax.axhline(hk_mut_limit, color=colors["HK"], linestyle="--", lw=2.1, alpha=0.8,
                label=rf"Theory $\mathcal{{H}}$ mut limit ({hk_mut_limit})")
                
-    ax.set_xlabel("Simulation step", fontsize=14)
-    ax.set_ylabel("Mutation level", fontsize=14)
+    ax.set_xlabel("Simulation step", fontsize=fontsize_label)
+    ax.set_ylabel("Mutation level", fontsize=fontsize_label)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize_ticks)
     ax.set_ylim(-0.05, 1.05)
     ax.set_axisbelow(True)
     
     # Lettering label (larger font size)
-    ax.text(-0.12, 1.05, label_letter, transform=ax.transAxes, fontsize=18, fontweight="bold", va="top", ha="right")
+    
+    ax.text(-0.12, 1.10, label_letter, transform=ax.transAxes, fontsize=fontsize_letter, fontweight="bold", va="top", ha="right")
 
 def plot_activation_panel(ax, sim_data, label_letter):
     steps = np.arange(len(sim_data["tumor_density"]))
     
     # Plot activation levels for each gene type (only I, O, HK)
     for gtype in ["I", "O", "HK"]:
-        ax.plot(steps, sim_data[f"act_{gtype}"], color=colors[gtype], lw=2.2, label=gene_labels[gtype])
+        ax.plot(steps, sim_data[f"act_{gtype}"], color=colors[gtype], lw=2.5, label=gene_labels[gtype])
         
     # Draw theoretical limit for I activation level (~2.17)
-    ax.axhline(i_act_limit, color=colors["I"], linestyle="--", lw=1.8, alpha=0.8,
+    ax.axhline(i_act_limit, color=colors["I"], linestyle="--", lw=2.1, alpha=0.8,
                label=rf"Theory $\mathcal{{I}}$ active limit ({i_act_limit:.2f})")
                
-    ax.set_xlabel("Simulation step", fontsize=14)
-    ax.set_ylabel("Activation level", fontsize=14)
+    ax.set_xlabel("Simulation step", fontsize=fontsize_label)
+    ax.set_ylabel("Activation level", fontsize=fontsize_label)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize_ticks)
     ax.set_ylim(-0.5, 10.5)
     ax.set_axisbelow(True)
     
     # Lettering label (larger font size)
-    ax.text(-0.12, 1.05, label_letter, transform=ax.transAxes, fontsize=18, fontweight="bold", va="top", ha="right")
+    ax.text(-0.12, 1.10, label_letter, transform=ax.transAxes, fontsize=fontsize_letter, fontweight="bold", va="top", ha="right")
 
 # 4. Populate the subplots (all in 1 row)
 # A & B: Tumor Case (sim_1)
@@ -143,13 +152,14 @@ fig.subplots_adjust(bottom=0.22, top=0.90, left=0.05, right=0.98, wspace=0.28)
 fig.legend(
     handles,
     labels,
-    loc="lower center",
+    loc="upper center",
     ncol=5,
     frameon=True,
     edgecolor="#e0e0e0",
     facecolor="white",
+    fontsize=fontsize_legend,
     framealpha=0.9,
-    bbox_to_anchor=(0.5, 0.02)
+    bbox_to_anchor=(0.5, 1.15)
 )
 
 # 6. Export Figure

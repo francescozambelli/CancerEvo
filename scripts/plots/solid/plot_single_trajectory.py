@@ -60,21 +60,10 @@ N_HK = 10        # number of HK genes
 
 # Phase-diagram data (from sweep:analysis_adaptive)
 dfa = load_adaptive_stability_results()
-if not dfa.empty:
-    grp = dfa.groupby("rmax_norm")["stable_dmu"]
-    r_prop_list = np.array(sorted(dfa["rmax_norm"].unique()))
-    mu_med = grp.median().values * 10
-    p_die_data = 1.0 - (1.0 - mu_med) ** N_HK
-else:
-    # fallback to original hardcoded values if file not found
-    r_prop_list = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0])
-    results = np.array([
-        -0.6101874390439277, 0.6226682669930774, 1.2917773010287472,
-         1.8387745389776091, 2.2434712898547584, 2.6607741287392520,
-         2.9356429157955044, 3.1821620335205547, 3.4130647650803505,
-         3.6252708643165220,  3.8084414875435573,
-    ])
-    p_die_data = np.array([(1.0 - (1.0 - m * 1e-2) ** N_HK) for m in results])
+grp = dfa.groupby("rmax_norm")["stable_dmu"]
+r_prop_list = np.array(sorted(dfa["rmax_norm"].unique()))
+mu_med = grp.median().values * 10
+p_die_data = 1.0 - (1.0 - mu_med+0.00) ** N_HK
 
 spl = make_smoothing_spline(r_prop_list, p_die_data, lam=0.001)
 x_new = np.linspace(0.8, 2.2, 200)
@@ -84,7 +73,7 @@ x_new = np.linspace(0.8, 2.2, 200)
 # ---------------------------------------------------------------------------
 repo_root = Path(__file__).resolve().parents[3]
 path_h = repo_root / "data" / "simulations" / "spatial_run" / "health_results.npz"
-path_t = repo_root / "data" / "simulations" / "spatial_run" / "tumor_results.npz"
+path_t = repo_root / "data" / "simulations" / "spatial_run" / "sim_1.npz"
 
 if not path_h.exists() or not path_t.exists():
     print("Could not find health_results.npz or tumor_results.npz in data/simulations/spatial_run/")
@@ -94,7 +83,7 @@ sim_h = {k: v for k, v in np.load(path_h).items()}
 sim_t = {k: v for k, v in np.load(path_t).items()}
 
 sid_h = "9 (reproducible)"
-sid_t = "1 (reproducible)"
+sid_t = "7 (reproducible)"
 
 print(f"Health run: sim_{sid_h}  ({len(sim_h['r'])} steps)")
 print(f"Tumor  run: sim_{sid_t}  ({len(sim_t['r'])} steps)")
@@ -121,11 +110,15 @@ td_t  = sim_t["tumor_density"]
 def _four_panel(pts, sim, td, spl, x_new, title, color):
     fig, ax = plt.subplots(1, 4, figsize=(22, 4.7))
     fs = 18
+    fontsize_letter = 24
+    letters = ["a", "b", "c", "d"]
 
-    for axi in ax:
+    for i, axi in enumerate(ax):
         axi.tick_params(axis="both", which="major", labelsize=13)
         axi.grid(ls=":", alpha=0.4)
         axi.yaxis.set_major_locator(MaxNLocator(nbins=5))
+        axi.text(-0.15, 1.12, letters[i], transform=axi.transAxes,
+                 fontsize=fontsize_letter, fontweight="bold", va="top", ha="right")
 
     # Panel 0: phase space
     y_spl = spl(x_new)
@@ -179,21 +172,21 @@ fig_t = _four_panel(pts_t, sim_t, td_t, spl, x_new,
 out_dir = Path(__file__).resolve().parents[3] / "outputs" / "figures" / "solid"
 out_dir.mkdir(parents=True, exist_ok=True)
 
-fig_h.savefig(out_dir / "single_trajectory_4panel_health.png", dpi=150,
-              bbox_inches="tight")
-fig_h.savefig(out_dir / "single_trajectory_4panel_health.svg",
-              bbox_inches="tight")
-fig_t.savefig(out_dir / "single_trajectory_4panel_tumor.png", dpi=150,
-              bbox_inches="tight")
-fig_t.savefig(out_dir / "single_trajectory_4panel_tumor.svg",
-              bbox_inches="tight")
-print("Saved 4-panel figures (PNG and SVG).")
+#fig_h.savefig(out_dir / "single_trajectory_4panel_health.png", dpi=150,
+              #bbox_inches="tight")
+#fig_h.savefig(out_dir / "single_trajectory_4panel_health.svg",
+              #bbox_inches="tight")
+#fig_t.savefig(out_dir / "single_trajectory_4panel_tumor.png", dpi=150,
+              #bbox_inches="tight")
+#fig_t.savefig(out_dir / "single_trajectory_4panel_tumor.svg",
+              #bbox_inches="tight")
+#print("Saved 4-panel figures (PNG and SVG).")
 
 # ---------------------------------------------------------------------------
 # ── Figure 2: 3-D phase-space trajectories ────────────────────────────────
 # ---------------------------------------------------------------------------
 
-def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
+def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³", label_letter=""):
     if lim:
         pts = pts[:lim]
         td  = td[:lim]
@@ -208,8 +201,12 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
     z_min = 0
     y_spline = spl(x_new)
 
-    fig = plt.figure(figsize=(10, 8))
+    fig = plt.figure(figsize=(11, 8))
     ax  = fig.add_subplot(111, projection="3d")
+
+    if label_letter:
+        ax.text2D(0.2, 0.85, label_letter, transform=ax.transAxes,
+                  fontsize=24, fontweight="bold", va="top", ha="right")
 
     # Trajectory scatter
     ax.scatter(pts[:, 0], pts[:, 1], td, c=td, cmap="coolwarm", s=size)
@@ -230,11 +227,13 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
 
     bbox_props = dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.55)
 
-    ax.text(1.8, 0.0, z_min, "Expansion", color="black", fontsize=9,
+    fontsize_text = 16
+    ax.text(1.8, 0.08, z_min, "Expansion", color="black", fontsize=fontsize_text,
             ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
 
-    ax.text(1.2, 0.35, z_min, "Collapse", color="black", fontsize=9,
-            ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=20)
+    ax.text(1.2, 0.35, z_min, "Collapse", color="black", fontsize=fontsize_text,
+            ha="center", va="center", weight="semibold", bbox=bbox_props, zorder=0)
+    
 
     # Shadow on the floor
     ax.scatter(pts[:, 0], pts[:, 1], zs=0, zdir="z",
@@ -248,15 +247,17 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
         ax.plot([pts[ci, 0]] * 2, [pts[ci, 1]] * 2, [0, td[ci]],
                 color="k", ls="--", lw=1.5)
 
-    ax.set_xlabel(r"$r/r_0$", fontsize=16, labelpad=10)
-    ax.set_ylabel(r"$P_{\rm death}$", fontsize=16, labelpad=10)
-    ax.set_zlabel(f"Tumor Density ({scale_str})", fontsize=14, labelpad=26)
+    fontsize_label = 18
+    fontsize_tick = 14
+    ax.set_xlabel(r"$r/r_0$", fontsize=fontsize_label, labelpad=15)
+    ax.set_ylabel(r"$P_{\rm death}$", fontsize=fontsize_label, labelpad=15)
+    ax.set_zlabel(f"Tumor Density", fontsize=fontsize_label, labelpad=40)
 
     ax.set_xlim(min(x_new), max(x_new))
     ax.set_ylim(min(y_spline), max(y_spline) * 1.5)
     ax.set_zlim(0, max(td) * 1.1)
 
-    ax.tick_params(axis="both", labelsize=12)
+    ax.tick_params(axis="both", labelsize=fontsize_tick)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
     ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
     ax.zaxis.set_major_locator(MaxNLocator(nbins=5))
@@ -280,24 +281,21 @@ def _3d_plot(pts, td, spl, x_new, lim=None, title="", scale_str="×10⁻³"):
         )
 
     ax.set_box_aspect(None, zoom=0.8)
+    fig.subplots_adjust(left=0.05, right=0.82, top=0.95, bottom=0.05)
     #fig.suptitle(title, fontsize=14, fontweight="bold")
     return fig
 
 
 fig_3dh = _3d_plot(pts_h, td_h, spl, x_new,
                    title=f"Health trajectory in phase space (sim {sid_h})",
-                   scale_str="×10⁻³")
+                   scale_str="×10⁻³", label_letter="f")
 fig_3dt = _3d_plot(pts_t, td_t, spl, x_new, lim=700,
                    title=f"Tumor trajectory in phase space (sim {sid_t})",
-                   scale_str="×10⁻¹")
+                   scale_str="×10⁻¹", label_letter="e")
 
-fig_3dh.savefig(out_dir / "single_trajectory_3d_health.png", dpi=150,
-                bbox_inches="tight")
-fig_3dh.savefig(out_dir / "single_trajectory_3d_health.svg",
-                bbox_inches="tight")
-fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.png",  dpi=150,
-                bbox_inches="tight")
-fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.svg",
-                bbox_inches="tight")
+fig_3dh.savefig(out_dir / "single_trajectory_3d_health.png", dpi=150)
+fig_3dh.savefig(out_dir / "single_trajectory_3d_health.svg")
+fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.png",  dpi=150)
+fig_3dt.savefig(out_dir / "single_trajectory_3d_tumor.svg")
 print(f"Saved 3-D figures (PNG and SVG) → {out_dir}")
 #plt.show()

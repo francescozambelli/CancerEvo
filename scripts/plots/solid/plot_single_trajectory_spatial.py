@@ -104,7 +104,7 @@ def plot_spatial_progression(scenario_name, title_prefix, zoom=False):
             rows = coords[:, 1]
             cols = coords[:, 2]
             
-            margin = 25
+            margin = 10
             r_min = max(0, rows.min() - margin)
             r_max = min(L - 1, rows.max() + margin)
             c_min = max(0, cols.min() - margin)
