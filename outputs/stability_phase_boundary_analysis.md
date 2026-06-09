@@ -236,6 +236,12 @@ $$\boxed{\delta\mu^*(r_{\max}) = \frac{1}{N_I}\left[1 - \left(\frac{1 + (r_0/r_{
 At the start of the stability sweep, the tumor is seeded at $f_C = 0.20$. In a liquid model, cancer cells target other cancer cells for replacement with probability $f_C$. Incorporating this self-inflicted replacement term, the stability condition becomes:
 $$\mathbb{E}[\Delta C] = (1 - f_C) (2P_s - 1) - (1 - f_C) \left(\frac{r_0}{r_{\text{cancer}}}\right)^2 + 2f_C (P_s - 1) = 0$$
 
+Where each term represents:
+*   **$(1 - f_C) (2P_s - 1)$ (Cancer-vs-WT Expansion):** The net change in cancer cells when a cancer cell is chosen to divide and targets a WT cell (occurring with probability $1 - f_C$). If accepted, the WT target is replaced. The expected number of surviving cancer cells after division is $2P_s$ (both daughters mutate and survive housekeeping with probability $P_s$), resulting in a net change of $2P_s - 1$.
+*   **$-(1 - f_C) \left(\frac{r_0}{r_{\text{cancer}}}\right)^2$ (WT-vs-Cancer Competition):** The normalized rate of cancer cell loss due to WT cells dividing and replacing cancer cells (occurring with probability $1 - f_C$). The raw loss rate is $r_0 \frac{r_0}{r_{\text{cancer}} + r_0}$, which when normalized by the cancer-vs-WT rate $r_{\text{cancer}} \frac{r_{\text{cancer}}}{r_{\text{cancer}} + r_0}$ yields this effective loss term.
+*   **$2f_C (P_s - 1)$ (Self-Replacement/Meltdown):** The net change when a cancer cell divides and targets another cancer cell (occurring with probability $f_C$). In this case, the target cell is already cancer. The expected number of surviving cancer cells after division is $2P_s$, but since we started with 2 cancer cells (the parent and the target), the net change is $2P_s - 2 = 2(P_s - 1)$.
+
+
 Solving for $P_s^*$ yields:
 $$\boxed{P_s^* = \frac{1 + f_C + (1 - f_C) \left(r_0 / r_{\text{cancer}}\right)^2}{2}}$$
 

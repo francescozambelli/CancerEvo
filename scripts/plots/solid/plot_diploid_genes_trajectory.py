@@ -31,14 +31,14 @@ N_HK = 10
 DMU = 0.015
 
 # Load simulations from ensemble_results_D
-SIM_T_ID = 1    # Tumor outcome
-SIM_H_ID = 437  # Health outcome
-sim_t = load_sim(SIM_T_ID, "ensemble_results_D")
-sim_h = load_sim(SIM_H_ID, "ensemble_results_D")
+SIM_T_ID = 10    # Tumor outcome
+SIM_H_ID = 49  # Health outcome
+sim_t = load_sim(SIM_T_ID, "ensemble_results")
+sim_h = load_sim(SIM_H_ID, "ensemble_results")
 
 # Compute theoretical limits using the Master Equation solver
 theory = compute_asymptotic_limit(N_I=N_I, N_H=N_HK, dmu=DMU, remove_lower=0)
-i_act_limit = theory["asymp_level_analytical"]  # Expected active instability genes (~2.1742)
+i_act_limit = 2.55#theory["asymp_level_analytical"]  # Expected active instability genes (~2.1742)
 hk_mut_limit = 0.5                              # Max mutation fraction for surviving HK genes
 
 # 2. Setup Plotting Style (with increased font sizes)
@@ -83,6 +83,7 @@ fontsize_label = 22
 fontsize_letter = 28
 fontsize_ticks = 20
 fontsize_legend = 22
+line_width = 3.5
 
 # Helpers to plot trajectories (no internal legends)
 def plot_mutation_panel(ax, sim_data, label_letter):
@@ -91,10 +92,10 @@ def plot_mutation_panel(ax, sim_data, label_letter):
     # Plot mutation levels for each gene type (only I, O, HK)
     
     for gtype in ["I", "O", "HK"]:
-        ax.plot(steps, sim_data[f"mut_{gtype}"], color=colors[gtype], lw=2.5, label=gene_labels[gtype])
+        ax.plot(steps, sim_data[f"mut_{gtype}"], color=colors[gtype], lw=line_width, label=gene_labels[gtype])
         
     # Draw theoretical limit for HK mutation level (0.5)
-    ax.axhline(hk_mut_limit, color=colors["HK"], linestyle="--", lw=2.1, alpha=0.8,
+    ax.axhline(hk_mut_limit, color=colors["HK"], linestyle="--", lw=line_width, alpha=0.8,
                label=rf"Theory $\mathcal{{H}}$ mut limit ({hk_mut_limit})")
                
     ax.set_xlabel("Simulation step", fontsize=fontsize_label)
@@ -112,11 +113,11 @@ def plot_activation_panel(ax, sim_data, label_letter):
     
     # Plot activation levels for each gene type (only I, O, HK)
     for gtype in ["I", "O", "HK"]:
-        ax.plot(steps, sim_data[f"act_{gtype}"], color=colors[gtype], lw=2.5, label=gene_labels[gtype])
+        ax.plot(steps, sim_data[f"act_{gtype}"], color=colors[gtype], lw=line_width, label=gene_labels[gtype])
         
     # Draw theoretical limit for I activation level (~2.17)
-    ax.axhline(i_act_limit, color=colors["I"], linestyle="--", lw=2.1, alpha=0.8,
-               label=rf"Theory $\mathcal{{I}}$ active limit ({i_act_limit:.2f})")
+    ax.axhline(i_act_limit, color=colors["I"], linestyle="--", lw=line_width, alpha=0.8,
+               label=rf"Boundary $\mathcal{{I}}$ active level ({i_act_limit:.2f})")
                
     ax.set_xlabel("Simulation step", fontsize=fontsize_label)
     ax.set_ylabel("Activation level", fontsize=fontsize_label)
