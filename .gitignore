@@ -6,6 +6,7 @@
 data/
 images/
 gif/
+/outputs/figures/
 
 __pycache__/
 *.pyc
