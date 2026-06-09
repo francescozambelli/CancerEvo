@@ -110,7 +110,7 @@ letter_fontsize=17
 # ---------------------------------------------------------------------------
 fig, ax_dict = plt.subplot_mosaic(
     [["A", "B"], ["C", "D"]],
-    figsize=(14, 7),
+    figsize=(16, 7),
     gridspec_kw={"hspace": 0.42, "wspace": 0.30},
 )
 
@@ -218,7 +218,7 @@ ax_D.text(-0.13, 1.12, "d", transform=ax_D.transAxes,
 # Save
 # ---------------------------------------------------------------------------
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-for ext in ("png", "svg"):
+for ext in ("png", "pdf", "svg"):
     out = OUT_DIR / f"density_vs_actI_{OUT_SUFFIX}.{ext}"
     fig.savefig(out, dpi=300, bbox_inches="tight", transparent=False, format=ext)
     print(f"Saved → {out}")
