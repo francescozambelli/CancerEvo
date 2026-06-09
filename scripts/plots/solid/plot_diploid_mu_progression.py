@@ -49,7 +49,7 @@ plt.rcParams.update({
 # ---------------------------------------------------------------------------
 print("Loading ensemble data for Diploid (2CHR) …")
 # The diploid case is stored in 'ensemble_results_2CHR'
-summary, trajs = load_ensemble("ensemble_results_2CHR")
+summary, trajs = load_ensemble("ensemble_results_D")
 
 health_trajs = []
 other_trajs = []

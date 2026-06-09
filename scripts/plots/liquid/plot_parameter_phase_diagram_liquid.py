@@ -87,6 +87,13 @@ def plot_heatmap():
     ax.set_ylabel(r"Division rate increment ($dr$)", fontsize=fontsize_labels, labelpad=10)
     #ax.set_title("Liquid Tumor Progression / Persistence Fraction", fontsize=18, fontweight="bold", pad=15)
     
+    ax.text(0.15, 0.55, "Expansion", 
+                transform=ax.transAxes, color='black', fontsize=18, fontweight='bold',
+                ha='left', va='top', bbox=dict(facecolor='white', alpha=0.6, edgecolor='black', linewidth=0.2, boxstyle='round,pad=0.4'))
+    ax.text(0.71, 0.14, "Collapse", 
+                transform=ax.transAxes, color='white', fontsize=18, fontweight='bold',
+                ha='left', va='top', bbox=dict(facecolor='black', alpha=0.6, edgecolor='black', linewidth=0.2, boxstyle='round,pad=0.4'))
+
     # Automatically locate and format ticks dynamically (reducing number of ticks)
     import matplotlib.ticker as ticker
     ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=6))
@@ -94,26 +101,28 @@ def plot_heatmap():
     ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     ax.tick_params(axis='both', which='major', labelsize=fontsize_ticks)
-
+    ax.tick_params(axis='x', which='major', rotation=45)
     ax.grid(False)
 
     # Add colorbar
     cbar = fig.colorbar(im, ax=ax, pad=0.03)
-    cbar.set_label("Fraction of runs ending with tumor present", fontsize=fontsize_cbar, labelpad=12)
+    cbar.set_label("Frac. runs ending with tumor", fontsize=fontsize_cbar, labelpad=12)
     cbar.ax.tick_params(labelsize=fontsize_ticks)
 
     # Highlight default settings from parameters_liquid.jl if within sweep range
     # default dmu = 0.045, dr = 0.008
     default_dmu, default_dr = 0.012, 0.006
     if dmu_vals.min() <= default_dmu <= dmu_vals.max() and dr_vals.min() <= default_dr <= dr_vals.max():
-        ax.scatter(default_dmu, default_dr, color='cyan', marker='*', s=150, edgecolors='black', 
-                   linewidths=1.5, zorder=10, label=f"Default Parameters\n(dmu={default_dmu}, dr={default_dr})")
+        ax.scatter(default_dmu, default_dr, color='cyan', marker='*', s=650, edgecolors='black', 
+                   linewidths=1.5, zorder=10, label=f"Default Parameters\n($d\mu={default_dmu:.1e}$,\n $dr={default_dr:.1e}$)")
         ax.legend(loc="upper left", framealpha=0.9, facecolor='white', edgecolor='none', fontsize=fontsize_legend)
     else:
         # If outside the sweep range, add text to show default params
-        ax.text(0.97, 0.95, f"Default parameters outside sweep:\ndmu = {default_dmu}, dr = {default_dr}", 
+        ax.text(0.97, 0.95, f"Default parameters outside sweep:\n($d\mu={default_dmu:.1e}$,\n $dr={default_dr:.1e}$)", 
                 transform=ax.transAxes, color='white', fontsize=11, fontweight='semibold',
                 ha='right', va='top', bbox=dict(facecolor='black', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.4'))
+
+    
 
     plt.tight_layout()
     plt.savefig(output_path_png, dpi=200, bbox_inches="tight")

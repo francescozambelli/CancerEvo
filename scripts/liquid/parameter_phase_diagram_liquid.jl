@@ -58,13 +58,13 @@ function run_parameter_sweep(n_grid=20, reps=50)
     output_file = joinpath(output_dir, "parameter_phase_diagram_results_liquid.csv")
 
     # Define the parameter sweep ranges (comparable to solid-tumor sweep)
-    dmu_range = collect(range(0.1e-3, 3.0e-2, length=n_grid))
+    dmu_range = collect(range(0.1e-3, 4.0e-2, length=n_grid))
     dr_range = collect(range(0.0, 3.0e-2, length=n_grid))
 
     # Setup optimized local parameters to override the default ones
     L_sweep = 80
-    n_steps_sweep = 1000
-    n_seed_sweep = 1280 # Seeding 10 cells at random global positions
+    n_steps_sweep = 1800
+    n_seed_sweep = 150 # Seeding 10 cells at random global positions
     limit=0.7
         
     # Flatten the grid tasks
@@ -101,7 +101,7 @@ function run_parameter_sweep(n_grid=20, reps=50)
         # Initialize fresh tissue
         tiss = LiquidTissue(
             L_sweep * L_sweep, N_I, N_O, N_S, N_M, N_HK, 
-            mu0, t.dmu, r0, t.dr, rmax, dm, N_CHR
+            mu0, t.dmu, r0, t.dr, 2*r0, 0.0, N_CHR
         )
         perturb_liquid!(tiss, n_seed_sweep, pert_chrs)
         
