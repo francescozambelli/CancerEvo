@@ -114,5 +114,5 @@ def dyn_state(r: float, r0: float, mu: float, k: float, N: int, exponent: float 
     p_death = 1 - (1-mu)^(2kN) * (1-mu^2)^(N*(1-2k))
     """
     x = r / r0
-    p = (1.0 - (1.0 - mu) ** (2 * k * N) * (1.0 - mu ** 2) ** (N * (1.0 - 2 * k))) ** exponent
+    p = (1.0 - mu) ** (2 * k * N)# * (1.0 - mu ** 2) ** (N * (1.0 - 2 * k))) ** exponent
     return x, p

@@ -43,7 +43,7 @@ N_HK = 10
 N_I  = 10
 
 # Maximum death probability to plot is 0.6
-YMAX = 0.6
+YMAX = 1
 
 # ── Adaptive boundary: per-rmax_norm statistics ──────────────────────────────
 if adaptive_available:
@@ -123,7 +123,7 @@ fontsize_reg = 22
 ax_mpl.text(3.0, 0.5, "Tumor Collapse",
             bbox=dict(facecolor="white", edgecolor="#1F77B4", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=fontsize_reg, ha="center")
-ax_mpl.text(5.0, 0.2, "Tumor Expansion",
+ax_mpl.text(5.0, 0.8, "Tumor Expansion",
             bbox=dict(facecolor="white", edgecolor="#1F77B4", boxstyle="round,pad=0.3", alpha=0.9),
             fontsize=fontsize_reg, ha="center")
 
@@ -133,11 +133,11 @@ fontsize_ticks = 23
 fontsize_legend = 20
 
 ax_mpl.set_xlabel(r"Normalized Division Rate ($r_{\mathrm{max}} / r_0$)", fontsize=fontsize_lab)
-ax_mpl.set_ylabel(r"Death Probability ($P_{\mathrm{death}}$)", fontsize=fontsize_lab)
+ax_mpl.set_ylabel(r"Survival Probability ($P_s$)", fontsize=fontsize_lab)
 ax_mpl.tick_params(axis='both', which='major', labelsize=fontsize_ticks)
 
 ax_mpl.set_xlim(1.0, XMAX)
-ax_mpl.set_ylim(-0.005, YMAX)
+ax_mpl.set_ylim(0.3, YMAX)
 ax_mpl.legend(fontsize=fontsize_legend, loc="lower right", framealpha=0.9)
 
 plt.tight_layout()
