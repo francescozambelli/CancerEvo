@@ -25,15 +25,15 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from scipy.interpolate import make_smoothing_spline
 
-from src.analysis.loaders import load_all_stability_results
+from src.analysis.loaders import load_stability_results_solid
 from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
 # Load data
 # ---------------------------------------------------------------------------
-merged    = load_all_stability_results()
+merged    = load_stability_results_solid()
 
-dfa              = merged[merged["source"] == "adaptive"]
+dfa              = merged
 adaptive_available = not dfa.empty
 
 XMIN = 1.0

@@ -221,23 +221,14 @@ def extract_field(trajs: List[dict], field: str) -> List[np.ndarray]:
 _R0 = 0.15  # reference reproduction rate used to normalise rmax
 
 
-def load_stability_results() -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Return (stability_results, stability_results_1) data frames."""
-    df0 = pd.read_csv(_REPO_ROOT / "data" / "stability_results.csv")
-    df1 = pd.read_csv(_REPO_ROOT / "data" / "stability_results_1.csv")
-    df0["rmax_norm"] = df0["rmax"] / _R0
-    df1["rmax_norm"] = df1["rmax"] / _R0
-    return df0, df1
-
-
-def load_adaptive_stability_results() -> pd.DataFrame:
+def load_stability_results_solid() -> pd.DataFrame:
     """
     Load ``data/stability_results_adaptive.csv`` produced by the adaptive
     sweep script.  Returns an empty DataFrame if the file does not yet exist.
 
     Adds a ``rmax_norm`` column (rmax / r0).
     """
-    path = _REPO_ROOT / "data" / "stability_results_adaptive.csv"
+    path = _REPO_ROOT / "outputs" / "results" / "stability_results_solid.csv"
     if not path.exists():
         import warnings
         warnings.warn(
@@ -250,14 +241,14 @@ def load_adaptive_stability_results() -> pd.DataFrame:
     return df
 
 
-def load_adaptive_stability_results_liquid() -> pd.DataFrame:
+def load_stability_results_liquid() -> pd.DataFrame:
     """
     Load ``data/stability_results_liquid_adaptive.csv`` produced by the adaptive
     sweep script for the liquid model. Returns an empty DataFrame if the file does not yet exist.
 
     Adds a ``rmax_norm`` column (rmax / r0).
     """
-    path = _REPO_ROOT / "data" / "stability_results_liquid_adaptive.csv"
+    path = _REPO_ROOT / "outputs" / "results" / "stability_results_liquid.csv"
     if not path.exists():
         import warnings
         warnings.warn(
@@ -268,45 +259,3 @@ def load_adaptive_stability_results_liquid() -> pd.DataFrame:
     df = pd.read_csv(path)
     df["rmax_norm"] = df["rmax"] / _R0
     return df
-
-
-def load_all_stability_results() -> pd.DataFrame:
-    """
-    Merge all stability CSV files (prior + adaptive) into one DataFrame.
-
-    Each row carries a ``source`` column identifying its origin:
-    ``"sweep_1"``, ``"sweep_2"``, or ``"adaptive"``.
-
-    Adds a ``rmax_norm`` column (rmax / r0).
-    """
-    df0, df1 = load_stability_results()
-    df0["source"] = "sweep_1"
-    df1["source"] = "sweep_2"
-
-    dfa = load_adaptive_stability_results()
-    if not dfa.empty:
-        dfa["source"] = "adaptive"
-
-    frames = [df for df in [df0, df1, dfa] if not df.empty]
-    merged = pd.concat(frames, ignore_index=True)
-    merged.sort_values(["rmax", "stable_dmu"], inplace=True, ignore_index=True)
-    return merged
-
-
-def load_external_tumor_mu() -> List[np.ndarray]:
-    """
-    Load mutation rate trajectories for 'Tumor' runs from the external data directory.
-    """
-    external_dir = Path("/data/UNIVERSITA/PhD/PROJECTS/Data/CancerEvo")
-    mu_path = external_dir / "0ch_mu.txt"
-    state_path = external_dir / "0ch_state.txt"
-
-    data = []
-    with open(mu_path) as f:
-        for line in f:
-            data.append(np.array([float(n) for n in line.strip().split(", ")]))
-
-    states = np.loadtxt(state_path, dtype=str)
-    tumor_indices = np.where(states == "Tumor")[0]
-    return [data[i] for i in tumor_indices]
-

@@ -155,8 +155,8 @@ function check_death_optimized(tiss::OptimizedTissue, idx::Int)
     return false
 end
 
-# Optimized substitution
-function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_type::String="whole")
+# Old optimized substitution with weighted neighbor selection (backup)
+function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_type::String="whole")
     N = tiss.L * tiss.L
     # Reproducers
     repro_indices, _ = sample_reproducers(tiss.r)
@@ -187,6 +187,172 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
             else
                 inv_rates = 1.0 ./ neigh_r
                 target_idx = neighs[sample(1:length(neighs), Weights(inv_rates))]
+            end
+            
+            # Daughter copies mother
+            tiss.state[target_idx] = tiss.state[i]
+            tiss.n_chrs[target_idx] = tiss.n_chrs[i]
+            tiss.chromosomes[:, target_idx] .= tiss.chromosomes[:, i]
+            tiss.mu[target_idx] = tiss.mu[i]
+            tiss.r[target_idx] = tiss.r[i]
+            tiss.m[target_idx] = tiss.m[i]
+            
+            # Mutate and finalize both cells (i = mother, target_idx = daughter).
+            # Note: In the solid model, both cells undergo mutation. This represents:
+            # 1. A symmetric cell division model, where both resulting cells are new
+            #    and undergo DNA replication (leading to potential errors in both).
+            # 2. Prevent boundary stagnation: Since boundary cells drive the expansion
+            #    into wild-type tissue, mutating the parent ensures that the active
+            #    expanding front evolves and adapts over successive divisions.
+            for idx in (i, target_idx)
+                mutate_optimized!(tiss, idx)
+                
+                # State transition to cancer
+                if tiss.state[idx] == 0
+                    has_mut = false
+                    for c in 1:tiss.n_chrs[idx]
+                        if tiss.chromosomes[c, idx] != 0
+                            has_mut = true; break
+                        end
+                    end
+                    if has_mut || tiss.n_chrs[idx] != n_chrs_init
+                        tiss.state[idx] = 1
+                    end
+                end
+                
+                if check_death_optimized(tiss, idx)
+                    push!(dead_indices, idx)
+                else
+                    update_cell_rates_optimized!(tiss, idx)
+                end
+            end
+            
+            # Missegregation (mother to daughter)
+            mother_m = tiss.m[i]
+            if rand() < mother_m && tiss.n_chrs[i] > 0
+                chr_idx = rand(1:tiss.n_chrs[i])
+                chr_to_move = tiss.chromosomes[chr_idx, i]
+                
+                if misseg_type == "chunk"
+                    # Chunk-based chromosome missegregation (aneuploid scenario)
+                    N_genes = tiss.N_genes
+                    len_cut = rand(0:N_genes)
+                    if len_cut >= 3 && len_cut <= N_genes - 3
+                        # Contiguous bitwise slice with wrap-around
+                        start_bit = rand(0:(N_genes - 1))
+                        slice_mask = UInt64(0)
+                        for bit_idx in 0:(len_cut - 1)
+                            bit = (start_bit + bit_idx) % N_genes
+                            slice_mask |= (UInt64(1) << bit)
+                        end
+                        
+                        # Extract chunk mutations
+                        chunk_muts = chr_to_move & slice_mask
+                        
+                        # Remove chunk mutations from mother
+                        tiss.chromosomes[chr_idx, i] &= ~slice_mask
+                        
+                        # Push chunk to daughter as new chromosome
+                        if tiss.n_chrs[target_idx] < 6
+                            tiss.n_chrs[target_idx] += 1
+                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chunk_muts
+                        end
+                    else
+                        # Fallback to transferring whole chromosome
+                        for k in chr_idx:(tiss.n_chrs[i]-1)
+                            tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
+                        end
+                        tiss.chromosomes[tiss.n_chrs[i], i] = 0
+                        tiss.n_chrs[i] -= 1
+                        
+                        if tiss.n_chrs[target_idx] < 6
+                            tiss.n_chrs[target_idx] += 1
+                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
+                        end
+                    end
+                else
+                    # Default: whole chromosome missegregation (polyploid scenario)
+                    for k in chr_idx:(tiss.n_chrs[i]-1)
+                        tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
+                    end
+                    tiss.chromosomes[tiss.n_chrs[i], i] = 0
+                    tiss.n_chrs[i] -= 1
+                    
+                    if tiss.n_chrs[target_idx] < 6
+                        tiss.n_chrs[target_idx] += 1
+                        tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
+                    end
+                end
+                
+                # Re-check death for both after transfer
+                for idx in (i, target_idx)
+                    if check_death_optimized(tiss, idx)
+                        push!(dead_indices, idx)
+                    end
+                end
+            end
+        end
+        end
+    end
+    
+    for idx in unique(dead_indices)
+        tiss.state[idx] = 2
+        tiss.r[idx] = 0.0
+        tiss.mu[idx] = 0.0
+        tiss.m[idx] = 0.0
+        tiss.n_chrs[idx] = 0
+        tiss.chromosomes[:, idx] .= 0
+    end
+end
+
+# Optimized substitution
+function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_type::String="whole")
+    N = tiss.L * tiss.L
+    # Reproducers
+    repro_indices, _ = sample_reproducers(tiss.r)
+    
+    dead_indices = Int[]
+    
+    repro_indices_list = findall(repro_indices)
+    
+    if length(repro_indices_list) > 1
+        for i in repro_indices_list
+        neighs = tiss.neighbors[i]
+        neigh_states = tiss.state[neighs]
+        
+        # A cell can divide only if it has at least one neighbor that is NOT wild-type
+        # (either cancer or dead). If it is completely isolated (surrounded only by WT cells),
+        # the division event is skipped. Interior cancer cells (surrounded by other cancer cells)
+        # can freely divide and replace their neighbors.
+        if !all(neigh_states .== 0) 
+            # Moran-like selection within the Moore neighborhood:
+            # 1. Prioritize replacing dead neighbors: with probability n_dead_neighs / n_neighs,
+            #    target a dead neighbor uniformly at random (always succeeds).
+            # 2. Otherwise, target a living neighbor uniformly at random, and replace it with
+            #    probability r_i / (r_i + r_j) (symmetric Moran competition).
+            neigh_r = tiss.r[neighs]
+            target_idx = -1
+            dead_neighs = findall(neigh_r .== 0.0)
+            n_dead_neighs = length(dead_neighs)
+            n_neighs = length(neighs)
+            
+            if n_dead_neighs > 0 && rand() < n_dead_neighs / n_neighs
+                target_idx = neighs[rand(dead_neighs)]
+            else
+                living_neighs = findall(neigh_r .!= 0.0)
+                if !isempty(living_neighs)
+                    candidate = neighs[rand(living_neighs)]
+                    r_i = tiss.r[i]
+                    r_j = tiss.r[candidate]
+                    denom = r_i + r_j
+                    if denom > 0.0 && rand() <= r_i / denom
+                        target_idx = candidate
+                    end
+                end
+            end
+            
+            if target_idx == -1
+                continue
             end
             
             # Daughter copies mother
