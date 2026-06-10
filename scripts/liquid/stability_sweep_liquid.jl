@@ -35,7 +35,7 @@ const STABILITY_TOLERANCE = 0.2
 const LOWER_LIMIT         = TARGET_DENSITY * (1 - STABILITY_TOLERANCE)
 const UPPER_LIMIT         = TARGET_DENSITY * (1 + STABILITY_TOLERANCE)
 const MAX_STEPS_STABILITY = 500
-const OUTPUT_FILE         = "stability_results_liquid_adaptive.csv"
+const OUTPUT_FILE         = "stability_results_liquid.csv"
 
 const N_CHR_STAB = 1
 function get_initial_stab_mask()
@@ -169,7 +169,7 @@ function load_completed_rmaxs(path::String)::Set{Float64}
 end
 
 function run_stability_sweep(; n_rmax::Int = 50, dry_run::Bool = false)
-    data_dir    = joinpath(dirname(dirname(@__DIR__)), "data")
+    data_dir    = joinpath(dirname(dirname(@__DIR__)), "outputs/results")
     output_path = joinpath(data_dir, OUTPUT_FILE)
 
     println("\n═══════════════════════════════════════════════════")
