@@ -10,7 +10,7 @@ N_HK  = 10
 # Tissue properties
 L     = 200
 mu0   = 0.0
-dmu   = 1.5e-2
+dmu   = 1.2e-2
 r0    = 1.5e-1
 dr    = 0.8e-2
 rmax  = 2 * r0

@@ -40,7 +40,7 @@ from scipy.interpolate import make_smoothing_spline
 
 from matplotlib.ticker import MaxNLocator, FuncFormatter
 
-from src.analysis.loaders import load_ensemble_csv, load_sim, load_adaptive_stability_results
+from src.analysis.loaders import load_ensemble_csv, load_sim, load_stability_results_solid
 from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
@@ -59,7 +59,7 @@ R0 = 0.15        # baseline reproduction rate
 N_HK = 10        # number of HK genes
 
 # Phase-diagram data (from sweep:analysis_adaptive)
-dfa = load_adaptive_stability_results()
+dfa = load_stability_results_solid()
 grp = dfa.groupby("rmax_norm")["stable_dmu"]
 r_prop_list = np.array(sorted(dfa["rmax_norm"].unique()))
 mu_med = grp.median().values * 10
@@ -72,8 +72,8 @@ x_new = np.linspace(1.0, 2.2, 200)
 # Load reproducible Health and Tumor trajectories
 # ---------------------------------------------------------------------------
 repo_root = Path(__file__).resolve().parents[3]
-path_h = repo_root / "data" / "simulations" / "ensemble_results" / "sim_49.npz"
-path_t = repo_root / "data" / "simulations" / "ensemble_results" / "sim_10.npz"
+path_h = repo_root / "data" / "simulations" / ENSEMBLE_DIR / "sim_1.npz"
+path_t = repo_root / "data" / "simulations" / ENSEMBLE_DIR / "sim_10.npz"
 
 if not path_h.exists() or not path_t.exists():
     print("Could not find health_results.npz or tumor_results.npz in data/simulations/spatial_run/")
