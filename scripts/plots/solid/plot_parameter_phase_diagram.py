@@ -112,7 +112,7 @@ def plot_heatmap():
 
     # Highlight default settings from parameters_liquid.jl if within sweep range
     # default dmu = 0.045, dr = 0.008
-    default_dmu, default_dr = 0.015, 0.008
+    default_dmu, default_dr = 0.012, 0.008
     if dmu_vals.min() <= default_dmu <= dmu_vals.max() and dr_vals.min() <= default_dr <= dr_vals.max():
         ax.scatter(default_dmu, default_dr, color='cyan', marker='*', s=650, edgecolors='black', 
                    linewidths=1.5, zorder=10, label=f"Default Parameters\n($d\mu={default_dmu:.1e}$,\n $dr={default_dr:.1e}$)")

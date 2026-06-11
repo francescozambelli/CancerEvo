@@ -32,9 +32,9 @@ DMU = 0.015
 
 # Load simulations from ensemble_results_D
 SIM_T_ID = 10    # Tumor outcome
-SIM_H_ID = 49  # Health outcome
-sim_t = load_sim(SIM_T_ID, "ensemble_results")
-sim_h = load_sim(SIM_H_ID, "ensemble_results")
+SIM_H_ID = 1  # Health outcome
+sim_t = load_sim(SIM_T_ID, "ensemble_results_D")
+sim_h = load_sim(SIM_H_ID, "ensemble_results_D")
 
 # Compute theoretical limits using the Master Equation solver
 theory = compute_asymptotic_limit(N_I=N_I, N_H=N_HK, dmu=DMU, remove_lower=0)
