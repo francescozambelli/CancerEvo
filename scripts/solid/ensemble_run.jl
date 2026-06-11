@@ -16,6 +16,7 @@ function save_results_npz(filename, results)
         "n_chrs" => results.n_chrs,
         "tumor_density" => results.tumor_density,
         "death_density" => results.dcells_density,
+        "dm" => [dm],
         # Outcome codes: 0: Health, 1: Tumor, 2: Done
         "outcome_code" => [results.state == "Health" ? 0 : results.state == "Tumor" ? 1 : 2]
     )
@@ -32,9 +33,9 @@ end
 Runs multiple simulations in parallel using Julia's multi-threading.
 Tracks whether the tumor reached the size limit, died out, or reached max steps.
 """
-function run_ensemble(num_sims=50, misseg_mech=misseg_type)
+function run_ensemble(num_sims=50, misseg_mech=misseg_type, suffix="", dm=dm)
     # Ensure output directory exists
-    ensemble_dir = joinpath(dirname(dirname(@__DIR__)), "data", "simulations", "ensemble_results")
+    ensemble_dir = joinpath(dirname(dirname(@__DIR__)), "data", "simulations", "ensemble_results$(suffix)")
     if !isdir(ensemble_dir); mkpath(ensemble_dir); end
     output_file = joinpath(ensemble_dir, "ensemble_results.csv")
 
@@ -43,6 +44,9 @@ function run_ensemble(num_sims=50, misseg_mech=misseg_type)
     println("--- Ensemble Runner ---")
     println("Running $num_sims simulations on $(Threads.nthreads()) threads.")
     println("Parameters: L=$L, steps=$n_steps, limit=$limit, N_CHR=$N_CHR, misseg_type=$misseg_mech, dmu=$dmu, mu0=$mu0, r0=$r0, dr=$dr, rmax=$rmax, dm=$dm")
+    if !isempty(suffix)
+        println("Suffix: $suffix")
+    end
     
     progress_lock = ReentrantLock()
     completed = 0
@@ -98,14 +102,46 @@ function run_ensemble(num_sims=50, misseg_mech=misseg_type)
     println("Results saved to: $output_file")
 end
 
-if length(ARGS) >= 2
+suffix = ""
+# Find and extract suffix if present (supports both --suffix and -s)
+idx = findfirst(x -> x == "--suffix" || x == "-s", ARGS)
+if !isnothing(idx)
+    if idx < length(ARGS)
+        suffix = ARGS[idx+1]
+        deleteat!(ARGS, [idx, idx+1])
+    else
+        deleteat!(ARGS, idx)
+    end
+end
+
+dm_val = dm
+# Find and extract dm if present
+idx_dm = findfirst(x -> x == "--dm", ARGS)
+if !isnothing(idx_dm)
+    if idx_dm < length(ARGS)
+        dm_val = parse(Float64, ARGS[idx_dm+1])
+        deleteat!(ARGS, [idx_dm, idx_dm+1])
+    else
+        deleteat!(ARGS, idx_dm)
+    end
+end
+
+if length(ARGS) >= 3
     n = parse(Int, ARGS[1])
     m_mech = ARGS[2]
-    run_ensemble(n, m_mech)
+    # If suffix is not already set via flag, take the 3rd argument
+    if isempty(suffix)
+        suffix = ARGS[3]
+    end
+    run_ensemble(n, m_mech, suffix, dm_val)
+elseif length(ARGS) == 2
+    n = parse(Int, ARGS[1])
+    m_mech = ARGS[2]
+    run_ensemble(n, m_mech, suffix, dm_val)
 elseif length(ARGS) == 1
     n = parse(Int, ARGS[1])
-    run_ensemble(n)
+    run_ensemble(n, misseg_type, suffix, dm_val)
 else
     # Default run
-    run_ensemble(20)
+    run_ensemble(20, misseg_type, suffix, dm_val)
 end
