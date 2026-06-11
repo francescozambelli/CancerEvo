@@ -158,7 +158,7 @@ class CorrectedLiquidTumor:
 
         if guess is None:
             guess = np.zeros(self.NI + 1)
-            guess[1]=0.1
+            guess[0]=0.1
 
 
         sol = least_squares(self.residuals, guess, bounds=(0.0, 1.0), method="trf", xtol=1e-10, ftol=1e-10)
@@ -176,22 +176,11 @@ if __name__ == "__main__":
     NI = 10
     NHK = 10
 
-    delta_mu = 0.023
+    delta_mu = 0.025
 
     r0 = 0.15
 
-    r = np.array([
-        0.3,
-        0.3,
-        0.3,
-        0.3,
-        0.3,
-        0.3,
-        0.3,
-        0.3,
-        0.3,
-        0.3
-    ])
+    r = [r0*2]*NI
 
     model = CorrectedLiquidTumor(
         NI=NI,
