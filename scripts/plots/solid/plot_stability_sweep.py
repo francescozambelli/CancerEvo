@@ -65,7 +65,7 @@ if adaptive_available:
     adapt_dmu_raw = dyn_state(0.0, 1.0, adapt_dmu_raw_mu, 0.5, N_HK)[1]
 
     # Fit a smoothing spline on the median points to draw a smooth boundary
-    spl = make_smoothing_spline(r_unique, adapt_med, lam=0.0001)
+    spl = make_smoothing_spline(r_unique, adapt_med, lam=0.005)
     r_smooth = np.linspace(XMIN, XMAX, 300)
     adapt_med_smooth = spl(r_smooth)
 
@@ -107,10 +107,10 @@ ax_mpl.plot(theory_rmax_norm, p_star_theory, color="blue", ls="--", lw=2.5, alph
 
 # Simulation boundary line (Solid black line connecting smooth spline)
 if adaptive_available:
-    ax_mpl.plot(r_smooth, adapt_med_smooth, color="navy", lw=3.0, zorder=5)#, label="Solid Tumor (Sim.)")
+    ax_mpl.plot(r_smooth, adapt_med_smooth, color="navy", lw=3.0, zorder=5, label= "Sim. data")#, label="Solid Tumor (Sim.)")
     
     # Simulation data points (Gray markers)
-    ax_mpl.scatter(r_unique, adapt_med, color="lightblue", s=80, zorder=10, edgecolor="navy", linewidths=1.5, label="Sim. data")
+    #ax_mpl.scatter(r_unique, adapt_med, color="lightblue", s=80, zorder=10, edgecolor="navy", linewidths=1.5, label="Sim. data")
 
 # Asymptotic saturation
 # ax_mpl.axhline(p_star_sat, color="orange", ls="--", lw=1.5, alpha=0.6, zorder=3)
