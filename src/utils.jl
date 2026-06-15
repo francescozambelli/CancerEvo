@@ -474,6 +474,8 @@ end
 function sample_reproducers(rates::Vector{Float64})
     R = sum(rates)
     K = rand(Poisson(R))
+    n_positive = count(>(0.0), rates)
+    K = min(K, n_positive)
     if K == 0
         return falses(length(rates)), zeros(Int, length(rates))
     end
