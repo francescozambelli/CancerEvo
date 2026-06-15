@@ -37,13 +37,12 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.ticker import MaxNLocator
 
-from src.sim_liquid import CorrectedLiquidTumor
+from src.analysis.stationary_liquid import solve_stationary_system, delta, gamma
 
 # ---------------------------------------------------------------------------
 # CLI args: [npz_path] [out_suffix] [mu_label] [mu_lo] [mu_hi] [dmu] [N_H] [remove_lower]
 # ---------------------------------------------------------------------------
-NPZ_PATH     = REPO_ROOT / (sys.argv[1] if len(sys.argv) > 1
-               else "data/simulations_liquid/highmu_actI_dist/sim_highmu.npz")
+NPZ_PATH     = REPO_ROOT / (sys.argv[1] if len(sys.argv) > 1 else "data/simulations_liquid/highmu_actI_dist/sim_highmu.npz")
 OUT_SUFFIX   = sys.argv[2] if len(sys.argv) > 2 else "highmu"
 MU_LABEL     = sys.argv[3] if len(sys.argv) > 3 else "0.087"
 MU_BAND_LO   = float(sys.argv[4]) if len(sys.argv) > 4 else 0.083
@@ -69,25 +68,38 @@ steps = np.arange(T)
 tail_start = int(0.70 * T)
 
 # ---------------------------------------------------------------------------
-# Theoretical stationary distribution from Master Equation (sim_liquid.py)
+# Theoretical stationary distribution from Master Equation (stationary_liquid.py)
 # ---------------------------------------------------------------------------
 r_tail_mean = r_sim[tail_start:].mean() if r_sim is not None else 0.25
 r0 = 0.15  # standard baseline replication rate in the liquid tumor model
 
-model = CorrectedLiquidTumor(
-    NI=N_I,
-    NHK=N_H,
-    delta_mu=DMU,
-    r=np.array([r_tail_mean] * N_I),
-    r0=r0
+res = solve_stationary_system(
+    N_I=N_I,
+    N_HK=N_H,
+    dmu=DMU,
+    r0=r0,
+    rmax=r_tail_mean,
+    remove_lower=REMOVE_LOWER,
 )
 
-sol = model.solve()
-if not sol.success:
-    raise RuntimeError(f"Theoretical solver failed: {sol.message}")
+dmu_star = res.get("dmu_star", None)
+if not res["converged"] or np.sum(res["f_k"]) == 0:
+    if dmu_star is not None:
+        print(f"Theory is stable at dmu={DMU:.5f}. Falling back to critical boundary dmu*={dmu_star - 1e-5:.5f}")
+        res = solve_stationary_system(
+            N_I=N_I,
+            N_HK=N_H,
+            dmu=dmu_star - 1e-5,
+            r0=r0,
+            rmax=r_tail_mean,
+            remove_lower=REMOVE_LOWER,
+        )
 
-f_theory = sol.x[:-1]
-pD_theory = sol.x[-1]
+if not res["converged"]:
+    raise RuntimeError("Theoretical solver failed to converge")
+
+f_theory = res["f_k"]
+pD_theory = res["p_D"]
 
 # Normalize cancer fractions to sum to 1
 sum_f = np.sum(f_theory)
@@ -210,8 +222,8 @@ ax_C.tick_params(axis="both", labelsize=ticks_fontsize)
 # ── Panel D: pdie & ppromote vs k ───────────────────────────────────────────
 ax_D = ax_dict["D"]
 k_range = np.arange(1, N_I + 1)
-p_die_vals = [model.delta(k) for k in k_range]
-p_promote_vals = [model.gamma(k) for k in k_range]
+p_die_vals = [delta(k, DMU, N_H) for k in k_range]
+p_promote_vals = [gamma(k, DMU, N_H, N_I) for k in k_range]
 
 ax_D.plot(k_range, p_die_vals, label=r"$p_{\rm die}$", color="purple", lw=2)
 ax_D.scatter(k_range, p_die_vals, color=[colors[k] for k in k_range], zorder=3, s=50, edgecolors="white", linewidths=0.5)

@@ -26,15 +26,15 @@ using Random, Statistics, Base.Threads, NPZ, ProgressMeter, CSV, DataFrames
 
 # Absolute search limits for dmu
 const DMU_MIN = 1e-6
-const DMU_MAX = 0.02
+const DMU_MAX = 0.04
 const N_BISECT = 14  # 14 iterations gives accuracy of ~1.2e-6
 
 const N_RMAX_DEFAULT      = 50
 const TARGET_DENSITY      = 0.2
-const STABILITY_TOLERANCE = 0.2
-const LOWER_LIMIT         = TARGET_DENSITY * (1 - STABILITY_TOLERANCE)
-const UPPER_LIMIT         = TARGET_DENSITY * (1 + STABILITY_TOLERANCE)
-const MAX_STEPS_STABILITY = 500
+const STABILITY_TOLERANCE = 0.5
+const LOWER_LIMIT         = 0.0#TARGET_DENSITY * (1 - STABILITY_TOLERANCE)
+const UPPER_LIMIT         = 1.0#TARGET_DENSITY * (1 + STABILITY_TOLERANCE)
+const MAX_STEPS_STABILITY = 3000
 const OUTPUT_FILE         = "stability_results_liquid.csv"
 
 const N_CHR_STAB = 1
@@ -57,7 +57,7 @@ function make_tissue(rmax::Float64, dmu::Float64)::LiquidTissue
     tiss = LiquidTissue(L * L, N_I, N_O, N_S, N_M, N_HK,
                             mu0, dmu, r0, dr, rmax, 0.0, N_CHR_STAB)
     N = tiss.N
-    perturb_liquid!(tiss, round(Int, TARGET_DENSITY * N), PERT_CHR_STAB)
+    perturb_liquid!(tiss, 10, PERT_CHR_STAB)
     return tiss
 end
 
@@ -118,10 +118,10 @@ function bisect_boundary(rmax::Float64, lo::Float64, hi::Float64,
     for _ in 1:n_iters
         mid = (lo + hi) / 2
         state, _ = probe(rmax, mid)
-        if state == "Tumor_Max"
-            lo = mid
-        else
+        if state == "Health"
             hi = mid
+        else
+            lo = mid
         end
     end
     return (lo + hi) / 2
@@ -212,7 +212,7 @@ function run_stability_sweep(; n_rmax::Int = 50, dry_run::Bool = false)
         state_lo, _ = probe(r_max, DMU_MIN)
         state_hi, _ = probe(r_max, DMU_MAX)
 
-        if state_lo == "Tumor_Max" && state_hi != "Tumor_Max"
+        if state_lo != "Health" && state_hi == "Health"
             println("  Transition bracketed. Starting bisection over [$DMU_MIN, $DMU_MAX]...")
             dmu_star = bisect_boundary(r_max, DMU_MIN, DMU_MAX, N_BISECT)
             append_results(output_path, r_max, [dmu_star])

@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from scipy.interpolate import make_smoothing_spline
 
-from src.analysis.loaders import load_adaptive_stability_results_liquid
+from src.analysis.loaders import load_stability_results_liquid
 from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ N_HK = 10
 N_I  = 10
 
 # Load liquid sweep data
-df_liquid = load_adaptive_stability_results_liquid()
+df_liquid = load_stability_results_liquid()
 liquid_available = not df_liquid.empty
 
 if not liquid_available:
@@ -64,15 +64,9 @@ spl_l = make_smoothing_spline(r_unique_l, liquid_med, lam=0.0001)
 r_smooth_l = np.linspace(XMIN, XMAX, 300)
 liquid_med_smooth = spl_l(r_smooth_l)
 
-# ── Theoretical Liquid Boundary (finite tumor fraction f_C = 0.20, both mutating) ──
+# ── Theoretical Liquid Boundary derived from the Unified Growth Foothold Inequality (N_I = 1) ──
 theory_rmax_norm = np.linspace(XMIN, XMAX, 600)
-theory_rmax_abs  = theory_rmax_norm * r0
-f_C = 0.20
-r_c = theory_rmax_abs
-P_s_star_l = (1.0 + f_C * (r0 / r_c) + (1.0 - f_C) * (r0 / r_c)**2) / (2.0 - f_C + f_C * (r0 / r_c))
-P_s_star_l = np.clip(P_s_star_l, 0.0, 1.0)
-mu_star_l  = 1.0 - P_s_star_l ** (1.0 / N_HK)
-p_star_theory_l = dyn_state(0.0, 1.0, mu_star_l, 0.5, N_HK)[1]
+p_star_theory_l = 0.5 * (1.0 + 1.0 / theory_rmax_norm)
 
 # Empirical Liquid Saturation (median of the flat asymptotic part rmax_norm >= 5)
 p_star_sat_l = np.median(liquid_med[r_unique_l >= 5.0])
