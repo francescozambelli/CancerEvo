@@ -102,6 +102,7 @@ def plot_heatmap():
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     ax.tick_params(axis='both', which='major', labelsize=fontsize_ticks)
     ax.tick_params(axis='x', which='major', rotation=45)
+    ax.set_xlim(0, 0.03)
     ax.grid(False)
 
     # Add colorbar

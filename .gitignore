@@ -3,6 +3,7 @@
 .vscode/
 .antigravitycli
 
+brain/
 data/
 images/
 gif/
@@ -13,3 +14,11 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+#latex biproduct
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml

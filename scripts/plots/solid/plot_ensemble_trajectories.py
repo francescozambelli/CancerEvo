@@ -37,7 +37,7 @@ plt.rcParams.update({
     "axes.spines.right": False,
 })
 
-DENSITY_MAX = 0.35
+DENSITY_MAX = 0.4
 N_BINS = 300
 
 # ---------------------------------------------------------------------------
@@ -99,10 +99,7 @@ fig, ax = plt.subplots(figsize=(7, 6))
 
 # Create inset axes in the lower right
 # Position: [x0, y0, width, height] in axes coordinates
-#ax_inset = ax.inset_axes([0.7, 0.18, 0.48, 0.29])
-
-# Create second inset axes in the upper middle/right for detail (t: 0 -> 500)
-#ax_inset_detail = ax.inset_axes([0.42, 0.05, 0.18, 0.20])
+ax_inset = ax.inset_axes([0.6, 0.1, 0.48, 0.29])
 
 interv = np.linspace(0, DENSITY_MAX, N_BINS)
 
@@ -127,28 +124,40 @@ for label in ["Diploid", "Polyploid", "Aneuploid"]:
     # Prepend origin so the curve starts at (0, 0)
     means = np.concatenate([[0], means])
     stds  = np.concatenate([[0], stds])
-    
-    plot_stats_elementwise(ax, density_trajs[label], color=COLORS[label], lw=3, alpha=0.3)
-    #ax.plot(means, interv, color=COLORS[label], lw=3, label=label)
-    #ax.fill_betweenx(interv, means - stds, means + stds,
-    #                 color=COLORS[label], alpha=0.3)
+    if label=="Polyploid":
+        ax.plot(means[:-100], interv[:-100], color=COLORS[label], lw=3, label=label)
+        ax.fill_betweenx(interv[:-100], means[:-100] - stds[:-100], means[:-100] + stds[:-100],
+                        color=COLORS[label], alpha=0.3)
+    else:
+        ax.plot(means, interv, color=COLORS[label], lw=3, label=label)
+        ax.fill_betweenx(interv, means - stds, means + stds,
+                        color=COLORS[label], alpha=0.3)
     
     # 2. Plot growth speed on inset axis (linear scale)
     gs_list = [get_smooth_slope(td[:d_lenght[label]], SKIP_SMOOTH, WIN_AVG) for td in density_trajs[label]]
     
-    #plot_stats_elementwise(ax_inset, gs_list, color=COLORS[label], lw=1.5, alpha=0.20)
+    plot_stats_elementwise(ax_inset, gs_list, color=COLORS[label], lw=1.5, alpha=0.20)
     
-    # 3. Plot growth speed detail on second inset axis (t: 0 -> 500)
-    #plot_stats_elementwise(ax_inset_detail, gs_list, color=COLORS[label], lw=1.5, alpha=0.20)
-
 # Format main axis
-ax.set_xlim(left=0)
+ax.set_xlim(left=0, right=3500)
 ax.set_ylim(bottom=0, top=DENSITY_MAX)
 ax.set_xlabel("Time", fontsize=14)
 ax.set_ylabel("Tumor cell density", fontsize=14)
 #ax.set_title("Tumor Density Trajectories", fontsize=14, fontweight="bold")
 ax.legend(fontsize=11, loc="upper left")
 ax.grid(False)
+
+# Format inset axis (linear)
+ax_inset.set_xlim(left=0, right=1500)
+ax_inset.set_ylim(bottom=0)
+ax_inset.set_xlabel("Time", fontsize=8)
+ax_inset.set_ylabel(r"Growth speed $d\rho/dt$", fontsize=8)
+ax_inset.tick_params(axis='both', which='both', labelsize=8)
+ax_inset.grid(False)
+ax_inset.set_axisbelow(True)
+#put y ticks to scientific notation
+ax_inset.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+ax_inset.yaxis.get_offset_text().set_fontsize(8)
 
 plt.tight_layout()
 

@@ -1,0 +1,392 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\geometry{margin=25mm}
+
+\title{Supplementary Materials: Self-Organized cancer fragility emerges from chromosomal instability}
+
+\author{\textbf{Theoretical Biology \& Mathematical Oncology Framework}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Stationary Mutational Population distributions in the Liquid case}
+
+We consider a liquid tumor model with fixed population size $N$. The number of wild-type cells is indicated with $W$, the number of dead cells with $D$. The cancer cell population can be further divided in $N_{\mathcal{I}}$ sub-populations (one per instability class), with $N_{\mathcal{I}}$ the number of instability genes. We indicate the abundance of each cancer sub-population with $C_k$, where $k \in \{1, \dots, N_I\}$ counts the number of mutated instability genes. We work with densities (fractions) rather than absolute abundances:
+
+\begin{equation}
+    f_W \equiv \frac{W}{N}, \quad f_k \equiv \frac{C_k}{N}, \quad p_D \equiv \frac{D}{N}
+\end{equation}
+
+These are constrained by the fixed-size normalization:
+\begin{equation}
+    \sum_{k=1}^{N_I} f_k + f_W + p_D = 1
+\end{equation}
+
+\subsubsection*{Survival probability after a mutation round}
+
+Both cancer and wild-type cells undergo replication followed by a stochastic mutation event. After mutation, a \emph{viability check} is performed on all $N_{HK}$ housekeeping genes: if \emph{any} housekeeping gene becomes fully mutated (on all chromosome copies), the cell dies. Each gene has an independent per-locus mutation probability $\mu_k = k \cdot \delta\mu$ for a class-$k$ cell. The probability that a \emph{single} housekeeping gene survives (i.e.\ is \textbf{not} mutated) in one round is $(1 - k\,\delta\mu)$. Since all $N_{HK}$ housekeeping genes must independently survive:
+
+\begin{equation}
+    P_{s,k} = \underbrace{(1 - k\,\delta\mu)}_{\text{one HK gene survives}} \times \cdots \times \underbrace{(1 - k\,\delta\mu)}_{N_{HK}\text{ times}} = (1 - k\,\delta\mu)^{N_{HK}}
+\end{equation}
+
+\subsubsection*{The post-replication fates (exact multi-step model)}
+
+After a mutation round, a cell in class $k$ can either remain in class $k$ (cloning), promote to class $k+j$ with $j \ge 1$ (multi-step promotion), or die due to a housekeeping mutation. Since mutations at different loci occur independently with per-locus probability $\mu_k = k \cdot \delta\mu$, we derive these probabilities exactly:
+
+\paragraph{1. Faithful cloning ($\alpha_k$):} The cell remains in class $k$. This requires that none of the $N_{HK}$ housekeeping genes and none of the $(N_I - k)$ remaining unmutated instability genes are hit. The total number of loci that must remain unmutated is $N_{HK} + N_I - k$:
+\begin{equation}
+    \alpha_k = (1 - k\,\delta\mu)^{N_{HK} + N_I - k}
+\end{equation}
+
+\paragraph{2. Promotion ($P_{k \to k+j}$):} The cell advances from class $k$ to class $k+j$ (where $j \in \{1, \dots, N_I - k\}$ instability genes mutate, while all other instability loci and all housekeeping loci remain unmutated). Since the selection of which instability genes mutate is combinatorial:
+\begin{equation}
+    P_{k \to k+j} = \binom{N_I - k}{j} (k\,\delta\mu)^j (1 - k\,\delta\mu)^{N_{HK} + N_I - k - j}
+\end{equation}
+Note that faithful cloning is simply the diagonal case $\alpha_k = P_{k \to k}$.
+
+\paragraph{3. Lethal mutation ($\delta_k$):} The cell dies because at least one housekeeping gene is hit, which is the complement of the survival probability $P_{s,k} = (1 - k\,\delta\mu)^{N_{HK}}$:
+\begin{equation}
+    \delta_k = 1 - P_{s,k} = 1 - (1 - k\,\delta\mu)^{N_{HK}}
+\end{equation}
+
+\textbf{Exact normalization check:} The sum of all possible survival outcomes plus the death probability is exactly 1:
+\begin{equation}
+    \sum_{j=0}^{N_I - k} P_{k \to k+j} + \delta_k = (1 - k\,\delta\mu)^{N_{HK}} \sum_{j=0}^{N_I - k} \binom{N_I - k}{j} (k\,\delta\mu)^j (1 - k\,\delta\mu)^{N_I - k - j} + [1 - (1 - k\,\delta\mu)^{N_{HK}}] = 1
+\end{equation}
+This binomial formulation provides an exact description of the mutation process without needing leading-order approximations.
+
+\subsubsection*{Moran competition probabilities}
+
+When a dividing cell targets a living (non-dead) cell, the outcome is decided by a \emph{Moran process}: the divider replaces the target with probability proportional to its fitness relative to the combined fitness. All cancer classes share the same intrinsic division rate $r_{\text{max}}$, while wild-type cells divide at rate $r_0$:
+
+\begin{itemize}
+    \item \textbf{Cancer vs Wild-Type:} The cancer cell (rate $r_{\text{max}}$) competes against a wild-type cell (rate $r_0$):
+    \begin{equation}
+        \beta_{cw} = \frac{r_{\text{max}}}{r_{\text{max}} + r_0}
+    \end{equation}
+    \item \textbf{Cancer vs Cancer:} Two cancer cells with the same rate $r_{\text{max}}$ compete symmetrically:
+    \begin{equation}
+        \beta_{cc} = \frac{r_{\text{max}}}{r_{\text{max}} + r_{\text{max}}} = \frac{1}{2}
+    \end{equation}
+    \item \textbf{Wild-Type vs Cancer:} The complement of the cancer-vs-WT outcome:
+    \begin{equation}
+        \beta_{wc} = \frac{r_0}{r_{\text{max}} + r_0} = 1 - \beta_{cw}
+    \end{equation}
+\end{itemize}
+
+System parameters are formalized in Table~\ref{tab:parameters}.
+
+\begin{table}[htbp]
+\centering
+\caption{Systematic Overview of the Unified Parameter Space}
+\label{tab:parameters}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Biological Definition} & \textbf{Functional Form / Constraint} \\
+\midrule
+$N$ & Total fixed tissue lattice sites & Constant volume constraint \\
+$N_I$ & Maximum viable cancer mutational classes & Total mutable Instability genes \\
+$N_{HK}$ & Total critical Housekeeping genes & Continuous fitness check loci \\
+$\delta\mu$ & Per-locus mutation rate increment & Constant scaling factor \\
+$r_{\text{max}}$ & Intrinsic division rate of class $k$ cancer & Phenotypic fitness parameter \\
+$r_0$ & Active division rate of healthy wild-type & Homeostatic driver baseline \\
+$\alpha_k$ & Probability of a faithful clone & $(1-k\,\delta\mu)^{N_{HK} + N_I - k}$ \\
+$P_{k \to k+j}$ & Probability of promotion ($k \to k+j$) & $\binom{N_I-k}{j}(k\,\delta\mu)^j(1-k\,\delta\mu)^{N_{HK}+N_I-k-j}$ \\
+$\delta_k$ & Lethal mutation probability & $1 - (1-k\,\delta\mu)^{N_{HK}}$ \\
+$\beta_{cw}$ & Moran win probability of cancer vs WT & $r_{\text{max}} / (r_{\text{max}} + r_0)$ \\
+$\beta_{cc}$ & Moran win probability of cancer $k$ vs $j$ & $r_{\text{max}} / (r_{\text{max}} + r_{\text{max}})$ \\
+$\beta_{wc}$ & Moran win probability of WT vs cancer $k$ & $r_0 / (r_{\text{max}} + r_0) = 1 - \beta_{cw}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Microscopic Mechanisms and Elementary Transition Rates}
+
+After each duplication step, both mother and daughter cells independently undergo stochastic mutation events as described above. Both cells independently draw from the same probability distribution: cloning ($\alpha_k$), promoting ($P_{k \to k+j}$), or dying ($\delta_k$). Crucially, DNA replication and subsequent viability/mutation checks are only performed upon successful division (Moran competition success). If division is aborted, neither the mother nor the daughter replicates or mutates. Thus, all division-dependent rates (cloning, promotion, and death) for both mother and daughter cells are scaled by the division success probability $\phi_k$.
+
+\subsubsection*{Effective reachable space $\phi_k$}
+
+We define the fractional reachable space $\phi_k$ as the effective probability that a dividing class-$k$ cancer cell successfully places its daughter. The daughter can land on three types of targets:
+
+\begin{equation}
+    \phi_k = \underbrace{p_D}_{\substack{\text{dead slots:}\\\text{always available}}}
+           + \underbrace{f_W\,\beta_{cw}}_{\substack{\text{WT cells displaced}\\\text{via Moran competition}}}
+           + \underbrace{\sum_{j=1}^{N_I} f_j\,\beta_{cc}}_{\substack{\text{cancer cells displaced}\\\text{(50\% win rate)}}}
+\end{equation}
+
+\begin{itemize}
+    \item $p_D$: the fraction of dead (empty) slots. Replacement always succeeds (no competition needed).
+    \item $f_W \beta_{cw}$: wild-type cells are encountered with frequency $f_W$, and the cancer cell wins the Moran competition with probability $\beta_{cw}$.
+    \item $\sum_j f_j \beta_{cc}$: other cancer cells are encountered with total frequency $\sum_j f_j$, with a symmetric 50\% win rate $\beta_{cc} = 1/2$.
+\end{itemize}
+
+\subsubsection*{Enumeration of all elementary transitions}
+
+We now enumerate every possible microscopic event and its rate. The key insight is that during a single division event of a class-$k$ cancer cell, \emph{two independent fates} are resolved: (i) the \textbf{mother fate} (what happens to the original cell on its site after mutation), and (ii) the \textbf{daughter fate} (what happens to the copy placed at the target site after mutation). Both fates are conditioned on the division being successfully completed.
+
+The complete transition rate matrix is given in Table~\ref{tab:transitions}. We explain each row below.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete Microscopic Transition Rate Matrix (Symmetrical Hazards)}
+\label{tab:transitions}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Active Vector} & \textbf{Target \& Event Type} & $\mathbf{\Delta C_k}$ & $\mathbf{\Delta D}$ & \textbf{Transition Rate ($\lambda$)} \\
+\midrule
+Cancer Class $k$ & \textbf{Mother Fate:} Dies on Site & $-1$ & $+1$ & $C_k \, r_{\text{max}} \, \phi_k \, \delta_k$ \\
+Cancer Class $k$ & \textbf{Mother Fate:} Promotes on Site ($k \to k+j$) & $-1_{k}, +1_{k+j}$ & $0$ & $C_k \, r_{\text{max}} \, \phi_k \, P_{k \to k+j}$ \\
+Cancer Class $k$ & \textbf{Daughter Fate:} Clones on $D$ & $+1$ & $-1$ & $C_k \, r_{\text{max}} \, p_D \, \alpha_k$ \\
+Cancer Class $k$ & \textbf{Daughter Fate:} Promotes on $D$ ($k \to k+j$) & $+1_{k+j}$ & $-1$ & $C_k \, r_{\text{max}} \, p_D \, P_{k \to k+j}$ \\
+Cancer Class $k$ & \textbf{Daughter Fate:} Dies on $D$ & $0$ & $0$ & $C_k \, r_{\text{max}} \, p_D \, \delta_k$ \\
+Cancer Class $k$ & \textbf{Daughter Fate:} Clones on $W$ & $+1$ & $0$ & $C_k \, r_{\text{max}} \, f_W \, \beta_{cw} \, \alpha_k$ \\
+Cancer Class $k$ & \textbf{Daughter Fate:} Dies on $W$ & $0$ & $+1$ & $C_k \, r_{\text{max}} \, f_W \, \beta_{cw} \, \delta_k$ \\
+Wild-Type ($W$) & WT Divides, Replaces Dead Void & $0$ & $-1$ & $W \, r_0 \, p_D$ \\
+Wild-Type ($W$) & WT Divides, Clears Cancer $k$ & $-1$ & $0$ & $W \, r_0 \, f_k \, \beta_{wc}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Explanation of each transition rate:}
+
+\begin{enumerate}
+    \item \textbf{Mother dies on site} ($C_k\, r_{\text{max}}\, \phi_k\, \delta_k$): A class-$k$ cell successfully initiates division (probability $\phi_k$), and the mother undergoes a lethal housekeeping mutation (probability $\delta_k$). The cell dies in place: $C_k \to C_k - 1$, $D \to D + 1$.
+
+    \item \textbf{Mother promotes on site} ($C_k\, r_{\text{max}}\, \phi_k\, P_{k \to k+j}$): The mother successfully initiates division and mutates $j$ instability genes, advancing to class $k+j$ \emph{without leaving its site}. This is a type-swap: $C_k \to C_k - 1$, $C_{k+j} \to C_{k+j} + 1$, with no change to $D$.
+
+    \item \textbf{Daughter clones on dead slot} ($C_k\, r_{\text{max}}\, p_D\, \alpha_k$): The daughter targets a dead slot (probability $p_D$) and faithfully clones (probability $\alpha_k$). Net effect: $C_k \to C_k + 1$, $D \to D - 1$.
+
+    \item \textbf{Daughter promotes on dead slot} ($C_k\, r_{\text{max}}\, p_D\, P_{k \to k+j}$): The daughter targets a dead slot and mutates $j$ instability genes during division. Net effect: $C_{k+j} \to C_{k+j} + 1$, $D \to D - 1$.
+
+    \item \textbf{Daughter dies on dead slot} ($C_k\, r_{\text{max}}\, p_D\, \delta_k$): The daughter targets a dead slot but suffers a lethal mutation. The dead slot remains dead, and no net population change occurs ($\Delta C_k = 0$, $\Delta D = 0$).
+
+    \item \textbf{Daughter clones on WT} ($C_k\, r_{\text{max}}\, f_W\, \beta_{cw}\, \alpha_k$): The daughter targets a wild-type cell (probability $f_W$), wins the Moran competition (probability $\beta_{cw}$), and faithfully clones ($\alpha_k$). The WT cell is displaced: $C_k \to C_k + 1$, $W \to W - 1$.
+
+    \item \textbf{Daughter dies on WT} ($C_k\, r_{\text{max}}\, f_W\, \beta_{cw}\, \delta_k$): The daughter wins competition against a WT cell but then suffers a lethal mutation. The WT cell is lost and a dead cell appears: $D \to D + 1$, $W \to W - 1$.
+
+    \item \textbf{WT replaces dead slot} ($W\, r_0\, p_D$): A wild-type cell divides (rate $r_0$) and fills a dead slot (probability $p_D$). Net: $W \to W + 1$, $D \to D - 1$. No Moran competition is needed against dead cells.
+
+    \item \textbf{WT clears cancer} ($W\, r_0\, f_k\, \beta_{wc}$): A wild-type cell targets a class-$k$ cancer cell (probability $f_k$) and wins the Moran competition with probability $\beta_{wc}$. Net: $C_k \to C_k - 1$, $W \to W + 1$.
+\end{enumerate}
+
+\subsection{Mean-Field Ordinary Differential Equations}
+
+By taking the thermodynamic limit ($N \to \infty$), the stochastic master equation converges to a deterministic system of ODEs. We derive the ODE for each compartment by summing all transition rates from Table~\ref{tab:transitions} that affect that compartment, converting from absolute counts to densities ($f_k = C_k/N$).
+
+\subsubsection*{Derivation of $df_k/dt$ for interior cancer classes ($1 < k < N_I$)}
+
+We collect every process that changes $C_k$, grouping by physical origin:
+
+\paragraph{Term 1 --- Mother leaves class $k$ (loss).} The mother cell leaves class $k$ if she either promotes to any higher class $k+j$ or dies. This happens with total probability $1 - \alpha_k$, where $\alpha_k = P_{k \to k}$ is the faithful cloning probability:
+\begin{equation}
+    \text{(mother loss)} = -r_{\text{max}}\, f_k\, \phi_k\, (1 - \alpha_k)
+\end{equation}
+
+\paragraph{Term 2 --- Daughter clonal expansion (gain).} The daughter is placed on an available target (with effective probability $\phi_k$) and faithfully clones into class $k$ (probability $\alpha_k$). This combines rows 3 and 6 of Table~\ref{tab:transitions}:
+\begin{equation}
+    \text{(daughter clone)} = +r_{\text{max}}\, f_k\, \phi_k\, \alpha_k
+\end{equation}
+where $\phi_k = p_D + f_W \beta_{cw} + \sum_j f_j \beta_{cc}$ captures all possible successful placements.
+
+\paragraph{Term 3 --- Cancer--cancer self-displacement (loss).} When a class-$k$ cell (call it cell~A) divides and its daughter targets \emph{another} class-$k$ cell (cell~B), cell~B is always removed. The daughter then undergoes mutation, leading to three possible outcomes:
+
+\begin{enumerate}
+    \item[\textbullet] Daughter clones faithfully ($\alpha_k$): cell~B is lost, but a new class-$k$ cell appears $\Rightarrow$ \textbf{net change = 0}.
+    \item[\textbullet] Daughter promotes ($P_{k \to k+j}$): cell~B is lost, daughter enters class $k+j$ $\Rightarrow$ \textbf{net change = $-1$ for class $k$}.
+    \item[\textbullet] Daughter dies ($\delta_k$): cell~B is lost, daughter dies $\Rightarrow$ \textbf{net change = $-1$ for class $k$}.
+\end{enumerate}
+
+In the ODE, this split is handled across two terms: Term~2 captures the gain from the first outcome (daughter clones, weighted by $\alpha_k$), while Term~3 captures the \emph{unconditional} loss of cell~B. Their net contribution is $r_{\text{max}} f_k^2 (\alpha_k - 1)/2 < 0$:
+\begin{equation}
+    \text{(self-displacement loss)} = -r_{\text{max}}\, \frac{f_k^2}{2}
+\end{equation}
+
+\paragraph{Term 4 --- Displacement by other cancer classes (loss).} Class-$k$ cells can be displaced by daughters from any other cancer class $j \neq k$:
+\begin{equation}
+    \text{(cross-class loss)} = -f_k \sum_{j \neq k} r_{\text{max}}\, f_j\, \beta_{cc}
+\end{equation}
+
+\paragraph{Term 5 --- Wild-type clearance (loss).} WT cells can divide and displace cancer class $k$ via Moran competition (row 9 of Table~\ref{tab:transitions}):
+\begin{equation}
+    \text{(WT clearance)} = -r_0\, f_W\, f_k\, \beta_{wc}
+\end{equation}
+
+\paragraph{Term 6 --- Promotion influx from all lower classes (gain).} Class $k$ receives cells from all classes $i < k$ through both mother and daughter promotions (transition probability $P_{i \to k}$). Since both occur only upon successful division:
+\begin{equation}
+    \text{(promotion influx)} = \sum_{i=1}^{k-1} 2\, r_{\text{max}}\, f_i\, \phi_i\, P_{i \to k}
+\end{equation}
+The factor $2$ reflects the dual source (mother + daughter) scaled by the division success probability $\phi_i$ and the multi-step promotion probability $P_{i \to k}$.
+
+\paragraph{Full interior equation.} Combining all six terms:
+\begin{equation}
+    \boxed{\frac{df_k}{dt} = r_{\text{max}} f_k \phi_k (2\alpha_k - 1)
+    - r_{\text{max}} \frac{f_k^2}{2}
+    - f_k \!\sum_{j \neq k}\! r_{\text{max}} f_j \beta_{cc}
+    - r_0 f_W f_k \beta_{wc}
+    + \sum_{i=1}^{k-1} 2\, r_{\text{max}} f_i \phi_i P_{i \to k}}
+\end{equation}
+
+\subsubsection*{Boundary class $k = 1$}
+
+The founding cancer class $k=1$ receives \textbf{no upstream mutational influx} (there is no class $k=0$). The equation is identical to the interior case but without Term~6:
+\begin{equation}
+    \frac{df_1}{dt} = r_{\text{max}} f_1 \phi_1 (2\alpha_1 - 1) - r_{\text{max}} \frac{f_1^2}{2} - f_1 \sum_{j \neq 1} r_{\text{max}} f_j \beta_{cc} - r_0 f_W f_1 \beta_{wc}
+\end{equation}
+
+\subsubsection*{Terminal class $k = N_I$}
+
+For the terminal mutational class, all instability genes are already mutated, so further promotion is impossible: $P_{N_I \to N_I+j} = 0$. The mother-loss term simplifies to $-r_{\text{max}} f_{N_I} \phi_{N_I} (1 - \alpha_{N_I})$ where $1 - \alpha_{N_I} = \delta_{N_I}$. The promotion influx from all classes $i < N_I$ is present:
+\begin{equation}
+    \frac{df_{N_I}}{dt} = r_{\text{max}} f_{N_I} \phi_{N_I} (2\alpha_{N_I} - 1) - r_{\text{max}} \frac{f_{N_I}^2}{2} - f_{N_I} \sum_{j \neq N_I} r_{\text{max}} f_j \beta_{cc} - r_0 f_W f_{N_I} \beta_{wc} + \sum_{i=1}^{N_I-1} 2\, r_{\text{max}} f_i \phi_i P_{i \to N_I}
+\end{equation}
+
+\subsubsection*{Wild-type compartment $f_W$}
+
+The WT population grows when WT cells divide and successfully place daughters on dead slots or displace cancer cells, and shrinks when cancer daughters displace WT cells:
+
+\begin{itemize}
+    \item \textbf{Gain:} WT divides onto dead slots (rate $r_0 f_W p_D$) or displaces cancer class $j$ (rate $r_0 f_W f_j \beta_{wc}$ per class).
+    \item \textbf{Loss:} Cancer class $k$ daughters displace WT cells (rate $r_{\text{max}} f_k f_W \beta_{cw}$ per class).
+\end{itemize}
+
+\begin{equation}
+    \frac{df_W}{dt} = \underbrace{r_0 f_W \left( p_D + \sum_{j=1}^{N_I} f_j \beta_{wc} \right)}_{\text{WT expansion (dead slots + cancer clearance)}} - \underbrace{f_W \sum_{k=1}^{N_I} r_{\text{max}} f_k \beta_{cw}}_{\text{displacement by cancer daughters}}
+\end{equation}
+
+\subsubsection*{Dead compartment $p_D$}
+
+Dead cells accumulate from lethal mutations (both mother dying in place and daughter dying after placement) and are consumed when any living cell fills a dead slot. Since DNA replication only happens during successful division, both mother and daughter can only die if division succeeds.
+
+\begin{itemize}
+    \item \textbf{Gain from mother death:} $r_{\text{max}} f_k \phi_k \delta_k$ per class (row 1).
+    \item \textbf{Gain from daughter death:} $r_{\text{max}} f_k \phi_k \delta_k$ per class (combining rows 5, 7, and cancer-cancer targets).
+    \item \textbf{Total death-related gain:} $2\, r_{\text{max}} f_k \phi_k \delta_k$ per class.
+    \item \textbf{Loss from filling:} Dead slots are consumed by cancer daughters ($r_{\text{max}} f_k p_D$, regardless of fate) and WT daughters ($r_0 f_W p_D$).
+\end{itemize}
+
+\begin{equation}
+    \frac{dp_D}{dt} = \underbrace{\sum_{k=1}^{N_I} r_{\text{max}} f_k \left[ 2 \phi_k \delta_k - p_D \right]}_{\text{cancer-driven death accumulation minus filling}} - \underbrace{r_0 f_W p_D}_{\text{WT filling dead slots}}
+\end{equation}
+
+\subsection{Stationary State Distributions and Stability Analysis}
+
+\subsubsection*{Linear stability of the healthy fixed point}
+
+We examine the linear stability of the healthy fixed point $(f_W^* = 1,\; p_D^* = 0,\; f_k^* = 0\;\forall k)$ against an infinitesimal perturbation $f_1 = \epsilon \ll 1$, with all other cancer classes still at zero.
+
+Starting from the $k=1$ boundary ODE and substituting the healthy fixed-point values, each term simplifies as follows:
+
+\begin{itemize}
+    \item \textbf{Mother loss \& daughter clone (combined):} $r_{\text{max}}\,\epsilon\,\phi_1\,(2\alpha_1 - 1)$. At the fixed point, $\phi_1 \to f_W \beta_{cw} = 1 \cdot \beta_{cw}$. This gives $r_{\text{max}}\,\beta_{cw}\,(2\alpha_1 - 1)\,\epsilon$.
+    \item \textbf{Self-displacement:} $-r_{\text{max}}\,\epsilon^2/2 \approx 0$ --- vanishes at $\mathcal{O}(\epsilon^2)$.
+    \item \textbf{Cross-class loss:} $-\epsilon \sum_{j\neq 1} r_{\text{max}} f_j \beta_{cc} = 0$.
+    \item \textbf{WT clearance:} $-r_0\,(1)\,\epsilon\,\beta_{wc} = -r_0\,\beta_{wc}\,\epsilon$.
+    \item \textbf{Promotion influx:} absent for $k=1$.
+\end{itemize}
+
+Collecting all $\mathcal{O}(\epsilon)$ terms:
+\begin{equation}
+    \frac{df_1}{dt} \approx \left[ r_{\text{max}}\,\beta_{cw}\,(2\alpha_1 - 1) - r_0\,\beta_{wc} \right] \epsilon
+\end{equation}
+
+Substituting $\beta_{cw} = r_{\text{max}}/(r_{\text{max}} + r_0)$ and $\beta_{wc} = r_0/(r_{\text{max}} + r_0)$:
+\begin{equation}
+    \frac{df_1}{dt} \approx \frac{r_{\text{max}}}{r_{\text{max}} + r_0} \left[ r_{\text{max}} (2\alpha_1 - 1) - r_0 \right] f_1
+\end{equation}
+
+\subsubsection*{Derivation of the growth foothold inequality}
+
+The tumor can invade when the bracketed growth rate is positive:
+\begin{equation}
+    r_{\text{max}} (2\alpha_1 - 1) - r_0 > 0
+\end{equation}
+
+This yields the \textbf{Unified Growth Foothold Inequality}:
+\begin{equation}
+    \boxed{r_{\text{max}} (2\alpha_1 - 1) > r_0}
+\end{equation}
+
+\textbf{Physical interpretation:} The left-hand side balances the cancer cell's maximum birth rate times its net clonal expansion factor $(2\alpha_1 - 1)$, which accounts for the survival and fidelity of both the mother and daughter during a division event. The right-hand side $r_0$ represents the WT homeostatic division pressure. When mutation rates are too high, the cancer's net growth rate drops below the wild-type's division rate, preventing the tumor from taking foothold.
+
+\subsubsection*{Expression in terms of the survival probability $P_{s,1}$}
+
+We can rewrite the inequality in terms of the survival probability $P_{s,1} = (1-\delta\mu)^{N_{HK}}$ and the probability of faithful cloning $\alpha_1 = P_{s,1} (1-\delta\mu)^{N_I-1}$:
+\begin{equation}
+    \boxed{r_{\text{max}} \Big[ 2 P_{s,1}\,(1-\delta\mu)^{N_I-1} - 1\Big] > r_0}
+\end{equation}
+
+This form makes the phase boundary explicit: the critical $\delta\mu^*$ is the value at which $P_{s,1}$ (which decreases with $\delta\mu$) drops low enough to violate the inequality.
+
+\subsubsection*{Stationary state: reduction to sequential quadratic equations}
+
+When the growth inequality is satisfied, the system reaches a tumor-dominated stationary state where $df_k/dt = 0$ for all $k$. Setting the interior ODE to zero and rearranging:
+
+\begin{equation}
+    0 = r_{\text{max}} f_k^* \phi_k^* (2\alpha_k - 1) - r_{\text{max}} \frac{(f_k^*)^2}{2} - f_k^* \sum_{j \neq k} r_{\text{max}} f_j^* \beta_{cc} - r_0 f_W^* f_k^* \beta_{wc} + \sum_{i=1}^{k-1} 2\, r_{\text{max}} f_i^* \phi_i^* P_{i \to k}
+\end{equation}
+
+We separate the $\phi_k^*$ sum into its self-interaction part ($f_k^* \beta_{cc}$) and the rest ($\phi_k^{(\neq k)*}$):
+\begin{equation}
+    \phi_k^* = \phi_k^{(\neq k)*} + f_k^*\,\beta_{cc}
+\end{equation}
+
+Substituting and grouping terms by powers of $f_k^*$:
+
+\begin{align}
+    0 &= r_{\text{max}} f_k^* \left[\phi_k^{(\neq k)*} + f_k^* \beta_{cc}\right] (2\alpha_k - 1) - r_{\text{max}} \frac{(f_k^*)^2}{2} \nonumber \\
+      &\quad - f_k^* \sum_{j \neq k} r_{\text{max}} f_j^* \beta_{cc} - r_0 f_W^* f_k^* \beta_{wc} + \sum_{i=1}^{k-1} 2\, r_{\text{max}} f_i^* \phi_i^* P_{i \to k} \nonumber \\
+    0 &= r_{\text{max}} f_k^* \phi_k^{(\neq k)*} (2\alpha_k - 1) + r_{\text{max}} (f_k^*)^2 \beta_{cc} (2\alpha_k - 1) - r_{\text{max}} \frac{(f_k^*)^2}{2} \nonumber \\
+      &\quad - f_k^* \sum_{j \neq k} r_{\text{max}} f_j^* \beta_{cc} - r_0 f_W^* f_k^* \beta_{wc} + \sum_{i=1}^{k-1} 2\, r_{\text{max}} f_i^* \phi_i^* P_{i \to k}
+\end{align}
+
+Since $\beta_{cc} = 1/2$, the quadratic terms combine as:
+\begin{equation}
+    -r_{\text{max}} (1 - \alpha_k) (f_k^*)^2
+\end{equation}
+
+Collecting terms, this takes the standard quadratic form:
+
+\begin{equation}
+    A_k\,(f_k^*)^2 - B_k\,f_k^* - Q_{k-1}^* = 0
+\end{equation}
+
+where the coefficients are:
+
+\paragraph{$A_k$ --- Quadratic (self-interaction) coefficient:}
+\begin{equation}
+    A_k = r_{\text{max}} (1 - \alpha_k)
+\end{equation}
+This arises from the combination of self-displacement ($\beta_{cc} = 1/2$) and the mutation outcomes.
+
+\paragraph{$B_k$ --- Linear (net growth) coefficient:}
+\begin{equation}
+    B_k = r_{\text{max}}\,\phi_k^{(\neq k)*}\,(2\alpha_k - 1) - \sum_{j \neq k} r_{\text{max}} f_j^*\,\beta_{cc} - r_0\,f_W^*\,\beta_{wc}
+\end{equation}
+This coefficient represents the \emph{net per-capita growth rate} of class $k$ at the stationary state, excluding self-interaction and upstream promotion.
+
+\paragraph{$Q_{k-1}^*$ --- Upstream promotion source:}
+\begin{equation}
+    Q_{k-1}^* = \sum_{i=1}^{k-1} 2\, r_{\text{max}}\,f_i^*\,\phi_i^*\,P_{i \to k}
+\end{equation}
+This is the rate at which cells flow into class $k$ from all lower classes $i < k$ (dual-sourced: mother promoting + daughter promoting). For $k=1$, $Q_0^* = 0$.
+
+\subsubsection*{Solution via the quadratic formula}
+
+The quadratic $A_k x^2 - B_k x - Q_{k-1}^* = 0$ (with $x = f_k^*$) has the physical (positive) root:
+\begin{equation}
+    \boxed{f_k^* = \frac{B_k + \sqrt{B_k^2 + 4\,A_k\,Q_{k-1}^*}}{2\,A_k}}
+\end{equation}
+
+The positive sign before the square root is chosen because $f_k^* \geq 0$ is required. The system is solved \emph{sequentially}: $f_1^*$ is determined first (with $Q_0^* = 0$), then $f_2^*$ using $f_1^*$, and so on up to $f_{N_I}^*$.
+
+\end{document}

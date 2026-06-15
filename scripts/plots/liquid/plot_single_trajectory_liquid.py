@@ -28,7 +28,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.interpolate import make_smoothing_spline
 from matplotlib.ticker import MaxNLocator, FuncFormatter
 
-from src.analysis.loaders import load_sim, load_all_stability_results, load_adaptive_stability_results_liquid
+from src.analysis.loaders import load_sim, load_stability_results_solid, load_stability_results_liquid
 from src.analysis.stats import dyn_state
 
 # ---------------------------------------------------------------------------
@@ -36,10 +36,10 @@ from src.analysis.stats import dyn_state
 # ---------------------------------------------------------------------------
 R0 = 0.15        # baseline reproduction rate
 N_HK = 10        # number of HK genes
-LIQUID_DIR = "data/simulations_liquid/ensemble_results"
+LIQUID_DIR = "data/simulations_liquid/ensemble_results_D"
 
 # Load solid stability boundary
-merged_solid = load_all_stability_results()
+merged_solid = load_stability_results_solid()
 df_solid = merged_solid
 # Group/groupby full solid data to fit spline safely
 grp_s = df_solid.groupby("rmax_norm")["stable_dmu"]
@@ -49,7 +49,7 @@ solid_med = dyn_state(0.0, 1.0, solid_med_mu, 0.5, N_HK)[1]
 spl_s = make_smoothing_spline(r_unique_s, solid_med, lam=0.0001)
 
 # Load liquid stability boundary
-dfl = load_adaptive_stability_results_liquid()
+dfl = load_stability_results_liquid()
 if dfl.empty:
     print("Liquid stability sweep file not found or empty.")
     sys.exit(1)

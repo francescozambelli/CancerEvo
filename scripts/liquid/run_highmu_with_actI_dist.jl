@@ -8,12 +8,12 @@
 #   julia scripts/liquid/run_highmu_with_actI_dist.jl [MU_LO] [MU_HI] [outfile]
 #
 # Defaults:
-#   MU_LO   = 0.083
-#   MU_HI   = 0.095
+#   MU_LO   = 0.024
+#   MU_HI   = 0.028
 #   outfile = data/simulations_liquid/highmu_actI_dist/sim_highmu.npz
 #
-# Example (mu ~ 0.05):
-#   julia scripts/liquid/run_highmu_with_actI_dist.jl 0.048 0.052 sim_mu050.npz
+# Example (mu ~ 0.012):
+#   julia scripts/liquid/run_highmu_with_actI_dist.jl 0.024 0.028 sim_mu012.npz
 
 include("../../src/utils_liquid.jl")
 include("../../src/simulation_liquid.jl")
@@ -24,8 +24,8 @@ using Random, NPZ, Statistics
 # ---------------------------------------------------------------------------
 # Parse CLI arguments
 # ---------------------------------------------------------------------------
-MU_LO     = length(ARGS) >= 1 ? parse(Float64, ARGS[1]) : 0.083
-MU_HI     = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 0.095
+MU_LO     = length(ARGS) >= 1 ? parse(Float64, ARGS[1]) : 0.045
+MU_HI     = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 0.048
 OUT_NAME  = length(ARGS) >= 3 ? ARGS[3] : "sim_highmu.npz"
 const TAIL_FRAC = 0.70
 
