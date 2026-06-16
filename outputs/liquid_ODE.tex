@@ -185,49 +185,7 @@ By taking the thermodynamic limit ($N \to \infty$), the stochastic master equati
 
 \subsubsection*{Derivation of $df_k/dt$ for interior cancer classes ($1 < k < N_I$)}
 
-We collect every process that changes $C_k$, grouping by physical origin:
-
-\paragraph{Term 1 --- Mother leaves class $k$ (loss).} The mother cell leaves class $k$ if she either promotes to any higher class $k+j$ or dies. This happens with total probability $1 - \alpha_k$, where $\alpha_k = P_{k \to k}$ is the faithful cloning probability:
-\begin{equation}
-    \text{(mother loss)} = -r_{\text{max}}\, f_k\, \phi_k\, (1 - \alpha_k)
-\end{equation}
-
-\paragraph{Term 2 --- Daughter clonal expansion (gain).} The daughter is placed on an available target (with effective probability $\phi_k$) and faithfully clones into class $k$ (probability $\alpha_k$). This combines rows 3 and 6 of Table~\ref{tab:transitions}:
-\begin{equation}
-    \text{(daughter clone)} = +r_{\text{max}}\, f_k\, \phi_k\, \alpha_k
-\end{equation}
-where $\phi_k = p_D + f_W \beta_{cw} + \sum_j f_j \beta_{cc}$ captures all possible successful placements.
-
-\paragraph{Term 3 --- Cancer--cancer self-displacement (loss).} When a class-$k$ cell (call it cell~A) divides and its daughter targets \emph{another} class-$k$ cell (cell~B), cell~B is always removed. The daughter then undergoes mutation, leading to three possible outcomes:
-
-\begin{enumerate}
-    \item[\textbullet] Daughter clones faithfully ($\alpha_k$): cell~B is lost, but a new class-$k$ cell appears $\Rightarrow$ \textbf{net change = 0}.
-    \item[\textbullet] Daughter promotes ($P_{k \to k+j}$): cell~B is lost, daughter enters class $k+j$ $\Rightarrow$ \textbf{net change = $-1$ for class $k$}.
-    \item[\textbullet] Daughter dies ($\delta_k$): cell~B is lost, daughter dies $\Rightarrow$ \textbf{net change = $-1$ for class $k$}.
-\end{enumerate}
-
-In the ODE, this split is handled across two terms: Term~2 captures the gain from the first outcome (daughter clones, weighted by $\alpha_k$), while Term~3 captures the \emph{unconditional} loss of cell~B. Their net contribution is $r_{\text{max}} f_k^2 (\alpha_k - 1)/2 < 0$:
-\begin{equation}
-    \text{(self-displacement loss)} = -r_{\text{max}}\, \frac{f_k^2}{2}
-\end{equation}
-
-\paragraph{Term 4 --- Displacement by other cancer classes (loss).} Class-$k$ cells can be displaced by daughters from any other cancer class $j \neq k$:
-\begin{equation}
-    \text{(cross-class loss)} = -f_k \sum_{j \neq k} r_{\text{max}}\, f_j\, \beta_{cc}
-\end{equation}
-
-\paragraph{Term 5 --- Wild-type clearance (loss).} WT cells can divide and displace cancer class $k$ via Moran competition (row 9 of Table~\ref{tab:transitions}):
-\begin{equation}
-    \text{(WT clearance)} = -r_0\, f_W\, f_k\, \beta_{wc}
-\end{equation}
-
-\paragraph{Term 6 --- Promotion influx from all lower classes (gain).} Class $k$ receives cells from all classes $i < k$ through both mother and daughter promotions (transition probability $P_{i \to k}$). Since both occur only upon successful division:
-\begin{equation}
-    \text{(promotion influx)} = \sum_{i=1}^{k-1} 2\, r_{\text{max}}\, f_i\, \phi_i\, P_{i \to k}
-\end{equation}
-The factor $2$ reflects the dual source (mother + daughter) scaled by the division success probability $\phi_i$ and the multi-step promotion probability $P_{i \to k}$.
-
-\paragraph{Full interior equation.} Combining all six terms:
+For an interior cancer class $k$ ($1 < k < N_I$), the rate of change of the cell fraction $f_k$ is determined by five primary biological processes: (i) net clonal growth and survival ($r_{\text{max}} f_k \phi_k (2\alpha_k - 1)$), which balances faithful daughter cloning against mother cell loss via death or promotion; (ii) self-displacement loss within the same class ($r_{\text{max}} f_k^2 / 2$); (iii) cross-class loss due to displacement by other cancer classes ($f_k \sum_{j \neq k} r_{\text{max}} f_j \beta_{cc}$); (iv) wild-type clearance loss ($r_0 f_W f_k \beta_{wc}$); and (v) promotion influx from all upstream classes $i < k$ ($\sum_{i=1}^{k-1} 2\, r_{\text{max}} f_i \phi_i P_{i \to k}$). Combining these contributions yields:
 \begin{equation}
     \boxed{\frac{df_k}{dt} = r_{\text{max}} f_k \phi_k (2\alpha_k - 1)
     - r_{\text{max}} \frac{f_k^2}{2}
@@ -238,7 +196,7 @@ The factor $2$ reflects the dual source (mother + daughter) scaled by the divisi
 
 \subsubsection*{Boundary class $k = 1$}
 
-The founding cancer class $k=1$ receives \textbf{no upstream mutational influx} (there is no class $k=0$). The equation is identical to the interior case but without Term~6:
+The founding cancer class $k=1$ receives \textbf{no upstream mutational influx} (there is no class $k=0$). The equation is identical to the interior case but without the promotion influx:
 \begin{equation}
     \frac{df_1}{dt} = r_{\text{max}} f_1 \phi_1 (2\alpha_1 - 1) - r_{\text{max}} \frac{f_1^2}{2} - f_1 \sum_{j \neq 1} r_{\text{max}} f_j \beta_{cc} - r_0 f_W f_1 \beta_{wc}
 \end{equation}

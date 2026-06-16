@@ -1,0 +1,152 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{threeparttable}
+\usepackage{microtype}
+
+\geometry{margin=25mm}
+
+\title{Supplementary Materials: Simulation Parameter Tables \\ \large CancerEvo: Evolutionary Dynamics of Solid and Liquid Tumors}
+\author{Theoretical Biology \& Mathematical Oncology Framework}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+This supplementary document summarizes the key parameter values and configurations used in the CancerEvo simulation framework. The model describes the evolutionary dynamics of cancer clones under various spatial and ecological constraints, comparing a local, neighborhood-restricted \textbf{Solid Tumor} model with a global, well-mixed \textbf{Liquid Tumor} model. 
+
+Section~\ref{sec:baseline} details the shared genomic architecture and baseline rates. Section~\ref{sec:sim_runs} provides the parameters for the ensemble simulations (including diploid, aneuploid, and polyploid missegregation configurations), stability sweeps, parameter phase diagrams, and therapeutic interventions.
+
+\clearpage
+
+\section{Genomic Architecture and Baseline Rates}
+\label{sec:baseline}
+
+Table~\ref{tab:baseline_params} outlines the shared genomic architecture and rate parameters that are identical across both the solid and liquid tumor models to ensure direct comparability.
+
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{Shared Genomic Architecture and Baseline Simulation Rates}
+\label{tab:baseline_params}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Default Value} & \textbf{Biological / Model Description} \\
+\midrule
+\multicolumn{4}{l}{\textit{Genomic Architecture}} \\
+Ploidy Copy Number & $N_{\text{CHR}}$ & 2\tnote{a} & Initial number of chromosome copies per cell \\
+Instability Genes & $N_I$ & 10 & Loci driving mutation rate increments \\
+Oncogenes & $N_O$ & 10 & Loci driving division rate increments \\
+Suppressor Genes & $N_S$ & 10 & Loci driving division rate increments \\
+Missegregation Genes & $N_M$ & 5 & Loci driving chromosome missegregation \\
+Housekeeping Genes & $N_{HK}$ & 10 & Essential loci (homozygous mutation is lethal) \\
+Total Loci per Chromosome & $N_{\text{genes}}$ & 45 & Sum of all gene classes ($N_I + N_O + N_S + N_M + N_{HK}$) \\
+Initial Cancer Seed State & -- & -- & 1 mutated $I$ gene (bit 0), 1 mutated $O$ gene (bit 10)\tnote{b} \\
+\midrule
+\multicolumn{4}{l}{\textit{Baseline Rates}} \\
+Baseline Division Rate & $r_0$ & 0.15 & Birth rate of healthy wild-type cells ($r_{\text{WT}} = r_0$) \\
+Driver Rate Increment & $dr$ & 0.008 & Birth rate increase per mutated $O$ or $S$ allele \\
+Maximum Division Rate & $r_{\max}$ & 0.30 & Upper cap on division rate ($2 \times r_0$) \\
+Baseline Mutation Rate & $\mu_0$ & 0.0 & Background mutation rate per locus per division \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item[a] Set to $N_{\text{CHR}} = 1$ (haploid) specifically during the stability sweeps.
+\item[b] Represented as chromosome bitmask where all other 43 loci start unmutated.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+\clearpage
+
+\section{Simulation Configurations and Sweep Parameters}
+\label{sec:sim_runs}
+
+Table~\ref{tab:simulation_configs} details the distinct parameter sets and tissue environments used for the four primary studies in both the Solid and Liquid cases: Ensemble Simulations, Stability Sweeps, Parameter Phase Diagrams, and Therapeutic Interventions.
+
+\begin{table}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{threeparttable}
+\caption{Systematic Overview of Simulation Configuration Parameters}
+\label{tab:simulation_configs}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Configuration Variable} & \textbf{Ensemble Simulations} & \textbf{Stability Sweeps} & \textbf{Parameter Phase Diagrams} & \textbf{Therapeutic Interventions} \\
+\midrule
+\multicolumn{5}{l}{\textbf{Solid Tumor Model} (Local Moran-like competition in 2D Moore neighborhood)} \\
+Lattice Side ($L$) & 200 & 200 & 80 & 200 \\
+Total Cells ($N = L^2$) & 40,000 & 40,000 & 6,400 & 40,000 \\
+Max Simulation Steps ($n_{\text{steps}}$) & 2500 & 500 & 1000 & Up to 3000\tnote{a} \\
+Ploidy ($N_{\text{CHR}}$) & 2 & 1 (Haploid) & 2 & 2 \\
+Seeding Strategy & Circular seed ($R = 0.005 L$) & Circular seed ($R \approx 0.252 L$) & Circular seed ($R = 0.05 L$) & Circular seed ($R = 0.05 L$) \\
+Initial Tumor Fraction ($f_C(0)$) & $\sim 0.01\%$ ($\sim 5$ cells) & $20.0\%$ ($\sim 8,000$ cells) & $\sim 0.8\%$ ($\sim 49$ cells) & $\sim 0.8\%$ ($\sim 314$ cells) \\
+Mutation Rate Increment ($d\mu$) & $0.012$ & Swept [$10^{-6}$, $0.02$]\tnote{b} & Swept [$0.0001$, $0.03$] & $0.012$ ($0.024$ in D) \\
+Missegregation Rate ($dm$) & $0.0$ (D) / $0.01$ (A, P) & $0.0$ & $0.0$ & $0.0$ \\
+Missegregation Type & Whole (D, P) / Chunk (A) & Whole & Whole & Whole \\
+Replicate Count & 500 per ploidy & 1 per $r_{\max}$ step & 50 per grid point ($20 \times 20$) & 1 per intervention \\
+Termination Conditions & $f_{\text{WT}} < 0.5$ or $f_C = 0$ & $f_{\text{WT}} < 0.76$ or $f_{\text{WT}} > 0.84$ & $f_{\text{WT}} < 0.5$ or $f_C = 0$ & $f_{\text{WT}} < 0.5$ or $f_C = 0$ \\
+\midrule
+\multicolumn{5}{l}{\textbf{Liquid Tumor Model} (Global Moran-like competition with random placement)} \\
+Lattice Side ($L$) & 200 & 200 & 80 & --\tnote{c} \\
+Total Cells ($N = L^2$) & 40,000 & 40,000 & 6,400 & -- \\
+Max Simulation Steps ($n_{\text{steps}}$) & 2500 & 3000 & 3000 & -- \\
+Ploidy ($N_{\text{CHR}}$) & 2 & 1 (Haploid) & 2 & -- \\
+Seeding Strategy & Scattered random sites & Scattered random sites & Scattered random sites & -- \\
+Initial Seed Count ($n_{\text{seed}}$) & 10 cells & 10 cells & 50 cells & -- \\
+Mutation Rate Increment ($d\mu$) & $0.023$ (D) / $0.045$ (A, P) & Swept [$10^{-6}$, $0.04$]\tnote{b} & Swept [$0.0001$, $0.03$] & -- \\
+Missegregation Rate ($dm$) & $0.0$ (D) / $0.01$ (A, P) & $0.0$ & $0.0$ & -- \\
+Missegregation Type & Whole (D, P) / Chunk (A) & Whole & Whole & -- \\
+Replicate Count & 500 per ploidy & 1 per $r_{\max}$ step & 50 per grid point ($20 \times 20$) & -- \\
+Termination Conditions & $f_{\text{WT}} < 0.5$ or $f_C = 0$ & $f_C = 1.0$ or $f_C = 0.0$ & $f_{\text{WT}} < 0.5$ or $f_C = 0$ & -- \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item[a] Pre-intervention phase runs up to 2000 steps until the tumor density $f_C \ge 0.30$ trigger is met; the post-intervention phase runs for exactly 1000 steps.
+\item[b] Refined dynamically using a bisection algorithm with 14 iterations for each division rate step.
+\item[c] Therapeutic interventions are implemented and analyzed exclusively for the solid tumor model.
+\item \textbf{Note on Ensemble Labels}: \textbf{D} = Diploid ($N_{\text{CHR}}=2, dm=0.0$), \textbf{A} = Aneuploid ($N_{\text{CHR}}=2, dm=0.01$, chunk-based missegregation), \textbf{P} = Polyploid ($N_{\text{CHR}}=2, dm=0.01$, whole-chromosome missegregation).
+\end{tablenotes}
+\end{threeparttable}
+}%
+\end{table}
+
+\clearpage
+
+\section{Therapeutic Intervention Mechanisms (Solid Tumor)}
+\label{sec:interventions}
+
+Table~\ref{tab:interventions} describes the targeting rules, execution parameters, and physiological analogues of the four distinct therapeutic interventions simulated in the solid tumor model.
+
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{Mechanistic Parameters of simulated Therapeutic Interventions}
+\label{tab:interventions}
+\begin{tabular}{cp{4.5cm}p{3cm}p{5.5cm}}
+\toprule
+\textbf{Type} & \textbf{Biological Concept} & \textbf{Model Parameter} & \textbf{Clearance / Mutation Update Rule} \\
+\midrule
+\textbf{A} & Fitness-selective targeted therapy & $r_i$ (cell division rate) & Active cancer cells are cleared (reset to WT) with cell-specific probability $P(\text{clear}) = 1 - r_0/r_i$. \\
+\textbf{B} & Driver-selective early clone therapy & $i_{\lim} \le 1$ ($\mu \le d\mu$) & Cells belonging to mutation class 0 or 1 are cleared with probability $p_d = 1.0$. \\
+\textbf{C} & Instability-selective late clone therapy & $i_{\lim} \ge 3$ ($\mu \ge 3 d\mu$) & Cells belonging to mutation class $\ge 3$ are cleared with probability $p_d = 1.0$. \\
+\textbf{D} & Mutagenic load therapy & new $d\mu = 0.024$ & The mutation rate increment parameter $d\mu$ is doubled from $0.012$ to $0.024$, immediately doubling the mutation rates of all living cells. \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item \textbf{Common Parameters}: Interventions are triggered exactly when the active cancer density $f_C \ge 0.30$ (30\% of the tissue area). Displaced or cleared cancer cells are reset to the healthy wild-type state ($r_{\text{cell}} = r_0$, $\mu_{\text{cell}} = \mu_0$, $N_{\text{CHR}} = 2$, chromosomes unmutated).
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+\end{document}
