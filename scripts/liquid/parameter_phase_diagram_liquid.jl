@@ -58,14 +58,14 @@ function run_parameter_sweep(n_grid=20, reps=50)
     output_file = joinpath(output_dir, "parameter_phase_diagram_results_liquid.csv")
 
     # Define the parameter sweep ranges (comparable to solid-tumor sweep)
-    dmu_range = collect(range(0.1e-3, 4.0e-2, length=n_grid))
+    dmu_range = collect(range(0.1e-3, 3.0e-2, length=n_grid))
     dr_range = collect(range(0.0, 3.0e-2, length=n_grid))
 
     # Setup optimized local parameters to override the default ones
     L_sweep = 80
     n_steps_sweep = 3000
-    n_seed_sweep = 10 # Seeding 10 cells at random global positions
-    limit=0.9
+    n_seed_sweep = 50 # Seeding 10 cells at random global positions
+    limit=0.5
         
     # Flatten the grid tasks
     tasks = []
