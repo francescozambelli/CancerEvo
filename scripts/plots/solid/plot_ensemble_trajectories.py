@@ -95,11 +95,11 @@ for label in ["Diploid", "Aneuploid", "Polyploid"]:
 # ---------------------------------------------------------------------------
 # Plot
 # ---------------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(7, 6))
+fig, ax = plt.subplots(2,1,figsize=(9, 12))
 
 # Create inset axes in the lower right
 # Position: [x0, y0, width, height] in axes coordinates
-ax_inset = ax.inset_axes([0.6, 0.1, 0.48, 0.29])
+#ax_inset = ax.inset_axes([0.6, 0.1, 0.48, 0.29])
 
 interv = np.linspace(0, DENSITY_MAX, N_BINS)
 
@@ -125,39 +125,43 @@ for label in ["Diploid", "Polyploid", "Aneuploid"]:
     means = np.concatenate([[0], means])
     stds  = np.concatenate([[0], stds])
     if label=="Polyploid":
-        ax.plot(means[:-100], interv[:-100], color=COLORS[label], lw=3, label=label)
-        ax.fill_betweenx(interv[:-100], means[:-100] - stds[:-100], means[:-100] + stds[:-100],
+        ax[0].plot(means[:-100], interv[:-100], color=COLORS[label], lw=3, label=label)
+        ax[0].fill_betweenx(interv[:-100], means[:-100] - stds[:-100], means[:-100] + stds[:-100],
                         color=COLORS[label], alpha=0.3)
     else:
-        ax.plot(means, interv, color=COLORS[label], lw=3, label=label)
-        ax.fill_betweenx(interv, means - stds, means + stds,
+        ax[0].plot(means, interv, color=COLORS[label], lw=3, label=label)
+        ax[0].fill_betweenx(interv, means - stds, means + stds,
                         color=COLORS[label], alpha=0.3)
     
     # 2. Plot growth speed on inset axis (linear scale)
     gs_list = [get_smooth_slope(td[:d_lenght[label]], SKIP_SMOOTH, WIN_AVG) for td in density_trajs[label]]
     
-    plot_stats_elementwise(ax_inset, gs_list, color=COLORS[label], lw=1.5, alpha=0.20)
+    plot_stats_elementwise(ax[1], gs_list, color=COLORS[label], lw=3)
     
 # Format main axis
-ax.set_xlim(left=0, right=3500)
-ax.set_ylim(bottom=0, top=DENSITY_MAX)
-ax.set_xlabel("Time", fontsize=14)
-ax.set_ylabel("Tumor cell density", fontsize=14)
+fontsize_label = 20
+fontsize_ticks = 18
+fontsize_legend = 18
+
+ax[0].set_xlim(left=0, right=2500)
+ax[0].set_ylim(bottom=0, top=DENSITY_MAX)
+ax[0].set_xlabel("Time", fontsize=fontsize_label)
+ax[0].set_ylabel("Tumor cell density", fontsize=fontsize_label)
+ax[0].tick_params(axis='both', which='major', labelsize=fontsize_ticks) 
 #ax.set_title("Tumor Density Trajectories", fontsize=14, fontweight="bold")
-ax.legend(fontsize=11, loc="upper left")
-ax.grid(False)
+ax[0].legend(fontsize=fontsize_legend, loc="upper left")
 
 # Format inset axis (linear)
-ax_inset.set_xlim(left=0, right=1500)
-ax_inset.set_ylim(bottom=0)
-ax_inset.set_xlabel("Time", fontsize=8)
-ax_inset.set_ylabel(r"Growth speed $d\rho/dt$", fontsize=8)
-ax_inset.tick_params(axis='both', which='both', labelsize=8)
-ax_inset.grid(False)
-ax_inset.set_axisbelow(True)
+ax[1].set_xlim(left=0, right=1500)
+ax[1].set_ylim(bottom=0)
+ax[1].set_xlabel("Time", fontsize=fontsize_label)
+ax[1].set_ylabel(r"Growth speed $d\rho/dt$", fontsize=fontsize_label)
+ax[1].tick_params(axis='both', which='both', labelsize=fontsize_ticks)
+ax[1].grid(False)
+ax[1].set_axisbelow(True)
 #put y ticks to scientific notation
-ax_inset.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
-ax_inset.yaxis.get_offset_text().set_fontsize(8)
+ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+ax[1].yaxis.get_offset_text().set_fontsize(18)
 
 plt.tight_layout()
 
