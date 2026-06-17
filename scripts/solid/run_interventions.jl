@@ -1,4 +1,19 @@
-# scripts/solid/run_interventions.jl
+# ==============================================================================
+# run_interventions.jl
+# ==============================================================================
+# Description:
+#   Simulates the solid-tumor model under four therapeutic interventions:
+#     - A: Proportional removal (proportional to division rate r)
+#     - B: Selective clearance of low-instability clones
+#     - C: Selective clearance of high-instability clones
+#     - D: Induced instability burden (doubling of mutation rates)
+#   The intervention triggers when tumor density reaches 30%. Outputs are
+#   saved in NPZ format.
+#
+# Usage:
+#   julia --project=. scripts/solid/run_interventions.jl
+# ==============================================================================
+
 
 include("../../src/utils_solid.jl")
 include("../../src/simulation_solid.jl")

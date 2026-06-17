@@ -1,4 +1,20 @@
-# scripts/liquid/stability_phase_diagram_liquid.jl
+# ==============================================================================
+# stability_sweep_liquid.jl
+# ==============================================================================
+# Description:
+#   Runs a 2D parameter grid sweep over dmu (mutation rate step size) and
+#   rmax_norm (normalized division rate rmax/r0) for the liquid tumor model.
+#   Uses terminal class initialization and N_CHR_STAB = 1 to map the transition
+#   boundary (tumor collapse vs expansion) and saves results in CSV format.
+#
+# Usage:
+#   julia --project=. scripts/liquid/stability_sweep_liquid.jl [--n-grid value] [--reps value]
+#
+# Arguments:
+#   --n-grid value - Size of the 2D grid parameter space (default: 20)
+#   --reps value   - Number of replicate simulations per grid point (default: 25)
+# ==============================================================================
+
 
 include("../../src/utils_liquid.jl")
 include("../../src/simulation_liquid.jl")

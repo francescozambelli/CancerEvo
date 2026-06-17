@@ -1,4 +1,21 @@
-# scripts/ensemble_run.jl
+# ==============================================================================
+# ensemble_run_solid.jl
+# ==============================================================================
+# Description:
+#   Runs multiple independent solid-tumor simulations in parallel using Julia's
+#   multi-threading support. Saves individual trajectories as .npz files and
+#   generates a summary CSV.
+#
+# Usage:
+#   julia --project=. -t <num_threads> scripts/solid/ensemble_run_solid.jl [num_sims] [misseg_type] [suffix] [--dm value]
+#
+# Arguments:
+#   num_sims     - Number of simulations to run (default: 20)
+#   misseg_type  - Missegregation mechanism: "whole" or "chunk" (default: "whole")
+#   suffix       - Suffix for output directory name (default: "")
+#   --dm value   - Missegregation rate value (default: 0.0)
+# ==============================================================================
+
 
 include("../../src/utils_solid.jl")
 include("../../src/simulation_solid.jl")

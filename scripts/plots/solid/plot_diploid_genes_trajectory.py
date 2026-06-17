@@ -20,7 +20,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import numpy as np
 import matplotlib.pyplot as plt
 from src.analysis.loaders import load_sim
-from calculate_asymptotic_theory import compute_asymptotic_limit
+from src.analysis.calculate_asymptotic_theory import compute_asymptotic_limit
 
 # 1. Configuration & Parameters
 N_I = 10

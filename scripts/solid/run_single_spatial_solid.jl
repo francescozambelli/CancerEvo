@@ -1,8 +1,19 @@
-# scripts/run_single_spatial.jl
+# ==============================================================================
+# run_single_spatial_solid.jl
+# ==============================================================================
+# Description:
+#   Runs single-trajectory spatial simulations of the solid tumor model.
+#   Uses fixed seeds (9 for Health, 1 for Tumor) to ensure reproducibility.
+#   Captures spatial snapshots at different time points and saves both
+#   aggregated results and snapshot matrices in NPZ format.
 #
-# Run single-trajectory spatial simulations of the solid tumor model.
-# Uses fixed seeds (9 for Health, 1 for Tumor) to ensure reproducibility.
-# Saves snapshots and aggregate results to data/simulations/spatial_run/
+# Usage:
+#   julia --project=. scripts/solid/run_single_spatial_solid.jl [n_snapshots]
+#
+# Arguments:
+#   n_snapshots - Number of spatial snapshots to save (default: 12)
+# ==============================================================================
+
 
 include("../../src/utils_solid.jl")
 include("../../src/simulation_solid_spatial.jl")

@@ -1,4 +1,15 @@
-# scripts/simulation.jl
+# ==============================================================================
+# simulation_solid.jl
+# ==============================================================================
+# Description:
+#   Runs a single spatial simulation of the solid tumor model on a 2D lattice.
+#   Initializes the tissue, applies the initial cancer seed perturbation,
+#   runs the cellular automaton time loop, and saves the results in NPZ format.
+#
+# Usage:
+#   julia --project=. scripts/solid/simulation_solid.jl
+# ==============================================================================
+
 
 include("../../src/utils_solid.jl")
 include("../../src/simulation_solid.jl")

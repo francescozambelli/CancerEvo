@@ -32,7 +32,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.ticker import MaxNLocator
 
-from calculate_asymptotic_theory import compute_asymptotic_limit
+from src.analysis.calculate_asymptotic_theory import compute_asymptotic_limit
 
 # ---------------------------------------------------------------------------
 # CLI args: [npz_path] [out_suffix] [mu_label] [mu_lo] [mu_hi] [dmu] [N_H] [remove_lower]

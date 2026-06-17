@@ -1,4 +1,20 @@
-# scripts/parameter_phase_diagram.jl
+# ==============================================================================
+# parameter_phase_diagram_solid.jl
+# ==============================================================================
+# Description:
+#   Runs a 2D parameter grid sweep over dmu (mutation rate step size) and
+#   dr (division rate step size) for the solid tumor model. Computes the
+#   fraction of simulations ending with a tumor and outputs the aggregated
+#   results in CSV format.
+#
+# Usage:
+#   julia --project=. scripts/solid/parameter_phase_diagram_solid.jl [--n-grid value] [--reps value]
+#
+# Arguments:
+#   --n-grid value - Size of the 2D grid parameter space (default: 20)
+#   --reps value   - Number of replicate simulations per grid point (default: 50)
+# ==============================================================================
+
 
 include("../../src/utils_solid.jl")
 include("../../src/simulation_solid.jl")
