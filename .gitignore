@@ -1,17 +1,22 @@
+# Environment
+.venv/
 .ipynb_checkpoints
 .DS_Store
 .vscode/
 .antigravitycli
 
+# Folders to keep only in local
 brain/
 data/
 outputs/text/
+outputs/figures/
 gene_evolution_analysis/
-images/
+notebooks/
 gif/
-/outputs/figures/
+
 scratch/
 
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
