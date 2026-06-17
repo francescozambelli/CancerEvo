@@ -24,9 +24,9 @@
 #   julia scripts/stability_sweep.jl --dry-run    # print plan, no sims
 #   julia scripts/stability_sweep.jl --n-rmax 5   # quick smoke test
 
-include("../../src/utils.jl")
-include("../../src/simulation.jl")
-include("parameters.jl")
+include("../../src/utils_solid.jl")
+include("../../src/simulation_solid.jl")
+include("parameters_solid.jl")
 
 using Random, Statistics, Base.Threads, NPZ, ProgressMeter, CSV, DataFrames
 

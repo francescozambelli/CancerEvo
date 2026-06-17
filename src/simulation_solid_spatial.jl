@@ -4,7 +4,7 @@
 # Identical dynamics to simulation_optimized but also saves full L×L lattice
 # arrays (state, mu, r) at n_snapshots equally-spaced time points.
 
-include("utils.jl")
+include("utils_solid.jl")
 
 # ---------------------------------------------------------------------------
 # Extended result struct that carries spatial snapshots

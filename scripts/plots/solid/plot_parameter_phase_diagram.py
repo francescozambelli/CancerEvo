@@ -36,14 +36,14 @@ fontsize_legend = 20
 
 def plot_heatmap():
     project_root = Path(__file__).resolve().parents[3]
-    csv_path = project_root / "data" / "parameter_phase_diagram_results.csv"
+    csv_path = project_root / "outputs" / "results" / "parameter_phase_diagram_results_solid.csv"
     output_dir = project_root / "outputs" / "figures" / "solid"
     output_dir.mkdir(parents=True, exist_ok=True)
     root_dir = output_dir.parent
-    output_path_png = output_dir / "parameter_phase_diagram.png"
-    output_path_svg = output_dir / "parameter_phase_diagram.svg"
-    output_path_png_root = root_dir / "parameter_phase_diagram.png"
-    output_path_svg_root = root_dir / "parameter_phase_diagram.svg"
+    output_path_png = output_dir / "parameter_phase_diagram_solid.png"
+    output_path_svg = output_dir / "parameter_phase_diagram_solid.svg"
+    output_path_png_root = root_dir / "parameter_phase_diagram_solid.png"
+    output_path_svg_root = root_dir / "parameter_phase_diagram_solid.svg"
 
 
     if not csv_path.exists():

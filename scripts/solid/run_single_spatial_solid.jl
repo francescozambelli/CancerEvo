@@ -4,9 +4,9 @@
 # Uses fixed seeds (9 for Health, 1 for Tumor) to ensure reproducibility.
 # Saves snapshots and aggregate results to data/simulations/spatial_run/
 
-include("../../src/utils.jl")
-include("../../src/simulation_spatial.jl")
-include("parameters.jl")
+include("../../src/utils_solid.jl")
+include("../../src/simulation_solid_spatial.jl")
+include("parameters_solid.jl")
 
 using Random, NPZ
 

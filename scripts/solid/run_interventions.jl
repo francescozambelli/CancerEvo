@@ -1,9 +1,9 @@
 # scripts/solid/run_interventions.jl
 
-include("../../src/utils.jl")
-include("../../src/simulation.jl")
+include("../../src/utils_solid.jl")
+include("../../src/simulation_solid.jl")
 include("../../src/interventions.jl")
-include("parameters.jl")
+include("parameters_solid.jl")
 
 using Random, NPZ, Statistics
 

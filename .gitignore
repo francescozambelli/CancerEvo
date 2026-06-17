@@ -5,6 +5,8 @@
 
 brain/
 data/
+outputs/text/
+gene_evolution_analysis/
 images/
 gif/
 /outputs/figures/

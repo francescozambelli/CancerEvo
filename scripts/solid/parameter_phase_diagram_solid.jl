@@ -1,8 +1,8 @@
-# scripts/liquid/stability_phase_diagram_liquid.jl
+# scripts/parameter_phase_diagram.jl
 
-include("../../src/utils_liquid.jl")
-include("../../src/simulation_liquid.jl")
-include("parameters_liquid.jl")
+include("../../src/utils_solid.jl")
+include("../../src/simulation_solid.jl")
+include("parameters_solid.jl")
 
 using Base.Threads
 using Random, CSV, DataFrames
@@ -10,30 +10,27 @@ using Random, CSV, DataFrames
 # Struct to store individual simulation outcomes
 struct SimOutcome
     dmu::Float64
-    rmax_norm::Float64
+    dr::Float64
     rep::Int
     state::String
     steps::Int
 end
 
-# Ensure we use N_CHR_STAB = 1 and terminal class initialization
-const N_CHR_STAB = 1
-function get_initial_stab_mask()
-    m = UInt64(0)
-    for i in 1:N_I;             m |= (UInt64(1) << (i - 1));              end
-    for i in 1:N_O;             m |= (UInt64(1) << (N_I + i - 1));        end
-    for i in 1:N_S;             m |= (UInt64(1) << (N_I + N_O + i - 1)); end
-    return m
-end
-const PERT_CHR_STAB = [get_initial_stab_mask()]
+"""
+    simulation_solid_sweep(tiss, n_chr_init, n_steps, limit)
 
-function simulation_liquid_sweep(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int, limit::Float64)
+Highly optimized, lightweight simulation loop for parameter sweeps.
+Avoids expensive step-by-step metric calculations (mutations, activations, mean values)
+and allocates no intermediate vectors for metrics, only tracking final outcome and steps.
+"""
+function simulation_solid_sweep(tiss::OptimizedTissue, n_chr_init::Int, n_steps::Int, limit::Float64)
     state = "Done"
     step_count = n_steps
-    N = tiss.N
+    N = tiss.L * tiss.L
     for k in 1:n_steps
-        substitute_liquid!(tiss, n_chr_init)
+        substitute_optimized!(tiss, n_chr_init)
         
+        # count cancer cells - non-allocating count
         n_canc = count(==(1), tiss.state)
         
         if n_canc == 0
@@ -42,47 +39,40 @@ function simulation_liquid_sweep(tiss::LiquidTissue, n_chr_init::Int, n_steps::I
             break
         end
         
-        density = n_canc / N
-        if density > limit
+        # count wild-type cells - non-allocating count
+        n_wt = count(==(0), tiss.state)
+        wt_density = n_wt / N
+        if wt_density < (1.0 - limit)
             state = "Tumor_Max"
             step_count = k
             break
         end
     end
-    
-    # Resolve 'Done' cases using final density check
-    if state == "Done"
-        n_canc = count(==(1), tiss.state)
-        density = n_canc / N
-        # If the tumor density at step 15000 is still substantial, it survived.
-        if density > 0.05
-            state = "Tumor_Max"
-        else
-            state = "Health"
-        end
-    end
-    
     return (state=state, steps=step_count)
 end
 
-function run_parameter_sweep(n_grid=20, reps=25)
+function run_parameter_sweep(n_grid=20, reps=50)
+    # Output file
     output_dir = joinpath(dirname(dirname(@__DIR__)), "data")
     if !isdir(output_dir); mkpath(output_dir); end
-    output_file = joinpath(output_dir, "stability_phase_diagram_results_liquid.csv")
+    output_file = joinpath(output_dir, "parameter_phase_diagram_results.csv")
 
-    dmu_range = collect(range(0.0001, 0.007, length=n_grid))
-    rmax_norm_range = collect(range(1.1, 7.0, length=n_grid))
+    # Define the parameter sweep ranges
+    dmu_range = collect(range(0.1e-3, 3.0e-2, length=n_grid))
+    dr_range = collect(range(0.0, 2.4e-2, length=n_grid))
 
-    L_sweep = 100
-    n_steps_sweep = 1500
-    n_seed_sweep = 100
-    limit = 0.5
-        
+    # Setup optimized local parameters to override the default ones
+    L_sweep = 80
+    n_steps_sweep = 1000
+    r_pert_sweep = 0.05 # Yields 17 cells to prevent stochastic extinction
+    limit=0.5
+    
+    # Flatten the grid tasks
     tasks = []
     for dmu_val in dmu_range
-        for r_norm in rmax_norm_range
+        for dr_val in dr_range
             for r in 1:reps
-                push!(tasks, (dmu=dmu_val, rmax_norm=r_norm, rep=r))
+                push!(tasks, (dmu=dmu_val, dr=dr_val, rep=r))
             end
         end
     end
@@ -90,34 +80,36 @@ function run_parameter_sweep(n_grid=20, reps=25)
     num_sims = length(tasks)
     results = Vector{SimOutcome}(undef, num_sims)
     
-    println("--- Liquid Stability Phase Diagram Sweep ---")
+    println("--- Parameter Space Phase Diagram Sweep ---")
     println("Grid size: $n_grid x $n_grid = $(n_grid * n_grid) points")
     println("Replicates per point: $reps")
     println("Total simulations to run: $num_sims")
     println("Using $(Threads.nthreads()) threads.")
-    println("Sweep Parameters: L=$L_sweep, steps=$n_steps_sweep, limit=$limit, n_seed=$n_seed_sweep")
+    println("Sweep Parameters: L=$L_sweep, steps=$n_steps_sweep, limit=$limit, r_pert=$r_pert_sweep")
 
+    # Progress tracking
     progress_lock = ReentrantLock()
     completed = 0
     start_time = time()
+    
 
     @threads for i in 1:num_sims
         t = tasks[i]
         
+        # Unique seed per thread/simulation
         Random.seed!(time_ns() + i)
         
-        rmax_val = t.rmax_norm * r0
-        dr_val = rmax_val / 10
-        
-        tiss = LiquidTissue(
-            L_sweep * L_sweep, N_I, N_O, N_S, N_M, N_HK, 
-            mu0, t.dmu, r0, dr_val, rmax_val, 0.0, N_CHR_STAB
+        # Initialize fresh tissue
+        tiss = OptimizedTissue(
+            L_sweep, N_I, N_O, N_S, N_M, N_HK, 
+            mu0, t.dmu, r0, t.dr, rmax, dm, N_CHR
         )
-        perturb_liquid!(tiss, n_seed_sweep, PERT_CHR_STAB)
+        perturb_optimized!(tiss, r_pert_sweep, pert_chrs)
         
-        res = simulation_liquid_sweep(tiss, N_CHR_STAB, n_steps_sweep, limit)
+        # Run simulation with the highly optimized sweep loop
+        res = simulation_solid_sweep(tiss, N_CHR, n_steps_sweep, limit)
         
-        results[i] = SimOutcome(t.dmu, t.rmax_norm, t.rep, res.state, res.steps)
+        results[i] = SimOutcome(t.dmu, t.dr, t.rep, res.state, res.steps)
         
         lock(progress_lock) do
             completed += 1
@@ -126,6 +118,7 @@ function run_parameter_sweep(n_grid=20, reps=25)
                 est_total = (elapsed / completed) * num_sims
                 remaining = est_total - elapsed
                 
+                # Format remaining time
                 rem_str = if remaining < 60
                     "$(round(remaining, digits=1))s"
                 else
@@ -137,38 +130,48 @@ function run_parameter_sweep(n_grid=20, reps=25)
         end
     end
 
+    # Aggregate results by (dmu, dr)
     println("\nAggregating results...")
     
+    # We construct a dataframe from individual outcomes
     df_raw = DataFrame(
         dmu = [r.dmu for r in results],
-        rmax_norm = [r.rmax_norm for r in results],
+        dr = [r.dr for r in results],
         state = [r.state for r in results]
     )
 
-    gd = groupby(df_raw, [:dmu, :rmax_norm])
+    # Group by dmu and dr
+    gd = groupby(df_raw, [:dmu, :dr])
     
     df_agg = combine(gd) do sdf
         n_total = nrow(sdf)
         n_health = count(x -> x == "Health", sdf.state)
         n_tumor_max = count(x -> x == "Tumor_Max", sdf.state)
+        n_done = count(x -> x == "Done", sdf.state)
+        n_tumor_min = count(x -> x == "Tumor_Min", sdf.state)
         
-        fraction = n_tumor_max / n_total
+        # Fraction of interest: tumor mass exceeds limit (Tumor_Max) or finishes with tumor present (Done)
+        fraction = (n_tumor_max + n_done) / n_total
         
         (
             n_reps = n_total,
             health_count = n_health,
             tumor_max_count = n_tumor_max,
+            done_count = n_done,
+            tumor_min_count = n_tumor_min,
             fraction = fraction
         )
     end
 
+    # Save to CSV
     CSV.write(output_file, df_agg)
     println("Sweep complete! Aggregated results saved to: $output_file")
 end
 
+# Check for command line arguments
 if abspath(PROGRAM_FILE) == @__FILE__
     n_grid_val = 20
-    reps_val = 25
+    reps_val = 50
     for (i, arg) in enumerate(ARGS)
         if arg == "--n-grid" && i < length(ARGS)
             global n_grid_val = parse(Int, ARGS[i+1])

@@ -12,17 +12,17 @@
 #   MU_HI   = 0.035
 #   outfile = sim_solid_actI.npz
 
-include("../../src/utils.jl")
-include("../../src/simulation.jl")
-include("parameters.jl")
+include("../../src/utils_solid.jl")
+include("../../src/simulation_solid.jl")
+include("parameters_solid.jl")
 
 using Random, NPZ, Statistics
 
 # ---------------------------------------------------------------------------
 # Parse CLI arguments
 # ---------------------------------------------------------------------------
-MU_LO     = length(ARGS) >= 1 ? parse(Float64, ARGS[1]) : 0.030
-MU_HI     = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 0.035
+MU_LO     = length(ARGS) >= 1 ? parse(Float64, ARGS[1]) : 0.025
+MU_HI     = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 0.027
 OUT_NAME  = length(ARGS) >= 3 ? ARGS[3] : "sim_solid_actI.npz"
 const TAIL_FRAC = 0.70
 

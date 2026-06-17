@@ -9,7 +9,7 @@
 #   2. perturb_liquid!     — seeds N_SEED cancer cells at random scattered
 #      positions instead of a compact circular cluster.
 
-include("utils.jl")   # Re-use all structs, masks, mutation & rate functions
+include("utils_solid.jl")   # Re-use all structs, masks, mutation & rate functions
 
 # ---------------------------------------------------------------------------
 # Non-spatial Liquid Tissue Struct of Arrays (SoA)
