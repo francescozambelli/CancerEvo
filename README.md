@@ -2,6 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+![CancerEvo Project Overview](outputs/paper_figures/Fig_GitHub.png)
+
+
 ## 1. Scientific Overview & Objectives
 
 This repository implements spatial (solid tumor on a 2D lattice) and global (liquid tumor Moran process) stochastic simulations of cancer evolution. The model tracks the accumulation of somatic mutations in five categories of genes (Instability, Oncogenes, Survival, Missegregation, and Housekeeping) and the emergence of malignant clones under selective pressure.
