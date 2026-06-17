@@ -1,8 +1,9 @@
+![CancerEvo Project Overview](outputs/paper_figures/Fig_GitHub.png)
+
 # CancerEvo: Spatial and Global Stochastic Simulation Framework for Cancer Evolution
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![CancerEvo Project Overview](outputs/paper_figures/Fig_GitHub.png)
 
 
 ## 1. Scientific Overview & Objectives
