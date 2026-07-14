@@ -18,7 +18,7 @@ except ImportError:
         fig.savefig(os.path.join(output_dir, f"{filename}.svg"), bbox_inches='tight')
 
 def load_data(sweep_type):
-    data_dir = f"../../../data/phase_transition/{sweep_type}"
+    data_dir = f"../../../data/phase_transition_liquid/{sweep_type}"
     files = glob.glob(os.path.join(data_dir, "*.npz"))
     
     if not files:
@@ -72,9 +72,9 @@ def plot_combined():
         # Absolute distance to critical point
         dist_dmu = np.abs(vals_dmu_scaled - peak_val)
         
-        # Separate branches (excluding the peak and noisy points where dist is too small)
-        sub_idx = (vals_dmu_scaled < peak_val) & (dist_dmu > 0.4)
-        sup_idx = (vals_dmu_scaled > peak_val) & (dist_dmu > 0.4)
+        # Separate branches (excluding points very close to the peak due to noise/finite-size effects)
+        sub_idx = (vals_dmu_scaled < peak_val) & (dist_dmu > 0.8)
+        sup_idx = (vals_dmu_scaled > peak_val) & (dist_dmu > 0.8)
         
         x_sub, y_sub = dist_dmu[sub_idx], means_dmu[sub_idx]
         x_sup, y_sup = dist_dmu[sup_idx], means_dmu[sup_idx]
@@ -118,7 +118,7 @@ def plot_combined():
         # Absolute distance to critical point
         dist_dr = np.abs(vals_dr_scaled - peak_val)
         
-        # Separate branches (excluding the peak and noisy points where dist is too small)
+        # Separate branches (excluding points very close to the peak due to noise/finite-size effects)
         sub_idx = (vals_dr_scaled < peak_val) & (dist_dr > 0.2)
         sup_idx = (vals_dr_scaled > peak_val) & (dist_dr > 0.2)
         
@@ -155,11 +155,11 @@ def plot_combined():
 
     plt.tight_layout()
     
-    output_dir = "../../../outputs/figures/phase_transition"
+    output_dir = "../../../outputs/figures/phase_transition_liquid"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
-    save_publication_figure(fig, "extinction_time_scaling_combined", output_dir=output_dir)
+    save_publication_figure(fig, "extinction_time_scaling_combined_liquid", output_dir=output_dir)
     print(f"Saved combined scaling plot to {output_dir}")
 
 if __name__ == "__main__":

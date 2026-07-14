@@ -18,7 +18,7 @@ except ImportError:
         fig.savefig(os.path.join(output_dir, f"{filename}.svg"), bbox_inches='tight')
 
 def load_data(sweep_type):
-    data_dir = f"../../../data/phase_transition/{sweep_type}"
+    data_dir = f"../../../data/phase_transition_liquid/{sweep_type}"
     files = glob.glob(os.path.join(data_dir, "*.npz"))
     
     if not files:
@@ -95,6 +95,7 @@ def plot_combined():
         ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
+        ax.set_ylim(17.5, 30.0)
         #ax.grid(True, linestyle='--', alpha=0.3)
         ax.set_axisbelow(True)
 
@@ -136,6 +137,7 @@ def plot_combined():
         ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
+        ax.set_ylim(0.0, 6.0)
         #ax.grid(True, linestyle='--', alpha=0.3)
         ax.set_axisbelow(True)
 
@@ -145,11 +147,11 @@ def plot_combined():
 
     plt.tight_layout()
     
-    output_dir = "../../../outputs/figures/phase_transition"
+    output_dir = "../../../outputs/figures/phase_transition_liquid"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
-    save_publication_figure(fig, "extinction_time_combined", output_dir=output_dir)
+    save_publication_figure(fig, "extinction_time_combined_liquid", output_dir=output_dir)
     print(f"Saved combined plot to {output_dir}")
 
 if __name__ == "__main__":
