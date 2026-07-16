@@ -3,7 +3,13 @@ import sys
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 from matplotlib.colors import to_hex
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--init_mass_pct", type=int, default=10)
+parser.add_argument("--limit_pct", type=int, default=60)
+args = parser.parse_args()
 
 # Add plotting guidelines skill to path
 sys.path.append("/home/francesco/Antigravity/SKILLS/plotting-guidelines/scripts")
@@ -18,7 +24,7 @@ except ImportError:
         fig.savefig(os.path.join(output_dir, f"{filename}.svg"), bbox_inches='tight')
 
 def load_data(sweep_type):
-    data_dir = f"../../../data/phase_transition/{sweep_type}"
+    data_dir = f"../../../data/phase_transition_init{args.init_mass_pct}_limit{args.limit_pct}/{sweep_type}"
     files = glob.glob(os.path.join(data_dir, "*.npz"))
     
     if not files:
@@ -145,11 +151,11 @@ def plot_combined():
 
     plt.tight_layout()
     
-    output_dir = "../../../outputs/figures/phase_transition"
+    output_dir = f"../../../outputs/figures/phase_transition_init{args.init_mass_pct}_limit{args.limit_pct}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
-    save_publication_figure(fig, "extinction_time_combined", output_dir=output_dir)
+    save_publication_figure(fig, f"extinction_time_combined_init{args.init_mass_pct}_limit{args.limit_pct}", output_dir=output_dir)
     print(f"Saved combined plot to {output_dir}")
 
 if __name__ == "__main__":

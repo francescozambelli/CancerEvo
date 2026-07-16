@@ -13,12 +13,14 @@ include("parameters_liquid.jl")
 using Base.Threads
 using Random, NPZ
 
-function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
+function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10, init_mass_pct=10.0)
     fixed_dr = 0.008
     dmu_vals = collect(range(0.0175, 0.03, length=70))
-    n_seed_sweep = round(Int, 0.1 * L_sweep^2) # 10% tissue mass
+    init_mass_frac = init_mass_pct / 100.0
+    n_seed_sweep = round(Int, init_mass_frac * L_sweep^2)
 
-    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_liquid", "dmu")
+    limit_pct = round(Int, limit * 100)
+    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_liquid_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dmu")
     if !isdir(output_dir); mkpath(output_dir); end
 
     # Flatten tasks
@@ -30,7 +32,7 @@ function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 
     num_sims = length(tasks)
-    println("--- Running dmu sweep (Liquid) ---")
+    println("--- Running dmu sweep (Liquid, init: $(init_mass_pct)%, limit: $(round(Int, limit*100))%) ---")
     println("Total simulations: $num_sims on $(Threads.nthreads()) threads")
 
     progress_lock = ReentrantLock()
@@ -64,12 +66,14 @@ function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 end
 
-function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
+function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10, init_mass_pct=10.0)
     fixed_dmu = 0.012
     dr_vals = collect(range(0.0, 0.006, length=50))
-    n_seed_sweep = round(Int, 0.1 * L_sweep^2)
+    init_mass_frac = init_mass_pct / 100.0
+    n_seed_sweep = round(Int, init_mass_frac * L_sweep^2)
 
-    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_liquid", "dr")
+    limit_pct = round(Int, limit * 100)
+    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_liquid_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dr")
     if !isdir(output_dir); mkpath(output_dir); end
 
     # Flatten tasks
@@ -81,7 +85,7 @@ function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 
     num_sims = length(tasks)
-    println("\n--- Running dr sweep (Liquid) ---")
+    println("\n--- Running dr sweep (Liquid, init: $(init_mass_pct)%, limit: $(round(Int, limit*100))%) ---")
     println("Total simulations: $num_sims on $(Threads.nthreads()) threads")
 
     progress_lock = ReentrantLock()
@@ -114,10 +118,13 @@ function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
+    init_mass_pct = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 10.0
+    limit_pct = length(ARGS) > 1 ? parse(Float64, ARGS[2]) : 60.0
+    limit = limit_pct / 100.0
+
     println("Compiling and running liquid phase transition sweeps...")
     # L=80 (tissue size) to match solid setup
-    run_sweep_dmu(10000, 0.6, 80, 10)
-    run_sweep_dr(10000, 0.6, 80, 10)
+    run_sweep_dmu(10000, limit, 80, 10, init_mass_pct)
+    run_sweep_dr(10000, limit, 80, 10, init_mass_pct)
     println("All liquid sweeps finished successfully!")
 end

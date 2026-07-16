@@ -12,12 +12,14 @@ include("parameters_solid.jl")
 using Base.Threads
 using Random, NPZ
 
-function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
+function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10, init_mass_pct=10.0)
     fixed_dr = 0.008
     dmu_vals = collect(range(0.01, 0.025, length=70))
-    r_pert_sweep = sqrt(0.1 / pi) # 10% tissue mass
+    init_mass_frac = init_mass_pct / 100.0
+    r_pert_sweep = sqrt(init_mass_frac / pi)
 
-    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition", "dmu")
+    limit_pct = round(Int, limit * 100)
+    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dmu")
     if !isdir(output_dir); mkpath(output_dir); end
 
     # Flatten tasks
@@ -29,7 +31,7 @@ function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 
     num_sims = length(tasks)
-    println("--- Running dmu sweep ---")
+    println("--- Running dmu sweep (init: $(init_mass_pct)%, limit: $(round(Int, limit*100))%) ---")
     println("Total simulations: $num_sims on $(Threads.nthreads()) threads")
 
     progress_lock = ReentrantLock()
@@ -69,12 +71,14 @@ function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 end
 
-function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
+function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10, init_mass_pct=10.0)
     fixed_dmu = 0.012
     dr_vals = collect(range(0.0, 0.01, length=50))
-    r_pert_sweep = sqrt(0.1 / pi)
+    init_mass_frac = init_mass_pct / 100.0
+    r_pert_sweep = sqrt(init_mass_frac / pi)
 
-    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition", "dr")
+    limit_pct = round(Int, limit * 100)
+    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dr")
     if !isdir(output_dir); mkpath(output_dir); end
 
     # Flatten tasks
@@ -86,7 +90,7 @@ function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 
     num_sims = length(tasks)
-    println("\n--- Running dr sweep ---")
+    println("\n--- Running dr sweep (init: $(init_mass_pct)%, limit: $(round(Int, limit*100))%) ---")
     println("Total simulations: $num_sims on $(Threads.nthreads()) threads")
 
     progress_lock = ReentrantLock()
@@ -122,11 +126,14 @@ function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10)
     end
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
+    init_mass_pct = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 10.0
+    limit_pct = length(ARGS) > 1 ? parse(Float64, ARGS[2]) : 60.0
+    limit = limit_pct / 100.0
+    
     # Warm up to compile 
     println("Compiling...")
     # L=80 (tissue size)
-    run_sweep_dmu(10000, 0.6, 80, 10)
-    # run_sweep_dr(10000, 0.6, 80, 10)
+    run_sweep_dmu(10000, limit, 80, 10, init_mass_pct)
+    run_sweep_dr(10000, limit, 80, 10, init_mass_pct)
     println("Done!")
 end
