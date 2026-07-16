@@ -161,11 +161,11 @@ def plot_combined():
 
     plt.tight_layout()
     
-    output_dir = f"../../../outputs/figures/phase_transition_init{args.init_mass_pct}_limit{args.limit_pct}"
+    output_dir = f"../../../outputs/figures/phase_transition/init{args.init_mass_pct}_limit{args.limit_pct}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
-    save_publication_figure(fig, f"extinction_time_scaling_combined_init{args.init_mass_pct}_limit{args.limit_pct}", output_dir=output_dir)
+    save_publication_figure(fig, "extinction_time_scaling_combined", output_dir=output_dir)
     print(f"Saved combined scaling plot to {output_dir}")
 
 if __name__ == "__main__":
