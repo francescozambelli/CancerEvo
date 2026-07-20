@@ -83,7 +83,7 @@ function simulation_optimized(tiss::OptimizedTissue, n_chr_init::Int, n_steps::I
         end
         n_wt = count(tiss.state .== 0)
         wt_density = n_wt / (tiss.L^2)
-        if wt_density < (1.0 - limit)
+        if density >= limit
             println("Over")
             res.state = "Tumor_Max"
             break

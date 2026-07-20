@@ -19,7 +19,8 @@ function run_sweep_dmu(n_steps=10000, limit=0.6, L_sweep=80, N_s=10, init_mass_p
     r_pert_sweep = sqrt(init_mass_frac / pi)
 
     limit_pct = round(Int, limit * 100)
-    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dmu")
+    steps_str = n_steps == 10000 ? "" : "_steps$(n_steps)"
+    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition$(steps_str)_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dmu")
     if !isdir(output_dir); mkpath(output_dir); end
 
     # Flatten tasks
@@ -78,7 +79,8 @@ function run_sweep_dr(n_steps=10000, limit=0.6, L_sweep=80, N_s=10, init_mass_pc
     r_pert_sweep = sqrt(init_mass_frac / pi)
 
     limit_pct = round(Int, limit * 100)
-    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dr")
+    steps_str = n_steps == 10000 ? "" : "_steps$(n_steps)"
+    output_dir = joinpath(dirname(dirname(@__DIR__)), "data", "phase_transition$(steps_str)_init$(round(Int, init_mass_pct))_limit$(limit_pct)", "dr")
     if !isdir(output_dir); mkpath(output_dir); end
 
     # Flatten tasks
@@ -128,12 +130,13 @@ end
 
     init_mass_pct = length(ARGS) > 0 ? parse(Float64, ARGS[1]) : 10.0
     limit_pct = length(ARGS) > 1 ? parse(Float64, ARGS[2]) : 60.0
+    n_steps = length(ARGS) > 2 ? parse(Int, ARGS[3]) : 10000
     limit = limit_pct / 100.0
     
     # Warm up to compile 
     println("Compiling...")
     # L=80 (tissue size)
-    run_sweep_dmu(10000, limit, 80, 10, init_mass_pct)
-    run_sweep_dr(10000, limit, 80, 10, init_mass_pct)
+    run_sweep_dmu(n_steps, limit, 80, 10, init_mass_pct)
+    run_sweep_dr(n_steps, limit, 80, 10, init_mass_pct)
     println("Done!")
 end

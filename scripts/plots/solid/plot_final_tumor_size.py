@@ -31,31 +31,38 @@ def load_data(sweep_type):
     
     if not files:
         print(f"No .npz files found in {data_dir}")
-        return None, None, None
+        return None, None, None, None
 
-    data = {}
+    data_size = {}
+    data_time = {}
     for f in files:
         try:
             res = np.load(f)
             val = float(np.atleast_1d(res[sweep_type])[0])
+            final_size = float(res["tumor_density"][-1]) * 6400
             time = float(np.atleast_1d(res["time"])[0])
-            if val not in data:
-                data[val] = []
-            data[val].append(time)
+            if val not in data_size:
+                data_size[val] = []
+                data_time[val] = []
+            data_size[val].append(final_size)
+            data_time[val].append(time)
         except Exception as e:
             print(f"Error loading {f}: {e}")
 
-    if not data:
-        return None, None, None
+    if not data_size:
+        return None, None, None, None
 
-    vals = sorted(list(data.keys()))
-    means = []
+    vals = sorted(list(data_size.keys()))
+    means_size = []
+    means_time = []
     
     for v in vals:
-        times = data[v]
-        means.append(np.median(times))
+        sizes = data_size[v]
+        times = data_time[v]
+        means_size.append(np.median(sizes))
+        means_time.append(np.median(times))
 
-    return np.array(vals), data, np.array(means)
+    return np.array(vals), data_size, np.array(means_size), np.array(means_time)
 
 def plot_combined():
     fontsize_labels = 18
@@ -64,14 +71,14 @@ def plot_combined():
     fig, axes = plt.subplots(2, 1, figsize=(7, 9))
     
     # --- DMU PLOT ---
-    vals_dmu, data_time_dmu, means_dmu = load_data("dmu")
+    vals_dmu, data_size_dmu, means_size_dmu, means_time_dmu = load_data("dmu")
     if vals_dmu is not None:
         ax = axes[0]
         scale_factor = 1e3
         vals_dmu_scaled = vals_dmu * scale_factor
         
-        # Horizontal line at critical point
-        sorted_indices = np.argsort(means_dmu)
+        # Horizontal line at critical point (estimated from extinction times peak)
+        sorted_indices = np.argsort(means_time_dmu)
         peak_val = (vals_dmu_scaled[sorted_indices[-1]] + vals_dmu_scaled[sorted_indices[-2]]) / 2.0
         ax.axhline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
         
@@ -82,13 +89,13 @@ def plot_combined():
         # Plot individual replica points (small dots)
         for i, v in enumerate(vals_dmu):
             y_val = vals_dmu_scaled[i]
-            times = data_time_dmu[v]
+            sizes = data_size_dmu[v]
             color = '#08519c' if y_val <= peak_val else '#6baed6'
-            ax.scatter(times, [y_val] * len(times), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
+            ax.scatter(sizes, [y_val] * len(sizes), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
         
         # Subcritical & Supercritical Mean Trend Lines
-        # ax.plot(means_dmu[sub_idx], vals_dmu_scaled[sub_idx], '-', color='#08519c', linewidth=1.5, label='Subcritical', zorder=3)
-        # ax.plot(means_dmu[sup_idx], vals_dmu_scaled[sup_idx], '--', color='#6baed6', linewidth=1.5, label='Supercritical', zorder=3)
+        # ax.plot(means_size_dmu[sub_idx], vals_dmu_scaled[sub_idx], '-', color='#08519c', linewidth=1.5, label='Subcritical', zorder=3)
+        # ax.plot(means_size_dmu[sup_idx], vals_dmu_scaled[sup_idx], '--', color='#6baed6', linewidth=1.5, label='Supercritical', zorder=3)
         
         # Shade the supercritical region (above the peak)
         ax.axhspan(peak_val, max(vals_dmu_scaled), color='#7f7f7f', alpha=0.08, zorder=0)
@@ -101,21 +108,21 @@ def plot_combined():
         
         # Formatting
         ax.set_ylabel(r"$\Delta \mu$ ($\times 10^{-3}$)", fontsize=fontsize_labels)
-        ax.set_xlabel("Extinction time", fontsize=fontsize_labels)
+        ax.set_xlabel("Tumor population", fontsize=fontsize_labels)
         ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.set_axisbelow(True)
 
     # --- DR PLOT ---
-    vals_dr, data_time_dr, means_dr = load_data("dr")
+    vals_dr, data_size_dr, means_size_dr, means_time_dr = load_data("dr")
     if vals_dr is not None:
         ax = axes[1]
         scale_factor = 1e3
         vals_dr_scaled = vals_dr * scale_factor
         
         # Horizontal line at critical point
-        sorted_indices = np.argsort(means_dr)
+        sorted_indices = np.argsort(means_time_dr)
         peak_val = (vals_dr_scaled[sorted_indices[-1]] + vals_dr_scaled[sorted_indices[-2]]) / 2.0
         ax.axhline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
         
@@ -126,13 +133,13 @@ def plot_combined():
         # Plot individual replica points (small dots)
         for i, v in enumerate(vals_dr):
             y_val = vals_dr_scaled[i]
-            times = data_time_dr[v]
+            sizes = data_size_dr[v]
             color = '#a50f15' if y_val <= peak_val else '#fb6a4a'
-            ax.scatter(times, [y_val] * len(times), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
+            ax.scatter(sizes, [y_val] * len(sizes), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
         
         # Subcritical & Supercritical Mean Trend Lines
-        # ax.plot(means_dr[sub_idx], vals_dr_scaled[sub_idx], '-', color='#a50f15', linewidth=1.5, label='Subcritical', zorder=3)
-        # ax.plot(means_dr[sup_idx], vals_dr_scaled[sup_idx], '--', color='#fb6a4a', linewidth=1.5, label='Supercritical', zorder=3)
+        # ax.plot(means_size_dr[sub_idx], vals_dr_scaled[sub_idx], '-', color='#a50f15', linewidth=1.5, label='Subcritical', zorder=3)
+        # ax.plot(means_size_dr[sup_idx], vals_dr_scaled[sup_idx], '--', color='#fb6a4a', linewidth=1.5, label='Supercritical', zorder=3)
         
         # Shade the supercritical region
         ax.axhspan(peak_val, max(vals_dr_scaled), color='#7f7f7f', alpha=0.08, zorder=0)
@@ -145,7 +152,7 @@ def plot_combined():
         
         # Formatting
         ax.set_ylabel(r"$\Delta r$ ($\times 10^{-3}$)", fontsize=fontsize_labels)
-        ax.set_xlabel("Extinction time", fontsize=fontsize_labels)
+        ax.set_xlabel("Tumor population", fontsize=fontsize_labels)
         ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -158,8 +165,8 @@ def plot_combined():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
-    save_publication_figure(fig, "extinction_time_combined", output_dir=output_dir)
-    print(f"Saved combined plot to {output_dir}")
+    save_publication_figure(fig, "final_tumor_size_combined", output_dir=output_dir)
+    print(f"Saved combined final size plot to {output_dir}")
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))

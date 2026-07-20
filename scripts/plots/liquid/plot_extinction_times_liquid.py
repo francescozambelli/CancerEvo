@@ -9,6 +9,7 @@ from matplotlib.colors import to_hex
 parser = argparse.ArgumentParser()
 parser.add_argument("--init_mass_pct", type=int, default=10)
 parser.add_argument("--limit_pct", type=int, default=60)
+parser.add_argument("--n_steps", type=int, default=10000)
 args = parser.parse_args()
 
 # Add plotting guidelines skill to path
@@ -24,7 +25,8 @@ except ImportError:
         fig.savefig(os.path.join(output_dir, f"{filename}.svg"), bbox_inches='tight')
 
 def load_data(sweep_type):
-    data_dir = f"../../../data/phase_transition_liquid_init{args.init_mass_pct}_limit{args.limit_pct}/{sweep_type}"
+    steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
+    data_dir = f"../../../data/phase_transition_liquid{steps_str}_init{args.init_mass_pct}_limit{args.limit_pct}/{sweep_type}"
     files = glob.glob(os.path.join(data_dir, "*.npz"))
     
     if not files:
@@ -35,8 +37,8 @@ def load_data(sweep_type):
     for f in files:
         try:
             res = np.load(f)
-            val = float(res[sweep_type])
-            time = float(res["time"])
+            val = float(np.atleast_1d(res[sweep_type])[0])
+            time = float(np.atleast_1d(res["time"])[0])
             if val not in data:
                 data[val] = []
             data[val].append(time)
@@ -48,30 +50,27 @@ def load_data(sweep_type):
 
     vals = sorted(list(data.keys()))
     means = []
-    sems = []
     
     for v in vals:
         times = data[v]
-        means.append(np.mean(times))
-        sems.append(np.std(times, ddof=1) / np.sqrt(len(times)) if len(times) > 1 else 0.0)
+        means.append(np.median(times))
 
-    return np.array(vals), np.array(means), np.array(sems)
+    return np.array(vals), data, np.array(means)
 
 def plot_combined():
     fontsize_labels = 18
     fontsize_ticks = 15
     
-    fig, axes = plt.subplots(2, 1, figsize=(6, 9))
+    fig, axes = plt.subplots(2, 1, figsize=(7, 9))
     
     # --- DMU PLOT ---
-    vals_dmu, means_dmu, sems_dmu = load_data("dmu")
+    vals_dmu, data_time_dmu, means_dmu = load_data("dmu")
     if vals_dmu is not None:
         ax = axes[0]
-        # Scale vals_dmu by 10^3 to avoid messy decimals and match DR plot scale
         scale_factor = 1e3
         vals_dmu_scaled = vals_dmu * scale_factor
         
-        # Horizontal line at critical point (midpoint of highest and second highest)
+        # Horizontal line at critical point
         sorted_indices = np.argsort(means_dmu)
         peak_val = (vals_dmu_scaled[sorted_indices[-1]] + vals_dmu_scaled[sorted_indices[-2]]) / 2.0
         ax.axhline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
@@ -80,40 +79,42 @@ def plot_combined():
         sub_idx = vals_dmu_scaled <= peak_val
         sup_idx = vals_dmu_scaled >= peak_val
         
-        # Subcritical Plot
-        ax.errorbar(means_dmu[sub_idx], vals_dmu_scaled[sub_idx], xerr=sems_dmu[sub_idx], fmt='-o', color='#08519c', markersize=4, capsize=3, linewidth=1.5, zorder=3)
-        ax.fill_betweenx(vals_dmu_scaled[sub_idx], means_dmu[sub_idx] - sems_dmu[sub_idx], means_dmu[sub_idx] + sems_dmu[sub_idx], color='#08519c', alpha=0.2, zorder=2)
+        # Plot individual replica points (small dots)
+        for i, v in enumerate(vals_dmu):
+            y_val = vals_dmu_scaled[i]
+            times = data_time_dmu[v]
+            color = '#08519c' if y_val <= peak_val else '#6baed6'
+            ax.scatter(times, [y_val] * len(times), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
         
-        # Supercritical Plot
-        ax.errorbar(means_dmu[sup_idx], vals_dmu_scaled[sup_idx], xerr=sems_dmu[sup_idx], fmt='--^', color='#6baed6', markersize=4, capsize=3, linewidth=1.5, zorder=3)
-        ax.fill_betweenx(vals_dmu_scaled[sup_idx], means_dmu[sup_idx] - sems_dmu[sup_idx], means_dmu[sup_idx] + sems_dmu[sup_idx], color='#6baed6', alpha=0.2, zorder=2)
+        # Subcritical & Supercritical Mean Trend Lines
+        # ax.plot(means_dmu[sub_idx], vals_dmu_scaled[sub_idx], '-', color='#08519c', linewidth=1.5, label='Subcritical', zorder=3)
+        # ax.plot(means_dmu[sup_idx], vals_dmu_scaled[sup_idx], '--', color='#6baed6', linewidth=1.5, label='Supercritical', zorder=3)
         
         # Shade the supercritical region (above the peak)
         ax.axhspan(peak_val, max(vals_dmu_scaled), color='#7f7f7f', alpha=0.08, zorder=0)
         
-        # Add labels for subcritical and supercritical regions
-        ax.text(0.40, 0.20, "subcritical", transform=ax.transAxes, ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
-        ax.text(0.40, 0.80, "supercritical", transform=ax.transAxes, ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
+        # Add region labels centered in their respective sub-regions
+        sub_y = (min(vals_dmu_scaled) + peak_val) / 2.0
+        sup_y = (peak_val + max(vals_dmu_scaled)) / 2.0
+        ax.text(0.50, sub_y, "subcritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
+        ax.text(0.50, sup_y, "supercritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
         
         # Formatting
         ax.set_ylabel(r"$\Delta \mu$ ($\times 10^{-3}$)", fontsize=fontsize_labels)
-        ax.set_xlabel("Mean Simulation Time (steps)", fontsize=fontsize_labels)
+        ax.set_xlabel("Extinction time", fontsize=fontsize_labels)
         ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.set_ylim(17.5, 30.0)
-        #ax.grid(True, linestyle='--', alpha=0.3)
         ax.set_axisbelow(True)
 
     # --- DR PLOT ---
-    vals_dr, means_dr, sems_dr = load_data("dr")
+    vals_dr, data_time_dr, means_dr = load_data("dr")
     if vals_dr is not None:
         ax = axes[1]
-        # Scale vals_dr by 10^3 to avoid messy scientific notation on ticks
         scale_factor = 1e3
         vals_dr_scaled = vals_dr * scale_factor
         
-        # Horizontal line at critical point (midpoint of highest and second highest)
+        # Horizontal line at critical point
         sorted_indices = np.argsort(means_dr)
         peak_val = (vals_dr_scaled[sorted_indices[-1]] + vals_dr_scaled[sorted_indices[-2]]) / 2.0
         ax.axhline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
@@ -122,38 +123,38 @@ def plot_combined():
         sub_idx = vals_dr_scaled <= peak_val
         sup_idx = vals_dr_scaled >= peak_val
         
-        # Subcritical Plot
-        ax.errorbar(means_dr[sub_idx], vals_dr_scaled[sub_idx], xerr=sems_dr[sub_idx], fmt='-s', color='#a50f15', markersize=4, capsize=3, linewidth=1.5, zorder=3)
-        ax.fill_betweenx(vals_dr_scaled[sub_idx], means_dr[sub_idx] - sems_dr[sub_idx], means_dr[sub_idx] + sems_dr[sub_idx], color='#a50f15', alpha=0.2, zorder=2)
+        # Plot individual replica points (small dots)
+        for i, v in enumerate(vals_dr):
+            y_val = vals_dr_scaled[i]
+            times = data_time_dr[v]
+            color = '#a50f15' if y_val <= peak_val else '#fb6a4a'
+            ax.scatter(times, [y_val] * len(times), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
         
-        # Supercritical Plot
-        ax.errorbar(means_dr[sup_idx], vals_dr_scaled[sup_idx], xerr=sems_dr[sup_idx], fmt='--d', color='#fb6a4a', markersize=4, capsize=3, linewidth=1.5, zorder=3)
-        ax.fill_betweenx(vals_dr_scaled[sup_idx], means_dr[sup_idx] - sems_dr[sup_idx], means_dr[sup_idx] + sems_dr[sup_idx], color='#fb6a4a', alpha=0.2, zorder=2)
+        # Subcritical & Supercritical Mean Trend Lines
+        # ax.plot(means_dr[sub_idx], vals_dr_scaled[sub_idx], '-', color='#a50f15', linewidth=1.5, label='Subcritical', zorder=3)
+        # ax.plot(means_dr[sup_idx], vals_dr_scaled[sup_idx], '--', color='#fb6a4a', linewidth=1.5, label='Supercritical', zorder=3)
         
-        # Shade the supercritical region (above the peak)
+        # Shade the supercritical region
         ax.axhspan(peak_val, max(vals_dr_scaled), color='#7f7f7f', alpha=0.08, zorder=0)
         
-        # Add labels for subcritical and supercritical regions
-        ax.text(0.40, 0.20, "subcritical", transform=ax.transAxes, ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
-        ax.text(0.40, 0.80, "supercritical", transform=ax.transAxes, ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
+        # Add region labels centered in their respective sub-regions
+        sub_y_dr = (min(vals_dr_scaled) + peak_val) / 2.0
+        sup_y_dr = (peak_val + max(vals_dr_scaled)) / 2.0
+        ax.text(0.50, sub_y_dr, "subcritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
+        ax.text(0.50, sup_y_dr, "supercritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
         
         # Formatting
         ax.set_ylabel(r"$\Delta r$ ($\times 10^{-3}$)", fontsize=fontsize_labels)
-        ax.set_xlabel("Mean Simulation Time (steps)", fontsize=fontsize_labels)
+        ax.set_xlabel("Extinction time", fontsize=fontsize_labels)
         ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.set_ylim(0.0, 6.0)
-        #ax.grid(True, linestyle='--', alpha=0.3)
         ax.set_axisbelow(True)
-
-    # Add subplot letters (g, h)
-    #axes[0].text(-0.22, 1.15, "g", transform=axes[0].transAxes, fontsize=20, fontweight='bold', va='top', ha='right')
-    #axes[1].text(-0.22, 1.15, "h", transform=axes[1].transAxes, fontsize=20, fontweight='bold', va='top', ha='right')
 
     plt.tight_layout()
     
-    output_dir = f"../../../outputs/figures/phase_transition_liquid/init{args.init_mass_pct}_limit{args.limit_pct}"
+    steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
+    output_dir = f"../../../outputs/figures/phase_transition_liquid{steps_str}/init{args.init_mass_pct}_limit{args.limit_pct}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
