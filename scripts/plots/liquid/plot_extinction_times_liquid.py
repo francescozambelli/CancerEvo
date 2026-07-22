@@ -4,7 +4,6 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-from matplotlib.colors import to_hex
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--init_mass_pct", type=int, default=10)
@@ -17,28 +16,43 @@ sys.path.append("/home/francesco/Antigravity/SKILLS/plotting-guidelines/scripts"
 try:
     from plotting_utils import save_publication_figure
 except ImportError:
-    # Fallback if not found
     def save_publication_figure(fig, filename, output_dir="plots"):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         fig.savefig(os.path.join(output_dir, f"{filename}.png"), bbox_inches='tight', dpi=300)
         fig.savefig(os.path.join(output_dir, f"{filename}.svg"), bbox_inches='tight')
 
-def load_data(sweep_type):
+
+def load_data(sweep_type, v_min=None, v_max=None):
     steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
     data_dir = f"../../../data/phase_transition_liquid{steps_str}_init{args.init_mass_pct}_limit{args.limit_pct}/{sweep_type}"
     files = glob.glob(os.path.join(data_dir, "*.npz"))
-    
+
     if not files:
         print(f"No .npz files found in {data_dir}")
-        return None, None, None
+        return None, None, None, None, None
 
     data = {}
+    indiv_vals = []
+    indiv_times = []
+    ceiling_threshold = args.n_steps * 0.99
+
     for f in files:
         try:
             res = np.load(f)
             val = float(np.atleast_1d(res[sweep_type])[0])
+            if v_min is not None and val < v_min:
+                continue
+            if v_max is not None and val > v_max:
+                continue
             time = float(np.atleast_1d(res["time"])[0])
+            code = int(np.atleast_1d(res.get("outcome_code", 0))[0])
+
+            # Keep only extinction trials (code == 0) and t < 1e5
+            if time < ceiling_threshold and code == 0:
+                indiv_vals.append(val)
+                indiv_times.append(time)
+
             if val not in data:
                 data[val] = []
             data[val].append(time)
@@ -46,120 +60,99 @@ def load_data(sweep_type):
             print(f"Error loading {f}: {e}")
 
     if not data:
-        return None, None, None
+        return None, None, None, None, None
 
     vals = sorted(list(data.keys()))
     means = []
-    
+
     for v in vals:
         times = data[v]
-        means.append(np.median(times))
+        means.append(np.mean(times))
 
-    return np.array(vals), data, np.array(means)
+    return np.array(vals), data, np.array(means), np.array(indiv_vals), np.array(indiv_times)
+
+
+def plot_panel(ax, vals, data_time, means, indiv_v, indiv_t, sweep_name, color,
+               fontsize_labels=18, fontsize_ticks=15):
+    scale_factor = 1e3
+    vals_scaled = vals * scale_factor
+
+    # Vertical line at critical point
+    sorted_indices = np.argsort(means)
+    peak_val = (vals_scaled[sorted_indices[-1]] + vals_scaled[sorted_indices[-2]]) / 2.0
+    ax.axvline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
+
+    # Overlay individual replica scatter points across full domain
+    for i, v in enumerate(vals):
+        x_val = vals_scaled[i]
+        times = data_time[v]
+        ax.scatter([x_val] * len(times), times, color=color, s=16, alpha=0.35, zorder=2, edgecolors='none')
+
+    # Fit power-law scaling curve and draw all the way UP TO 1e5 saturation ceiling
+    indiv_sc = indiv_v * scale_factor
+    x_fit = np.abs(indiv_sc - peak_val)
+    y_fit = indiv_t
+    mask_fit = x_fit > 1e-12
+
+    if np.sum(mask_fit) >= 4:
+        slope, intercept = np.polyfit(np.log10(x_fit[mask_fit]), np.log10(y_fit[mask_fit]), 1)
+        x_grid = np.linspace(vals_scaled.min(), vals_scaled.max(), 2000)
+        dist_grid = np.abs(x_grid - peak_val)
+        y_curve = np.clip(10 ** (slope * np.log10(dist_grid) + intercept), a_min=0, a_max=args.n_steps)
+
+        left_mask = x_grid < peak_val
+        right_mask = x_grid > peak_val
+
+        ax.plot(x_grid[left_mask], y_curve[left_mask], '-', color=color, linewidth=1.5, zorder=4)
+        ax.plot(x_grid[right_mask], y_curve[right_mask], '-', color=color, linewidth=1.5, zorder=4)
+
+    # Formatting
+    ax.set_ylim(-2000, args.n_steps * 1.05)
+    ax.set_xlabel(rf"${sweep_name} \ (\times 10^{{-3}})$", fontsize=fontsize_labels)
+    ax.set_ylabel("Extinction Time (steps)", fontsize=fontsize_labels)
+    ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_axisbelow(True)
+
 
 def plot_combined():
-    fontsize_labels = 18
-    fontsize_ticks = 15
-    
-    fig, axes = plt.subplots(2, 1, figsize=(7, 9))
-    
-    # --- DMU PLOT ---
-    vals_dmu, data_time_dmu, means_dmu = load_data("dmu")
-    if vals_dmu is not None:
-        ax = axes[0]
-        scale_factor = 1e3
-        vals_dmu_scaled = vals_dmu * scale_factor
-        
-        # Horizontal line at critical point
-        sorted_indices = np.argsort(means_dmu)
-        peak_val = (vals_dmu_scaled[sorted_indices[-1]] + vals_dmu_scaled[sorted_indices[-2]]) / 2.0
-        ax.axhline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
-        
-        # Separate branches
-        sub_idx = vals_dmu_scaled <= peak_val
-        sup_idx = vals_dmu_scaled >= peak_val
-        
-        # Plot individual replica points (small dots)
-        for i, v in enumerate(vals_dmu):
-            y_val = vals_dmu_scaled[i]
-            times = data_time_dmu[v]
-            color = '#08519c' if y_val <= peak_val else '#6baed6'
-            ax.scatter(times, [y_val] * len(times), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
-        
-        # Subcritical & Supercritical Mean Trend Lines
-        # ax.plot(means_dmu[sub_idx], vals_dmu_scaled[sub_idx], '-', color='#08519c', linewidth=1.5, label='Subcritical', zorder=3)
-        # ax.plot(means_dmu[sup_idx], vals_dmu_scaled[sup_idx], '--', color='#6baed6', linewidth=1.5, label='Supercritical', zorder=3)
-        
-        # Shade the supercritical region (above the peak)
-        ax.axhspan(peak_val, max(vals_dmu_scaled), color='#7f7f7f', alpha=0.08, zorder=0)
-        
-        # Add region labels centered in their respective sub-regions
-        sub_y = (min(vals_dmu_scaled) + peak_val) / 2.0
-        sup_y = (peak_val + max(vals_dmu_scaled)) / 2.0
-        ax.text(0.50, sub_y, "subcritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
-        ax.text(0.50, sup_y, "supercritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
-        
-        # Formatting
-        ax.set_ylabel(r"$\Delta \mu$ ($\times 10^{-3}$)", fontsize=fontsize_labels)
-        ax.set_xlabel("Extinction time", fontsize=fontsize_labels)
-        ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.set_axisbelow(True)
-
-    # --- DR PLOT ---
-    vals_dr, data_time_dr, means_dr = load_data("dr")
-    if vals_dr is not None:
-        ax = axes[1]
-        scale_factor = 1e3
-        vals_dr_scaled = vals_dr * scale_factor
-        
-        # Horizontal line at critical point
-        sorted_indices = np.argsort(means_dr)
-        peak_val = (vals_dr_scaled[sorted_indices[-1]] + vals_dr_scaled[sorted_indices[-2]]) / 2.0
-        ax.axhline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
-        
-        # Separate branches
-        sub_idx = vals_dr_scaled <= peak_val
-        sup_idx = vals_dr_scaled >= peak_val
-        
-        # Plot individual replica points (small dots)
-        for i, v in enumerate(vals_dr):
-            y_val = vals_dr_scaled[i]
-            times = data_time_dr[v]
-            color = '#a50f15' if y_val <= peak_val else '#fb6a4a'
-            ax.scatter(times, [y_val] * len(times), color=color, s=16, alpha=0.55, zorder=2, edgecolors='none')
-        
-        # Subcritical & Supercritical Mean Trend Lines
-        # ax.plot(means_dr[sub_idx], vals_dr_scaled[sub_idx], '-', color='#a50f15', linewidth=1.5, label='Subcritical', zorder=3)
-        # ax.plot(means_dr[sup_idx], vals_dr_scaled[sup_idx], '--', color='#fb6a4a', linewidth=1.5, label='Supercritical', zorder=3)
-        
-        # Shade the supercritical region
-        ax.axhspan(peak_val, max(vals_dr_scaled), color='#7f7f7f', alpha=0.08, zorder=0)
-        
-        # Add region labels centered in their respective sub-regions
-        sub_y_dr = (min(vals_dr_scaled) + peak_val) / 2.0
-        sup_y_dr = (peak_val + max(vals_dr_scaled)) / 2.0
-        ax.text(0.50, sub_y_dr, "subcritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
-        ax.text(0.50, sup_y_dr, "supercritical", transform=ax.get_yaxis_transform(), ha='center', va='center', fontsize=14, color='#444444', fontweight='semibold')
-        
-        # Formatting
-        ax.set_ylabel(r"$\Delta r$ ($\times 10^{-3}$)", fontsize=fontsize_labels)
-        ax.set_xlabel("Extinction time", fontsize=fontsize_labels)
-        ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.set_axisbelow(True)
-
-    plt.tight_layout()
-    
     steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
     output_dir = f"../../../outputs/figures/phase_transition_liquid{steps_str}/init{args.init_mass_pct}_limit{args.limit_pct}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        
+
+    fig, axes = plt.subplots(2, 1, figsize=(7, 9))
+
+    # --- DMU PLOT ---
+    vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu = load_data("dmu", v_min=19e-3, v_max=27e-3)
+    if vals_dmu is not None:
+        plot_panel(axes[0], vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu, r"\Delta \mu", "#08519c")
+
+        # Single panel figure (no title, enlarged fonts)
+        fig_s, ax_s = plt.subplots(figsize=(6.5, 5.5))
+        plot_panel(ax_s, vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu, r"\Delta \mu", "#08519c", fontsize_labels=20, fontsize_ticks=16)
+        fig_s.tight_layout()
+        save_publication_figure(fig_s, "liquid_extinction_time_dmu", output_dir=output_dir)
+        plt.close(fig_s)
+
+    # --- DR PLOT ---
+    vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr = load_data("dr", v_min=1e-3, v_max=4e-3)
+    if vals_dr is not None:
+        plot_panel(axes[1], vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr, r"\Delta r", "#a50f15")
+
+        # Single panel figure (no title, enlarged fonts)
+        fig_s, ax_s = plt.subplots(figsize=(6.5, 5.5))
+        plot_panel(ax_s, vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr, r"\Delta r", "#a50f15", fontsize_labels=20, fontsize_ticks=16)
+        fig_s.tight_layout()
+        save_publication_figure(fig_s, "liquid_extinction_time_dr", output_dir=output_dir)
+        plt.close(fig_s)
+
+    # Save combined pair plot
+    fig.tight_layout()
     save_publication_figure(fig, "extinction_time_combined_liquid", output_dir=output_dir)
-    print(f"Saved combined plot to {output_dir}")
+    print(f"Saved combined pair plot and single panels to {output_dir}")
+
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))

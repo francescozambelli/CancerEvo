@@ -25,10 +25,10 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
-# Data loading: loads individual trial points excluding max-step limit runs
+# Data loading: loads individual trial points within parameter bounds
 # ---------------------------------------------------------------------------
-def load_individual_data(is_liquid: bool, sweep_type: str):
-    """Load individual simulation extinction trials (values Δ and extinction times T_e).
+def load_individual_data(is_liquid: bool, sweep_type: str, v_min: float, v_max: float):
+    """Load individual simulation extinction trials within parameter bounds [v_min, v_max].
 
     Trials reaching the 1e5 simulation step ceiling (time >= 0.99 * n_steps) are
     filtered out for all models because they did not undergo extinction.
@@ -58,14 +58,21 @@ def load_individual_data(is_liquid: bool, sweep_type: str):
             res = np.load(f)
             val = float(np.atleast_1d(res[sweep_type])[0])
             time = float(np.atleast_1d(res["time"])[0])
+
+            # Filter parameter domain range [v_min, v_max]
+            if val < v_min or val > v_max:
+                continue
+
             # Filter out runs that hit the 1e5 step limit (did not reach extinction)
             if time >= ceiling_threshold:
                 continue
+
             # For the liquid model, keep only true extinction trials (outcome_code == 0)
             if is_liquid:
                 code = int(np.atleast_1d(res.get("outcome_code", 0))[0])
                 if code != 0:
                     continue
+
             raw_by_val.setdefault(val, []).append(time)
             indiv_vals.append(val)
             indiv_times.append(time)
@@ -84,7 +91,8 @@ def load_individual_data(is_liquid: bool, sweep_type: str):
 # Plot single panel: fit individual extinction trial points on log-log scale
 # ---------------------------------------------------------------------------
 def plot_scaling_panel(ax, vals, means, indiv_vals, indiv_times, sweep_name,
-                       color, fontsize_labels=15, fontsize_ticks=13):
+                       color, fit_side="all", fontsize_labels=15, fontsize_ticks=13,
+                       show_data_label=True, legend_fontsize=11):
     scale_factor = 1e3
     vals_scaled = vals * scale_factor
 
@@ -96,17 +104,30 @@ def plot_scaling_panel(ax, vals, means, indiv_vals, indiv_times, sweep_name,
     indiv_vals_scaled = indiv_vals * scale_factor
     dist_all = np.abs(indiv_vals_scaled - peak_val)
 
-    # Exclude points super close to critical point (dist < 1e-12) due to floating point roundoff
-    mask = (dist_all > 1e-12) & (indiv_times > 0)
+    # Base mask excluding points super close to critical point (dist < 1e-12) due to float roundoff
+    mask_base = (dist_all > 1e-12) & (indiv_times > 0)
 
-    x_fit = dist_all[mask]
-    y_fit = indiv_times[mask]
+    # Scatter plot individual trial points (with optional label for legend)
+    data_label = rf'Extinction Trials ($N={len(dist_all[mask_base])}$)' if show_data_label else None
+    ax.scatter(
+        dist_all[mask_base], indiv_times[mask_base], color=color, alpha=0.35, s=16, linewidths=0,
+        label=data_label,
+    )
 
-    # Perform linear regression in log-log space across all individual extinction points
+    # Apply fit side filter if specified (e.g. "before" for points < peak_val)
+    mask_fit = mask_base.copy()
+    if fit_side == "before":
+        mask_fit = mask_fit & (indiv_vals_scaled < peak_val)
+    elif fit_side == "after":
+        mask_fit = mask_fit & (indiv_vals_scaled > peak_val)
+
+    x_fit = dist_all[mask_fit]
+    y_fit = indiv_times[mask_fit]
+
+    # Perform linear regression in log-log space across the selected extinction points
     fit, cov = np.polyfit(np.log10(x_fit), np.log10(y_fit), 1, cov=True)
     slope = fit[0]
     intercept = fit[1]
-    slope_err = np.sqrt(cov[0, 0])
     exponent_nu = -slope
 
     # Calculate R^2 in log-log space
@@ -116,72 +137,84 @@ def plot_scaling_panel(ax, vals, means, indiv_vals, indiv_times, sweep_name,
     ss_tot = np.sum((y_log - np.mean(y_log)) ** 2)
     r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
 
-    # Plot individual extinction points as scatter dots
-    ax.scatter(
-        x_fit, y_fit, color=color, alpha=0.35, s=14, linewidths=0,
-        label=rf'Extinction Trials ($N={len(x_fit)}$)',
-    )
-
-    # Plot single linear regression line across the full range of points
+    # Plot linear regression line across the range of fitted points
     x_line = np.logspace(np.log10(x_fit.min()), np.log10(x_fit.max()), 200)
     y_line = 10 ** (slope * np.log10(x_line) + intercept)
     ax.plot(
-        x_line, y_line, '-', color='black', linewidth=1.8,
+        x_line, y_line, '-', color='black', linewidth=2.0,
         label=rf'Fit: $\nu = {exponent_nu:.2f}$ ($R^2={r2:.3f}$)',
     )
 
     ax.set_xscale('log')
     ax.set_yscale('log')
 
+    crit_symbol = r"\Delta \mu_c^*" if "mu" in sweep_name else r"\Delta r_c^*"
     ax.set_xlabel(
-        f"Distance to critical point\n$|{sweep_name} - {sweep_name}_c|$ ($\times 10^{{-3}}$)",
+        f"Distance to critical point\n$|{sweep_name} - {crit_symbol}| \\ (\\times 10^{{-3}})$",
         fontsize=fontsize_labels,
     )
     ax.set_ylabel("Extinction Time $T_e$ (steps)", fontsize=fontsize_labels)
     ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.legend(fontsize=11, frameon=False, loc='best')
-    ax.grid(True, which="both", ls=":", alpha=0.3)
+    ax.legend(fontsize=legend_fontsize, frameon=False, loc='best')
 
 
 # ---------------------------------------------------------------------------
-# Main routine: assemble 2x2 panel figure
+# Main routine: assemble 2x2 panel figure and individual single-panel figures
 # ---------------------------------------------------------------------------
 def plot_all_scaling():
-    fig, axes = plt.subplots(2, 2, figsize=(13, 11))
-
-    # Configuration for each of the 4 panels:
-    # (is_liquid, sweep_type, sweep_name, color, ax, title)
-    panels = [
-        (False, "dmu", r"\Delta \mu", "#08519c", axes[0, 0],
-         r"Solid Model: $\Delta \mu$ Critical Slowing Down"),
-        (False, "dr", r"\Delta r", "#a50f15", axes[0, 1],
-         r"Solid Model: $\Delta r$ Critical Slowing Down"),
-        (True, "dmu", r"\Delta \mu", "#08519c", axes[1, 0],
-         r"Liquid Model: $\Delta \mu$ Critical Slowing Down (Extinction Only)"),
-        (True, "dr", r"\Delta r", "#a50f15", axes[1, 1],
-         r"Liquid Model: $\Delta r$ Critical Slowing Down (Extinction Only)"),
-    ]
-
-    for is_liq, stype, sname, col, ax, title in panels:
-        vals, means, indiv_vals, indiv_times = load_individual_data(is_liq, stype)
-        if vals is None:
-            ax.set_title(title + " [no data]", fontsize=13, fontweight='bold')
-            continue
-        plot_scaling_panel(ax, vals, means, indiv_vals, indiv_times, sname, col)
-        ax.set_title(title, fontsize=13, fontweight='bold')
-
-    plt.tight_layout()
-
     steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
     out_dir = os.path.join(
         PROJECT_ROOT, "outputs", "figures",
         f"scaling_analysis{steps_str}_init{args.init_mass_pct}_limit{args.limit_pct}",
     )
     os.makedirs(out_dir, exist_ok=True)
+
+    fig, axes = plt.subplots(2, 2, figsize=(13, 11))
+
+    # Configuration for each of the 4 panels:
+    # (is_liquid, sweep_type, sweep_name, v_min, v_max, color, fit_side, ax, title, file_prefix)
+    panel_configs = [
+        (False, "dmu", r"\Delta \mu", 13e-3, 21e-3, "#08519c", "all", axes[0, 0],
+         r"Solid Model: $\Delta \mu \in [13, 21] \times 10^{-3}$ Critical Slowing Down", "solid_dmu"),
+        (False, "dr", r"\Delta r", 1e-3, 7e-3, "#a50f15", "all", axes[0, 1],
+         r"Solid Model: $\Delta r \in [1, 7] \times 10^{-3}$ Critical Slowing Down", "solid_dr"),
+        (True, "dmu", r"\Delta \mu", 19e-3, 27e-3, "#08519c", "all", axes[1, 0],
+         r"Liquid Model: $\Delta \mu \in [19, 27] \times 10^{-3}$ Critical Slowing Down", "liquid_dmu"),
+        (True, "dr", r"\Delta r", 1e-3, 4e-3, "#a50f15", "before", axes[1, 1],
+         r"Liquid Model: $\Delta r \in [1, 4] \times 10^{-3}$ Critical Slowing Down", "liquid_dr"),
+    ]
+
+    for is_liq, stype, sname, v_min, v_max, col, fside, ax, title, file_prefix in panel_configs:
+        vals, means, indiv_vals, indiv_times = load_individual_data(is_liq, stype, v_min, v_max)
+        if vals is None:
+            ax.set_title(title + " [no data]", fontsize=13, fontweight='bold')
+            continue
+
+        # Plot in combined 2x2 figure (with title and data point label)
+        plot_scaling_panel(
+            ax, vals, means, indiv_vals, indiv_times, sname, col,
+            fit_side=fside, fontsize_labels=15, fontsize_ticks=13,
+            show_data_label=True, legend_fontsize=11,
+        )
+        ax.set_title(title, fontsize=13, fontweight='bold')
+
+        # Create single-panel figure: NO title, enlarged fonts, NO data points legend label
+        fig_single, ax_single = plt.subplots(figsize=(6.5, 5.5))
+        plot_scaling_panel(
+            ax_single, vals, means, indiv_vals, indiv_times, sname, col,
+            fit_side=fside, fontsize_labels=20, fontsize_ticks=16,
+            show_data_label=False, legend_fontsize=15,
+        )
+        fig_single.tight_layout()
+        save_publication_figure(fig_single, f"{file_prefix}_critical_scaling", output_dir=out_dir)
+        plt.close(fig_single)
+        print(f"Saved refined single panel plot to {out_dir}/{file_prefix}_critical_scaling.png")
+
+    fig.tight_layout()
     save_publication_figure(fig, "critical_slowing_down_scaling", output_dir=out_dir)
-    print(f"Saved critical slowing down scaling plot to {out_dir}")
+    print(f"Saved 2x2 combined critical slowing down scaling plot to {out_dir}")
 
 
 if __name__ == "__main__":
