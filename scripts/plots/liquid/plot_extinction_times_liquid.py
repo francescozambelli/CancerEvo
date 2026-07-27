@@ -7,8 +7,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--init_mass_pct", type=int, default=10)
-parser.add_argument("--limit_pct", type=int, default=60)
-parser.add_argument("--n_steps", type=int, default=10000)
+parser.add_argument("--limit_pct", type=int, default=40)
+parser.add_argument("--n_steps", type=int, default=100000)
 args = parser.parse_args()
 
 # Add plotting guidelines skill to path
@@ -20,11 +20,11 @@ except ImportError:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         fig.savefig(os.path.join(output_dir, f"{filename}.png"), bbox_inches='tight', dpi=300)
-        fig.savefig(os.path.join(output_dir, f"{filename}.svg"), bbox_inches='tight')
+        fig.savefig(os.path.join(output_dir, f"{filename}.svg"), bbox_inches='tight', background='transparent')
 
 
 def load_data(sweep_type, v_min=None, v_max=None):
-    steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
+    steps_str = f"_steps{args.n_steps}"
     data_dir = f"../../../data/phase_transition_liquid{steps_str}_init{args.init_mass_pct}_limit{args.limit_pct}/{sweep_type}"
     files = glob.glob(os.path.join(data_dir, "*.npz"))
 
@@ -86,7 +86,7 @@ def plot_panel(ax, vals, data_time, means, indiv_v, indiv_t, sweep_name, color,
     for i, v in enumerate(vals):
         x_val = vals_scaled[i]
         times = data_time[v]
-        ax.scatter([x_val] * len(times), times, color=color, s=16, alpha=0.35, zorder=2, edgecolors='none')
+        ax.scatter([x_val] * len(times), times, color=color, s=28, alpha=0.35, zorder=2, edgecolors='none')
 
     # Fit power-law scaling curve and draw all the way UP TO 1e5 saturation ceiling
     indiv_sc = indiv_v * scale_factor
@@ -109,14 +109,14 @@ def plot_panel(ax, vals, data_time, means, indiv_v, indiv_t, sweep_name, color,
     # Formatting
     ax.set_ylim(-2000, args.n_steps * 1.05)
     ax.set_xlabel(rf"${sweep_name} \ (\times 10^{{-3}})$", fontsize=fontsize_labels)
-    ax.set_ylabel("Extinction Time (steps)", fontsize=fontsize_labels)
+    ax.set_ylabel("Time to Extinction", fontsize=fontsize_labels)
     ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.set_axisbelow(True)
 
 
-def plot_combined():
+def plot_combined(fontsize_labels=25, fontsize_ticks=20):
     steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
     output_dir = f"../../../outputs/figures/phase_transition_liquid{steps_str}/init{args.init_mass_pct}_limit{args.limit_pct}"
     if not os.path.exists(output_dir):
@@ -125,25 +125,27 @@ def plot_combined():
     fig, axes = plt.subplots(2, 1, figsize=(7, 9))
 
     # --- DMU PLOT ---
-    vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu = load_data("dmu", v_min=19e-3, v_max=27e-3)
+    vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu = load_data("dmu", v_min=21e-3, v_max=25e-3)
     if vals_dmu is not None:
         plot_panel(axes[0], vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu, r"\Delta \mu", "#08519c")
 
         # Single panel figure (no title, enlarged fonts)
-        fig_s, ax_s = plt.subplots(figsize=(6.5, 5.5))
-        plot_panel(ax_s, vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu, r"\Delta \mu", "#08519c", fontsize_labels=20, fontsize_ticks=16)
+        fig_s, ax_s = plt.subplots(figsize=(6.5, 6.5))
+        plot_panel(ax_s, vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu, r"\Delta \mu", "#08519c", fontsize_labels=fontsize_labels, fontsize_ticks=fontsize_ticks)
+        ax_s.set_yticks([])
         fig_s.tight_layout()
         save_publication_figure(fig_s, "liquid_extinction_time_dmu", output_dir=output_dir)
         plt.close(fig_s)
 
     # --- DR PLOT ---
-    vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr = load_data("dr", v_min=1e-3, v_max=4e-3)
+    vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr = load_data("dr", v_min=1.8e-3, v_max=3.1e-3)
     if vals_dr is not None:
         plot_panel(axes[1], vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr, r"\Delta r", "#a50f15")
 
         # Single panel figure (no title, enlarged fonts)
-        fig_s, ax_s = plt.subplots(figsize=(6.5, 5.5))
-        plot_panel(ax_s, vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr, r"\Delta r", "#a50f15", fontsize_labels=20, fontsize_ticks=16)
+        fig_s, ax_s = plt.subplots(figsize=(6.5, 6.5))
+        plot_panel(ax_s, vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr, r"\Delta r", "#a50f15", fontsize_labels=fontsize_labels, fontsize_ticks=fontsize_ticks)
+        ax_s.set_yticks([])
         fig_s.tight_layout()
         save_publication_figure(fig_s, "liquid_extinction_time_dr", output_dir=output_dir)
         plt.close(fig_s)
