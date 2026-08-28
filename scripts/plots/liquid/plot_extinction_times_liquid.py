@@ -72,14 +72,21 @@ def load_data(sweep_type, v_min=None, v_max=None):
     return np.array(vals), data, np.array(means), np.array(indiv_vals), np.array(indiv_times)
 
 
+def get_peak_val(vals_scaled, means):
+    if len(vals_scaled) == 1:
+        return vals_scaled[0]
+
+    sorted_indices = np.argsort(means)
+    return (vals_scaled[sorted_indices[-1]] + vals_scaled[sorted_indices[-2]]) / 2.0
+
+
 def plot_panel(ax, vals, data_time, means, indiv_v, indiv_t, sweep_name, color,
                fontsize_labels=18, fontsize_ticks=15):
     scale_factor = 1e3
     vals_scaled = vals * scale_factor
 
     # Vertical line at critical point
-    sorted_indices = np.argsort(means)
-    peak_val = (vals_scaled[sorted_indices[-1]] + vals_scaled[sorted_indices[-2]]) / 2.0
+    peak_val = get_peak_val(vals_scaled, means)
     ax.axvline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
 
     # Overlay individual replica scatter points across full domain
@@ -116,6 +123,54 @@ def plot_panel(ax, vals, data_time, means, indiv_v, indiv_t, sweep_name, color,
     ax.set_axisbelow(True)
 
 
+def plot_mean_panel(ax, vals, peak_val, means, sweep_name, color,
+                    fontsize_labels=18, fontsize_ticks=15):
+    scale_factor = 1e3
+    vals_scaled = vals * scale_factor
+
+    peak_val = peak_val if peak_val is not None else get_peak_val(vals_scaled, means)
+    ax.axvline(peak_val, color='#7f7f7f', linestyle='--', alpha=0.8, linewidth=1.5, zorder=1)
+
+    ax.scatter(
+        vals_scaled,
+        means,
+        color=color,
+        s=55,
+        alpha=0.9,
+        zorder=3,
+        edgecolors='black',
+        linewidths=0.6,
+    )
+
+    x_fit = np.abs(vals_scaled - peak_val)
+    y_fit = means
+    mask_fit = (x_fit > 1e-12) & (y_fit > 0)
+
+    if np.sum(mask_fit) >= 4:
+        slope, intercept = np.polyfit(np.log10(x_fit[mask_fit]), np.log10(y_fit[mask_fit]), 1)
+        x_grid = np.linspace(vals_scaled.min(), vals_scaled.max(), 2000)
+        dist_grid = np.abs(x_grid - peak_val)
+        mask_grid = dist_grid > 1e-12
+
+        y_curve = np.zeros_like(x_grid)
+        y_curve[mask_grid] = 10 ** (slope * np.log10(dist_grid[mask_grid]) + intercept)
+        y_curve = np.clip(y_curve, a_min=0, a_max=args.n_steps)
+
+        left_mask = x_grid < peak_val
+        right_mask = x_grid > peak_val
+
+        ax.plot(x_grid[left_mask], y_curve[left_mask], '-', color=color, linewidth=1.5, zorder=4)
+        ax.plot(x_grid[right_mask], y_curve[right_mask], '-', color=color, linewidth=1.5, zorder=4)
+
+    ax.set_ylim(-2000, args.n_steps * 1.05)
+    ax.set_xlabel(rf"${sweep_name} \ (\times 10^{{-3}})$", fontsize=fontsize_labels)
+    ax.set_ylabel("Mean Time to Extinction", fontsize=fontsize_labels)
+    ax.tick_params(axis='both', labelsize=fontsize_ticks, direction='out')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_axisbelow(True)
+
+
 def plot_combined(fontsize_labels=25, fontsize_ticks=20):
     steps_str = "" if args.n_steps == 10000 else f"_steps{args.n_steps}"
     output_dir = f"../../../outputs/figures/phase_transition_liquid{steps_str}/init{args.init_mass_pct}_limit{args.limit_pct}"
@@ -123,11 +178,13 @@ def plot_combined(fontsize_labels=25, fontsize_ticks=20):
         os.makedirs(output_dir)
 
     fig, axes = plt.subplots(2, 1, figsize=(7, 9))
+    fig_mean, axes_mean = plt.subplots(2, 1, figsize=(7, 9))
 
     # --- DMU PLOT ---
     vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu = load_data("dmu", v_min=21e-3, v_max=25e-3)
     if vals_dmu is not None:
         plot_panel(axes[0], vals_dmu, data_time_dmu, means_dmu, indiv_v_dmu, indiv_t_dmu, r"\Delta \mu", "#08519c")
+        plot_mean_panel(axes_mean[0], vals_dmu, None, means_dmu, r"\Delta \mu", "#08519c")
 
         # Single panel figure (no title, enlarged fonts)
         fig_s, ax_s = plt.subplots(figsize=(6.5, 6.5))
@@ -137,10 +194,17 @@ def plot_combined(fontsize_labels=25, fontsize_ticks=20):
         save_publication_figure(fig_s, "liquid_extinction_time_dmu", output_dir=output_dir)
         plt.close(fig_s)
 
+        fig_mean_s, ax_mean_s = plt.subplots(figsize=(6.5, 6.5))
+        plot_mean_panel(ax_mean_s, vals_dmu, None, means_dmu, r"\Delta \mu", "#08519c", fontsize_labels=fontsize_labels, fontsize_ticks=fontsize_ticks)
+        fig_mean_s.tight_layout()
+        save_publication_figure(fig_mean_s, "liquid_extinction_time_mean_dmu", output_dir=output_dir)
+        plt.close(fig_mean_s)
+
     # --- DR PLOT ---
     vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr = load_data("dr", v_min=1.8e-3, v_max=3.1e-3)
     if vals_dr is not None:
         plot_panel(axes[1], vals_dr, data_time_dr, means_dr, indiv_v_dr, indiv_t_dr, r"\Delta r", "#a50f15")
+        plot_mean_panel(axes_mean[1], vals_dr, None, means_dr, r"\Delta r", "#a50f15")
 
         # Single panel figure (no title, enlarged fonts)
         fig_s, ax_s = plt.subplots(figsize=(6.5, 6.5))
@@ -150,10 +214,21 @@ def plot_combined(fontsize_labels=25, fontsize_ticks=20):
         save_publication_figure(fig_s, "liquid_extinction_time_dr", output_dir=output_dir)
         plt.close(fig_s)
 
+        fig_mean_s, ax_mean_s = plt.subplots(figsize=(6.5, 6.5))
+        plot_mean_panel(ax_mean_s, vals_dr, None, means_dr, r"\Delta r", "#a50f15", fontsize_labels=fontsize_labels, fontsize_ticks=fontsize_ticks)
+        fig_mean_s.tight_layout()
+        save_publication_figure(fig_mean_s, "liquid_extinction_time_mean_dr", output_dir=output_dir)
+        plt.close(fig_mean_s)
+
     # Save combined pair plot
     fig.tight_layout()
     save_publication_figure(fig, "extinction_time_combined_liquid", output_dir=output_dir)
-    print(f"Saved combined pair plot and single panels to {output_dir}")
+    plt.close(fig)
+
+    fig_mean.tight_layout()
+    save_publication_figure(fig_mean, "extinction_time_mean_combined_liquid", output_dir=output_dir)
+    plt.close(fig_mean)
+    print(f"Saved combined pair plot, mean scatter plots, and single panels to {output_dir}")
 
 
 if __name__ == "__main__":

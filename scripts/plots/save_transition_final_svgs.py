@@ -281,7 +281,7 @@ def export_all_svgs():
 
     # Liquid Δμ Panel
     fig, ax = plt.subplots(figsize=(8.5, 6))
-    ax.axvspan(22.7, 23.7, color="#4292c6", alpha=0.20, label="Bistability Region")
+    #ax.axvspan(22.7, 23.7, color="#4292c6", alpha=0.20, label="Bistability Region")
     for v in vals_l_dmu:
         ax.scatter([v] * len(size_l_dmu[v]), size_l_dmu[v], color=COLOR_BLUE, s=18, alpha=0.35, edgecolors="none")
     ax.axvline(peak_l_dmu, color="#7f7f7f", linestyle="--", linewidth=1.5, alpha=0.8)
