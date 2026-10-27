@@ -11,6 +11,10 @@ function reset_cell_optimized!(tiss::OptimizedTissue, idx::Int, n_chrs_init::Int
     tiss.state[idx] = 0
     tiss.n_chrs[idx] = n_chrs_init
     tiss.chromosomes[:, idx] .= 0
+    tiss.presence[:, idx] .= 0
+    for c in 1:n_chrs_init
+        tiss.presence[c, idx] = tiss.mask_all
+    end
     tiss.mu[idx] = tiss.mu0
     tiss.r[idx] = tiss.r0
     tiss.m[idx] = 0.0

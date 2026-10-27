@@ -47,6 +47,31 @@ function simulation_liquid(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int,
             push!(res.m,  mean(tiss.m[cancer_idx]))
             push!(res.n_chrs, mean(tiss.n_chrs[cancer_idx]))
 
+            # Internal-state ploidy distribution & mutation burden by n_chrs
+            nc_counts = zeros(Int, 5)
+            nc_mut_sums = zeros(Float64, 5)
+            eff_p_sum = 0.0
+            for idx in cancer_idx
+                nc = Int(tiss.n_chrs[idx])
+                pres_tot = 0
+                mut_tot = 0
+                for c in 1:nc
+                    p_c = tiss.presence[c, idx]
+                    pres_tot += count_ones(p_c)
+                    mut_tot  += count_ones(tiss.chromosomes[c, idx] & p_c)
+                end
+                eff_p_sum += pres_tot / tiss.N_genes
+                if 1 <= nc <= 5
+                    nc_counts[nc] += 1
+                    if pres_tot > 0
+                        nc_mut_sums[nc] += mut_tot / pres_tot
+                    end
+                end
+            end
+            push!(res.eff_ploidy, eff_p_sum / n_canc)
+            push!(res.n_chrs_dist, Float64.(nc_counts) ./ n_canc)
+            push!(res.mut_by_nc, [nc_counts[k] > 0 ? nc_mut_sums[k] / nc_counts[k] : 0.0 for k in 1:5])
+
             mut_means = Float64[]
             act_means = Float64[]
 
@@ -59,21 +84,23 @@ function simulation_liquid(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int,
                 a_sum = 0.0
                 for idx in cancer_idx
                     nc = tiss.n_chrs[idx]
+                    all_muts, any_muts = get_cell_masks(tiss, idx)
 
-                    if mode == "all"
-                        combined = tiss.chromosomes[1, idx]
-                        for c in 2:nc; combined &= tiss.chromosomes[c, idx]; end
-                    else
-                        combined = tiss.chromosomes[1, idx]
-                        for c in 2:nc; combined |= tiss.chromosomes[c, idx]; end
-                    end
+                    combined = (mode == "all") ? all_muts : any_muts
                     a_sum += count_ones(combined & mask)
 
                     c_sum = 0.0
+                    valid_chrs = 0
                     for c in 1:nc
-                        c_sum += count_ones(tiss.chromosomes[c, idx] & mask) / total_bits
+                        pres_bits = count_ones(tiss.presence[c, idx] & mask)
+                        if pres_bits > 0
+                            c_sum += count_ones(tiss.chromosomes[c, idx] & tiss.presence[c, idx] & mask) / pres_bits
+                            valid_chrs += 1
+                        end
                     end
-                    m_sum += c_sum / nc
+                    if valid_chrs > 0
+                        m_sum += c_sum / valid_chrs
+                    end
                 end
                 push!(mut_means, m_sum / n_canc)
                 push!(act_means, a_sum / n_canc)
@@ -82,6 +109,9 @@ function simulation_liquid(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int,
             push!(res.activations, act_means)
         else
             push!(res.mu, 0.0); push!(res.r, 0.0); push!(res.m, 0.0); push!(res.n_chrs, 0.0)
+            push!(res.eff_ploidy, 0.0)
+            push!(res.n_chrs_dist, zeros(5))
+            push!(res.mut_by_nc, zeros(5))
             push!(res.muts, zeros(5)); push!(res.activations, zeros(5))
         end
 
@@ -111,6 +141,8 @@ function simulation_liquid(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int,
     # Post-process: invert list-of-timestep-vectors → list-of-type-trajectories
     res.muts        = invert(res.muts)
     res.activations = invert(res.activations)
+    res.n_chrs_dist = invert(res.n_chrs_dist)
+    res.mut_by_nc   = invert(res.mut_by_nc)
 
     return res
 end

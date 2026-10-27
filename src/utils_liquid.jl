@@ -25,8 +25,10 @@ mutable struct LiquidTissue
     m::Vector{Float64}
     
     # Chromosomes: stored as a matrix [6, N] of UInt64 (max 6 chromosomes as per death condition)
-    # Each UInt64 bit represents a gene mutation.
+    # Each UInt64 bit represents a gene mutation (0 = WT, 1 = mutated).
+    # presence: bitmask tracking whether each gene locus is physically present (1) or deleted/absent (0).
     chromosomes::Matrix{UInt64}
+    presence::Matrix{UInt64}
     n_chrs::Vector{Int8}
     
     # Parameters
@@ -43,14 +45,17 @@ mutable struct LiquidTissue
     mask_S::UInt64
     mask_M::UInt64
     mask_HK::UInt64
+    mask_all::UInt64
 end
 
 function LiquidTissue(N, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, n_chrs_init)
+    N_genes = N_I + N_O + N_S + N_M + N_HK
     state = zeros(Int8, N)
     mu = fill(mu0, N)
     r = fill(r0, N)
     m = zeros(Float64, N)
     chromosomes = zeros(UInt64, 6, N)
+    presence = zeros(UInt64, 6, N)
     n_chrs = fill(Int8(n_chrs_init), N)
     
     # Build masks
@@ -59,10 +64,15 @@ function LiquidTissue(N, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, n
     mask_S = ((UInt64(1) << N_S) - 1) << (N_I + N_O)
     mask_M = ((UInt64(1) << N_M) - 1) << (N_I + N_O + N_S)
     mask_HK = ((UInt64(1) << N_HK) - 1) << (N_I + N_O + N_S + N_M)
+    mask_all = (UInt64(1) << N_genes) - 1
     
-    return LiquidTissue(N, N_I+N_O+N_S+N_M+N_HK, state, mu, r, m, chromosomes, n_chrs,
+    for c in 1:n_chrs_init
+        presence[c, :] .= mask_all
+    end
+    
+    return LiquidTissue(N, N_genes, state, mu, r, m, chromosomes, presence, n_chrs,
                         mu0, dmu, r0, dr, rmax, dm, 
-                        mask_I, mask_O, mask_S, mask_M, mask_HK)
+                        mask_I, mask_O, mask_S, mask_M, mask_HK, mask_all)
 end
 
 # ---------------------------------------------------------------------------
@@ -74,9 +84,10 @@ function mutate_optimized!(tiss::LiquidTissue, idx::Int)
     nc = tiss.n_chrs[idx]
     for c in 1:nc
         chr = tiss.chromosomes[c, idx]
+        pres = tiss.presence[c, idx]
         for g in 0:(tiss.N_genes - 1)
             mask = UInt64(1) << g
-            if (chr & mask) == 0
+            if (pres & mask) != 0 && (chr & mask) == 0
                 if rand() < μ
                     chr |= mask
                 end
@@ -93,12 +104,7 @@ function update_cell_rates_optimized!(tiss::LiquidTissue, idx::Int)
         return
     end
     
-    all_muts = tiss.chromosomes[1, idx]
-    any_muts = tiss.chromosomes[1, idx]
-    for c in 2:nc
-        all_muts &= tiss.chromosomes[c, idx]
-        any_muts |= tiss.chromosomes[c, idx]
-    end
+    all_muts, any_muts = get_cell_masks(tiss, idx)
     
     n_act_I = count_ones(all_muts & tiss.mask_I)
     n_act_O = count_ones(any_muts & tiss.mask_O)
@@ -120,11 +126,8 @@ function check_death_optimized(tiss::LiquidTissue, idx::Int)
         return true
     end
     
-    # HK death: any HK gene activated in mode "all"
-    all_muts = tiss.chromosomes[1, idx]
-    for c in 2:nc
-        all_muts &= tiss.chromosomes[c, idx]
-    end
+    # HK death: any HK gene lacks a functional WT copy (all present copies mutated, or all copies deleted)
+    all_muts, _ = get_cell_masks(tiss, idx)
     if (all_muts & tiss.mask_HK) != 0
         return true
     end
@@ -202,12 +205,13 @@ function substitute_liquid!(tiss::LiquidTissue, n_chrs_init::Int, misseg_type::S
             if target_idx == -1; continue; end
 
             # ── Copy mother → daughter ────────────────────────────────────
-            tiss.state[target_idx]       = tiss.state[i]
-            tiss.n_chrs[target_idx]      = tiss.n_chrs[i]
+            tiss.state[target_idx]          = tiss.state[i]
+            tiss.n_chrs[target_idx]         = tiss.n_chrs[i]
             tiss.chromosomes[:, target_idx] .= tiss.chromosomes[:, i]
-            tiss.mu[target_idx]          = tiss.mu[i]
-            tiss.r[target_idx]           = tiss.r[i]
-            tiss.m[target_idx]           = tiss.m[i]
+            tiss.presence[:, target_idx]    .= tiss.presence[:, i]
+            tiss.mu[target_idx]             = tiss.mu[i]
+            tiss.r[target_idx]              = tiss.r[i]
+            tiss.m[target_idx]              = tiss.m[i]
 
             # ── Mutate and update both cells (symmetric division model) ──
             for idx in (i, target_idx)
@@ -217,7 +221,7 @@ function substitute_liquid!(tiss::LiquidTissue, n_chrs_init::Int, misseg_type::S
                 if tiss.state[idx] == 0
                     has_mut = false
                     for c in 1:tiss.n_chrs[idx]
-                        if tiss.chromosomes[c, idx] != 0
+                        if tiss.chromosomes[c, idx] != 0 || tiss.presence[c, idx] != tiss.mask_all
                             has_mut = true; break
                         end
                     end
@@ -236,64 +240,14 @@ function substitute_liquid!(tiss::LiquidTissue, n_chrs_init::Int, misseg_type::S
             # ── Missegregation (mother → daughter) ────────────────────────
             mother_m = tiss.m[i]
             if rand() < mother_m && tiss.n_chrs[i] > 0
-                chr_idx = rand(1:tiss.n_chrs[i])
-                chr_to_move = tiss.chromosomes[chr_idx, i]
+                missegregate_cell_pair!(tiss, i, target_idx, misseg_type)
                 
-                if misseg_type == "chunk"
-                    # Chunk-based chromosome missegregation (aneuploid scenario)
-                    N_genes = tiss.N_genes
-                    len_cut = rand(0:N_genes)
-                    if len_cut >= 3 && len_cut <= N_genes - 3
-                        # Contiguous bitwise slice with wrap-around
-                        start_bit = rand(0:(N_genes - 1))
-                        slice_mask = UInt64(0)
-                        for bit_idx in 0:(len_cut - 1)
-                            bit = (start_bit + bit_idx) % N_genes
-                            slice_mask |= (UInt64(1) << bit)
-                        end
-                        
-                        # Extract chunk mutations
-                        chunk_muts = chr_to_move & slice_mask
-                        
-                        # Remove chunk mutations from mother
-                        tiss.chromosomes[chr_idx, i] &= ~slice_mask
-                        
-                        # Push chunk to daughter as new chromosome
-                        if tiss.n_chrs[target_idx] < 6
-                            tiss.n_chrs[target_idx] += 1
-                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chunk_muts
-                        end
-                    else
-                        # Fallback to transferring whole chromosome
-                        for k in chr_idx:(tiss.n_chrs[i]-1)
-                            tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
-                        end
-                        tiss.chromosomes[tiss.n_chrs[i], i] = 0
-                        tiss.n_chrs[i] -= 1
-                        
-                        if tiss.n_chrs[target_idx] < 6
-                            tiss.n_chrs[target_idx] += 1
-                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
-                        end
-                    end
-                else
-                    # Default: whole chromosome missegregation (polyploid scenario)
-                    for k in chr_idx:(tiss.n_chrs[i]-1)
-                        tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
-                    end
-                    tiss.chromosomes[tiss.n_chrs[i], i] = 0
-                    tiss.n_chrs[i] -= 1
-                    
-                    if tiss.n_chrs[target_idx] < 6
-                        tiss.n_chrs[target_idx] += 1
-                        tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
-                    end
-                end
-                
-                # Re-check death after chromosome transfer
+                # Re-check death and update rates after chromosome transfer
                 for idx in (i, target_idx)
                     if check_death_optimized(tiss, idx)
                         push!(new_dead_indices, idx)
+                    else
+                        update_cell_rates_optimized!(tiss, idx)
                     end
                 end
             end
@@ -307,6 +261,7 @@ function substitute_liquid!(tiss::LiquidTissue, n_chrs_init::Int, misseg_type::S
         tiss.m[idx]              = 0.0
         tiss.n_chrs[idx]         = 0
         tiss.chromosomes[:, idx] .= 0
+        tiss.presence[:, idx]    .= 0
     end
 end
 
@@ -339,8 +294,11 @@ function perturb_liquid!(tiss::LiquidTissue, n_seed::Int,
     for idx in seed_indices
         tiss.state[idx]  = 1
         tiss.n_chrs[idx] = n_chrs_p
+        tiss.chromosomes[:, idx] .= 0
+        tiss.presence[:, idx]    .= 0
         for c in 1:n_chrs_p
             tiss.chromosomes[c, idx] = pert_chrs[c]
+            tiss.presence[c, idx]    = tiss.mask_all
         end
         update_cell_rates_optimized!(tiss, idx)
     end

@@ -16,6 +16,16 @@ mutable struct OptimizedResults
     dcells_density::Vector{Float64}
     muts::Vector{Vector{Float64}}
     activations::Vector{Vector{Float64}}
+    eff_ploidy::Vector{Float64}
+    n_chrs_dist::Vector{Vector{Float64}}
+    mut_by_nc::Vector{Vector{Float64}}
+end
+
+function OptimizedResults(state, mu, r, m, n_chrs, tumor_density, dcells_density, muts, activations)
+    return OptimizedResults(
+        state, mu, r, m, n_chrs, tumor_density, dcells_density, muts, activations,
+        Float64[], Vector{Vector{Float64}}(), Vector{Vector{Float64}}()
+    )
 end
 
 # Optimized Tissue using Struct of Arrays (SoA)
@@ -30,8 +40,10 @@ mutable struct OptimizedTissue
     m::Vector{Float64}
     
     # Chromosomes: stored as a matrix [6, L*L] of UInt64 (max 6 chromosomes as per death condition)
-    # Each UInt64 bit represents a gene mutation.
+    # Each UInt64 bit represents a gene mutation (0 = WT, 1 = mutated).
+    # presence: bitmask tracking whether each gene locus is physically present (1) or deleted/absent (0).
     chromosomes::Matrix{UInt64}
+    presence::Matrix{UInt64}
     n_chrs::Vector{Int8}
     
     # Parameters
@@ -48,6 +60,7 @@ mutable struct OptimizedTissue
     mask_S::UInt64
     mask_M::UInt64
     mask_HK::UInt64
+    mask_all::UInt64
     
     # Neighbor cache
     neighbors::Vector{Vector{Int}}
@@ -69,11 +82,13 @@ end
 
 function OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, n_chrs_init)
     N = L * L
+    N_genes = N_I + N_O + N_S + N_M + N_HK
     state = zeros(Int8, N)
     mu = fill(mu0, N)
     r = fill(r0, N)
     m = zeros(Float64, N)
     chromosomes = zeros(UInt64, 6, N)
+    presence = zeros(UInt64, 6, N)
     n_chrs = fill(Int8(n_chrs_init), N)
     
     # Build masks
@@ -82,23 +97,45 @@ function OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm
     mask_S = ((UInt64(1) << N_S) - 1) << (N_I + N_O)
     mask_M = ((UInt64(1) << N_M) - 1) << (N_I + N_O + N_S)
     mask_HK = ((UInt64(1) << N_HK) - 1) << (N_I + N_O + N_S + N_M)
+    mask_all = (UInt64(1) << N_genes) - 1
+    
+    for c in 1:n_chrs_init
+        presence[c, :] .= mask_all
+    end
     
     neighs = [get_neighbors_1d(L, i) for i in 1:N]
     
-    return OptimizedTissue(L, N_I+N_O+N_S+N_M+N_HK, state, mu, r, m, chromosomes, n_chrs,
+    return OptimizedTissue(L, N_genes, state, mu, r, m, chromosomes, presence, n_chrs,
                            mu0, dmu, r0, dr, rmax, dm, 
-                           mask_I, mask_O, mask_S, mask_M, mask_HK, neighs)
+                           mask_I, mask_O, mask_S, mask_M, mask_HK, mask_all, neighs)
 end
 
-# Fast mutation function
+# Compute effective recessive (all_muts) and dominant (any_muts) gene masks accounting for locus presence
+@inline function get_cell_masks(tiss, idx::Int)
+    nc = tiss.n_chrs[idx]
+    functional_wt = UInt64(0)
+    any_muts = UInt64(0)
+    @inbounds for c in 1:nc
+        pres = tiss.presence[c, idx]
+        chr  = tiss.chromosomes[c, idx]
+        functional_wt |= (pres & ~chr)
+        any_muts      |= (pres & chr)
+    end
+    # A recessive locus is inactivated/lost if NO chromosome carries a present, unmutated (WT) copy
+    all_muts = ~functional_wt & tiss.mask_all
+    return all_muts, any_muts
+end
+
+# Fast mutation function (only present, unmutated loci can mutate)
 function mutate_optimized!(tiss::OptimizedTissue, idx::Int)
     μ = tiss.mu[idx]
     nc = tiss.n_chrs[idx]
     for c in 1:nc
         chr = tiss.chromosomes[c, idx]
+        pres = tiss.presence[c, idx]
         for g in 0:(tiss.N_genes - 1)
             mask = UInt64(1) << g
-            if (chr & mask) == 0
+            if (pres & mask) != 0 && (chr & mask) == 0
                 if rand() < μ
                     chr |= mask
                 end
@@ -116,12 +153,7 @@ function update_cell_rates_optimized!(tiss::OptimizedTissue, idx::Int)
         return
     end
     
-    all_muts = tiss.chromosomes[1, idx]
-    any_muts = tiss.chromosomes[1, idx]
-    for c in 2:nc
-        all_muts &= tiss.chromosomes[c, idx]
-        any_muts |= tiss.chromosomes[c, idx]
-    end
+    all_muts, any_muts = get_cell_masks(tiss, idx)
     
     n_act_I = count_ones(all_muts & tiss.mask_I)
     n_act_O = count_ones(any_muts & tiss.mask_O)
@@ -143,16 +175,83 @@ function check_death_optimized(tiss::OptimizedTissue, idx::Int)
         return true
     end
     
-    # HK death: any HK gene activated in mode "all"
-    all_muts = tiss.chromosomes[1, idx]
-    for c in 2:nc
-        all_muts &= tiss.chromosomes[c, idx]
-    end
+    # HK death: any HK gene lacks a functional WT copy (all present copies mutated, or all copies deleted)
+    all_muts, _ = get_cell_masks(tiss, idx)
     if (all_muts & tiss.mask_HK) != 0
         return true
     end
     
     return false
+end
+
+# Helper to perform whole or chunk missegregation from mother (i) to daughter (target_idx)
+function missegregate_cell_pair!(tiss, i::Int, target_idx::Int, misseg_type::String)
+    chr_idx = rand(1:tiss.n_chrs[i])
+    chr_to_move = tiss.chromosomes[chr_idx, i]
+    pres_to_move = tiss.presence[chr_idx, i]
+    
+    if misseg_type == "chunk"
+        # Chunk-based chromosome missegregation (segmental aneuploidy)
+        N_genes = tiss.N_genes
+        len_cut = rand(0:N_genes)
+        if len_cut >= 3 && len_cut <= N_genes - 3
+            # Contiguous bitwise slice with wrap-around
+            start_bit = rand(0:(N_genes - 1))
+            slice_mask = UInt64(0)
+            for bit_idx in 0:(len_cut - 1)
+                bit = (start_bit + bit_idx) % N_genes
+                slice_mask |= (UInt64(1) << bit)
+            end
+            actual_slice = slice_mask & pres_to_move
+        else
+            actual_slice = pres_to_move
+        end
+    else
+        # Default: whole chromosome missegregation (polyploid scenario)
+        actual_slice = pres_to_move
+    end
+
+    if actual_slice != 0
+        chunk_muts = chr_to_move & actual_slice
+        chunk_pres = actual_slice
+
+        # 1. Remove transferred loci (both presence and mutation bits) from mother's donor slot
+        tiss.chromosomes[chr_idx, i] &= ~actual_slice
+        tiss.presence[chr_idx, i]    &= ~actual_slice
+
+        # Compact mother's allele copy-slots downward so copy c always occupies slot c
+        for c in 1:(tiss.n_chrs[i]-1)
+            for c_above in (c+1):tiss.n_chrs[i]
+                can_drop = tiss.presence[c_above, i] & ~tiss.presence[c, i]
+                if can_drop != 0
+                    tiss.presence[c, i]          |= can_drop
+                    tiss.chromosomes[c, i]       |= (tiss.chromosomes[c_above, i] & can_drop)
+                    tiss.presence[c_above, i]    &= ~can_drop
+                    tiss.chromosomes[c_above, i] &= ~can_drop
+                end
+            end
+        end
+        while tiss.n_chrs[i] > 0 && tiss.presence[tiss.n_chrs[i], i] == 0
+            tiss.n_chrs[i] -= 1
+        end
+
+        # 2. Pack transferred loci into daughter's lowest available allele copy-slots (1..6)
+        rem_pres = chunk_pres
+        rem_muts = chunk_muts
+        for c in 1:6
+            rem_pres == 0 && break
+            can_place = rem_pres & ~tiss.presence[c, target_idx]
+            if can_place != 0
+                tiss.presence[c, target_idx]    |= can_place
+                tiss.chromosomes[c, target_idx] |= (rem_muts & can_place)
+                rem_pres &= ~can_place
+                rem_muts &= ~can_place
+                if c > tiss.n_chrs[target_idx]
+                    tiss.n_chrs[target_idx] = Int8(c)
+                end
+            end
+        end
+    end
 end
 
 # Old optimized substitution with weighted neighbor selection (backup)
@@ -170,15 +269,7 @@ function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, miss
         neighs = tiss.neighbors[i]
         neigh_states = tiss.state[neighs]
         
-        # A cell can divide only if it has at least one neighbor that is NOT wild-type
-        # (either cancer or dead). If it is completely isolated (surrounded only by WT cells),
-        # the division event is skipped. Interior cancer cells (surrounded by other cancer cells)
-        # can freely divide and replace their neighbors.
         if !all(neigh_states .== 0) 
-            # Select which neighbor to replace:
-            # 1. Prioritize replacing dead neighbors (r = 0.0) to avoid dead-site accumulation.
-            # 2. Otherwise, select a neighbor with probability inversely proportional to its
-            #    replication rate (inv_rates = 1.0 ./ neigh_r).
             neigh_r = tiss.r[neighs]
             target_idx = -1
             dead_neighs = findall(neigh_r .== 0.0)
@@ -193,17 +284,11 @@ function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, miss
             tiss.state[target_idx] = tiss.state[i]
             tiss.n_chrs[target_idx] = tiss.n_chrs[i]
             tiss.chromosomes[:, target_idx] .= tiss.chromosomes[:, i]
+            tiss.presence[:, target_idx] .= tiss.presence[:, i]
             tiss.mu[target_idx] = tiss.mu[i]
             tiss.r[target_idx] = tiss.r[i]
             tiss.m[target_idx] = tiss.m[i]
             
-            # Mutate and finalize both cells (i = mother, target_idx = daughter).
-            # Note: In the solid model, both cells undergo mutation. This represents:
-            # 1. A symmetric cell division model, where both resulting cells are new
-            #    and undergo DNA replication (leading to potential errors in both).
-            # 2. Prevent boundary stagnation: Since boundary cells drive the expansion
-            #    into wild-type tissue, mutating the parent ensures that the active
-            #    expanding front evolves and adapts over successive divisions.
             for idx in (i, target_idx)
                 mutate_optimized!(tiss, idx)
                 
@@ -211,7 +296,7 @@ function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, miss
                 if tiss.state[idx] == 0
                     has_mut = false
                     for c in 1:tiss.n_chrs[idx]
-                        if tiss.chromosomes[c, idx] != 0
+                        if tiss.chromosomes[c, idx] != 0 || tiss.presence[c, idx] != tiss.mask_all
                             has_mut = true; break
                         end
                     end
@@ -230,64 +315,14 @@ function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, miss
             # Missegregation (mother to daughter)
             mother_m = tiss.m[i]
             if rand() < mother_m && tiss.n_chrs[i] > 0
-                chr_idx = rand(1:tiss.n_chrs[i])
-                chr_to_move = tiss.chromosomes[chr_idx, i]
+                missegregate_cell_pair!(tiss, i, target_idx, misseg_type)
                 
-                if misseg_type == "chunk"
-                    # Chunk-based chromosome missegregation (aneuploid scenario)
-                    N_genes = tiss.N_genes
-                    len_cut = rand(0:N_genes)
-                    if len_cut >= 3 && len_cut <= N_genes - 3
-                        # Contiguous bitwise slice with wrap-around
-                        start_bit = rand(0:(N_genes - 1))
-                        slice_mask = UInt64(0)
-                        for bit_idx in 0:(len_cut - 1)
-                            bit = (start_bit + bit_idx) % N_genes
-                            slice_mask |= (UInt64(1) << bit)
-                        end
-                        
-                        # Extract chunk mutations
-                        chunk_muts = chr_to_move & slice_mask
-                        
-                        # Remove chunk mutations from mother
-                        tiss.chromosomes[chr_idx, i] &= ~slice_mask
-                        
-                        # Push chunk to daughter as new chromosome
-                        if tiss.n_chrs[target_idx] < 6
-                            tiss.n_chrs[target_idx] += 1
-                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chunk_muts
-                        end
-                    else
-                        # Fallback to transferring whole chromosome
-                        for k in chr_idx:(tiss.n_chrs[i]-1)
-                            tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
-                        end
-                        tiss.chromosomes[tiss.n_chrs[i], i] = 0
-                        tiss.n_chrs[i] -= 1
-                        
-                        if tiss.n_chrs[target_idx] < 6
-                            tiss.n_chrs[target_idx] += 1
-                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
-                        end
-                    end
-                else
-                    # Default: whole chromosome missegregation (polyploid scenario)
-                    for k in chr_idx:(tiss.n_chrs[i]-1)
-                        tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
-                    end
-                    tiss.chromosomes[tiss.n_chrs[i], i] = 0
-                    tiss.n_chrs[i] -= 1
-                    
-                    if tiss.n_chrs[target_idx] < 6
-                        tiss.n_chrs[target_idx] += 1
-                        tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
-                    end
-                end
-                
-                # Re-check death for both after transfer
+                # Re-check death and update rates for both after transfer
                 for idx in (i, target_idx)
                     if check_death_optimized(tiss, idx)
                         push!(dead_indices, idx)
+                    else
+                        update_cell_rates_optimized!(tiss, idx)
                     end
                 end
             end
@@ -302,6 +337,7 @@ function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, miss
         tiss.m[idx] = 0.0
         tiss.n_chrs[idx] = 0
         tiss.chromosomes[:, idx] .= 0
+        tiss.presence[:, idx] .= 0
     end
 end
 
@@ -359,17 +395,12 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
             tiss.state[target_idx] = tiss.state[i]
             tiss.n_chrs[target_idx] = tiss.n_chrs[i]
             tiss.chromosomes[:, target_idx] .= tiss.chromosomes[:, i]
+            tiss.presence[:, target_idx] .= tiss.presence[:, i]
             tiss.mu[target_idx] = tiss.mu[i]
             tiss.r[target_idx] = tiss.r[i]
             tiss.m[target_idx] = tiss.m[i]
             
             # Mutate and finalize both cells (i = mother, target_idx = daughter).
-            # Note: In the solid model, both cells undergo mutation. This represents:
-            # 1. A symmetric cell division model, where both resulting cells are new
-            #    and undergo DNA replication (leading to potential errors in both).
-            # 2. Prevent boundary stagnation: Since boundary cells drive the expansion
-            #    into wild-type tissue, mutating the parent ensures that the active
-            #    expanding front evolves and adapts over successive divisions.
             for idx in (i, target_idx)
                 mutate_optimized!(tiss, idx)
                 
@@ -377,7 +408,7 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
                 if tiss.state[idx] == 0
                     has_mut = false
                     for c in 1:tiss.n_chrs[idx]
-                        if tiss.chromosomes[c, idx] != 0
+                        if tiss.chromosomes[c, idx] != 0 || tiss.presence[c, idx] != tiss.mask_all
                             has_mut = true; break
                         end
                     end
@@ -396,64 +427,14 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
             # Missegregation (mother to daughter)
             mother_m = tiss.m[i]
             if rand() < mother_m && tiss.n_chrs[i] > 0
-                chr_idx = rand(1:tiss.n_chrs[i])
-                chr_to_move = tiss.chromosomes[chr_idx, i]
+                missegregate_cell_pair!(tiss, i, target_idx, misseg_type)
                 
-                if misseg_type == "chunk"
-                    # Chunk-based chromosome missegregation (aneuploid scenario)
-                    N_genes = tiss.N_genes
-                    len_cut = rand(0:N_genes)
-                    if len_cut >= 3 && len_cut <= N_genes - 3
-                        # Contiguous bitwise slice with wrap-around
-                        start_bit = rand(0:(N_genes - 1))
-                        slice_mask = UInt64(0)
-                        for bit_idx in 0:(len_cut - 1)
-                            bit = (start_bit + bit_idx) % N_genes
-                            slice_mask |= (UInt64(1) << bit)
-                        end
-                        
-                        # Extract chunk mutations
-                        chunk_muts = chr_to_move & slice_mask
-                        
-                        # Remove chunk mutations from mother
-                        tiss.chromosomes[chr_idx, i] &= ~slice_mask
-                        
-                        # Push chunk to daughter as new chromosome
-                        if tiss.n_chrs[target_idx] < 6
-                            tiss.n_chrs[target_idx] += 1
-                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chunk_muts
-                        end
-                    else
-                        # Fallback to transferring whole chromosome
-                        for k in chr_idx:(tiss.n_chrs[i]-1)
-                            tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
-                        end
-                        tiss.chromosomes[tiss.n_chrs[i], i] = 0
-                        tiss.n_chrs[i] -= 1
-                        
-                        if tiss.n_chrs[target_idx] < 6
-                            tiss.n_chrs[target_idx] += 1
-                            tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
-                        end
-                    end
-                else
-                    # Default: whole chromosome missegregation (polyploid scenario)
-                    for k in chr_idx:(tiss.n_chrs[i]-1)
-                        tiss.chromosomes[k, i] = tiss.chromosomes[k+1, i]
-                    end
-                    tiss.chromosomes[tiss.n_chrs[i], i] = 0
-                    tiss.n_chrs[i] -= 1
-                    
-                    if tiss.n_chrs[target_idx] < 6
-                        tiss.n_chrs[target_idx] += 1
-                        tiss.chromosomes[tiss.n_chrs[target_idx], target_idx] = chr_to_move
-                    end
-                end
-                
-                # Re-check death for both after transfer
+                # Re-check death and update rates for both after transfer
                 for idx in (i, target_idx)
                     if check_death_optimized(tiss, idx)
                         push!(dead_indices, idx)
+                    else
+                        update_cell_rates_optimized!(tiss, idx)
                     end
                 end
             end
@@ -468,6 +449,7 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
         tiss.m[idx] = 0.0
         tiss.n_chrs[idx] = 0
         tiss.chromosomes[:, idx] .= 0
+        tiss.presence[:, idx] .= 0
     end
 end
 
@@ -509,8 +491,11 @@ function perturb_optimized!(tiss::OptimizedTissue, r_pert::Float64, pert_chrs::V
             idx = i + (j-1)*L
             tiss.state[idx] = 1
             tiss.n_chrs[idx] = length(pert_chrs)
+            tiss.chromosomes[:, idx] .= 0
+            tiss.presence[:, idx] .= 0
             for c in 1:length(pert_chrs)
                 tiss.chromosomes[c, idx] = pert_chrs[c]
+                tiss.presence[c, idx] = tiss.mask_all
             end
             update_cell_rates_optimized!(tiss, idx)
         end

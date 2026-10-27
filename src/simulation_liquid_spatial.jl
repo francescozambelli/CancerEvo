@@ -93,19 +93,21 @@ function simulation_liquid_spatial(tiss::LiquidTissue, n_chr_init::Int,
                 m_sum = 0.0; a_sum = 0.0
                 for idx in cancer_idx
                     nc = tiss.n_chrs[idx]
-                    if mode == "all"
-                        combined = tiss.chromosomes[1, idx]
-                        for c in 2:nc; combined &= tiss.chromosomes[c, idx]; end
-                    else
-                        combined = tiss.chromosomes[1, idx]
-                        for c in 2:nc; combined |= tiss.chromosomes[c, idx]; end
-                    end
+                    all_muts, any_muts = get_cell_masks(tiss, idx)
+                    combined = (mode == "all") ? all_muts : any_muts
                     a_sum += count_ones(combined & mask)
                     c_sum = 0.0
+                    valid_chrs = 0
                     for c in 1:nc
-                        c_sum += count_ones(tiss.chromosomes[c, idx] & mask) / total_bits
+                        pres_bits = count_ones(tiss.presence[c, idx] & mask)
+                        if pres_bits > 0
+                            c_sum += count_ones(tiss.chromosomes[c, idx] & tiss.presence[c, idx] & mask) / pres_bits
+                            valid_chrs += 1
+                        end
                     end
-                    m_sum += c_sum / nc
+                    if valid_chrs > 0
+                        m_sum += c_sum / valid_chrs
+                    end
                 end
                 push!(mut_means, m_sum / n_canc)
                 push!(act_means, a_sum / n_canc)

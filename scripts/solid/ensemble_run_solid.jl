@@ -25,21 +25,26 @@ using Base.Threads
 using Random, NPZ
 
 # Helper function to save results in NPZ format (reusable in ensemble)
-function save_results_npz(filename, results)
+function save_results_npz(filename, results, dm_val=dm)
     results_dict = Dict(
         "mu" => results.mu,
         "r" => results.r,
         "m" => results.m,
         "n_chrs" => results.n_chrs,
+        "eff_ploidy" => results.eff_ploidy,
         "tumor_density" => results.tumor_density,
         "death_density" => results.dcells_density,
-        "dm" => [dm],
+        "dm" => [dm_val],
         # Outcome codes: 0: Health, 1: Tumor, 2: Done
-        "outcome_code" => [results.state == "Health" ? 0 : results.state == "Tumor" ? 1 : 2]
+        "outcome_code" => [results.state == "Health" ? 0 : results.state == "Tumor_Max" || results.state == "Tumor" ? 1 : 2]
     )
     for (i, type) in enumerate(["I", "O", "S", "M", "HK"])
         results_dict["mut_$(type)"] = results.muts[i]
         results_dict["act_$(type)"] = results.activations[i]
+    end
+    for k in 1:min(5, length(results.n_chrs_dist))
+        results_dict["nc_dist_$(k)"] = results.n_chrs_dist[k]
+        results_dict["mut_by_nc_$(k)"] = results.mut_by_nc[k]
     end
     npzwrite(filename, results_dict)
 end
@@ -81,7 +86,7 @@ function run_ensemble(num_sims=50, misseg_mech=misseg_type, suffix="", dm=dm)
         res = simulation_optimized(tiss, N_CHR, n_steps, n_it_store, false, limit, 0.0, misseg_mech)
         
         # Save full NPZ result for this individual simulation
-        save_results_npz(joinpath(ensemble_dir, "sim_$(i).npz"), res)
+        save_results_npz(joinpath(ensemble_dir, "sim_$(i).npz"), res, dm)
         
         # Capture outcome
         final_step = length(res.tumor_density)
@@ -119,46 +124,48 @@ function run_ensemble(num_sims=50, misseg_mech=misseg_type, suffix="", dm=dm)
     println("Results saved to: $output_file")
 end
 
-suffix = ""
-# Find and extract suffix if present (supports both --suffix and -s)
-idx = findfirst(x -> x == "--suffix" || x == "-s", ARGS)
-if !isnothing(idx)
-    if idx < length(ARGS)
-        suffix = ARGS[idx+1]
-        deleteat!(ARGS, [idx, idx+1])
-    else
-        deleteat!(ARGS, idx)
+if abspath(PROGRAM_FILE) == @__FILE__
+    suffix = ""
+    # Find and extract suffix if present (supports both --suffix and -s)
+    idx = findfirst(x -> x == "--suffix" || x == "-s", ARGS)
+    if !isnothing(idx)
+        if idx < length(ARGS)
+            suffix = ARGS[idx+1]
+            deleteat!(ARGS, [idx, idx+1])
+        else
+            deleteat!(ARGS, idx)
+        end
     end
-end
 
-dm_val = dm
-# Find and extract dm if present
-idx_dm = findfirst(x -> x == "--dm", ARGS)
-if !isnothing(idx_dm)
-    if idx_dm < length(ARGS)
-        dm_val = parse(Float64, ARGS[idx_dm+1])
-        deleteat!(ARGS, [idx_dm, idx_dm+1])
-    else
-        deleteat!(ARGS, idx_dm)
+    dm_val = dm
+    # Find and extract dm if present
+    idx_dm = findfirst(x -> x == "--dm", ARGS)
+    if !isnothing(idx_dm)
+        if idx_dm < length(ARGS)
+            dm_val = parse(Float64, ARGS[idx_dm+1])
+            deleteat!(ARGS, [idx_dm, idx_dm+1])
+        else
+            deleteat!(ARGS, idx_dm)
+        end
     end
-end
 
-if length(ARGS) >= 3
-    n = parse(Int, ARGS[1])
-    m_mech = ARGS[2]
-    # If suffix is not already set via flag, take the 3rd argument
-    if isempty(suffix)
-        suffix = ARGS[3]
+    if length(ARGS) >= 3
+        n = parse(Int, ARGS[1])
+        m_mech = ARGS[2]
+        # If suffix is not already set via flag, take the 3rd argument
+        if isempty(suffix)
+            suffix = ARGS[3]
+        end
+        run_ensemble(n, m_mech, suffix, dm_val)
+    elseif length(ARGS) == 2
+        n = parse(Int, ARGS[1])
+        m_mech = ARGS[2]
+        run_ensemble(n, m_mech, suffix, dm_val)
+    elseif length(ARGS) == 1
+        n = parse(Int, ARGS[1])
+        run_ensemble(n, misseg_type, suffix, dm_val)
+    else
+        # Default run
+        run_ensemble(20, misseg_type, suffix, dm_val)
     end
-    run_ensemble(n, m_mech, suffix, dm_val)
-elseif length(ARGS) == 2
-    n = parse(Int, ARGS[1])
-    m_mech = ARGS[2]
-    run_ensemble(n, m_mech, suffix, dm_val)
-elseif length(ARGS) == 1
-    n = parse(Int, ARGS[1])
-    run_ensemble(n, misseg_type, suffix, dm_val)
-else
-    # Default run
-    run_ensemble(20, misseg_type, suffix, dm_val)
 end
