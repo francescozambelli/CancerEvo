@@ -90,9 +90,9 @@ else:
     r_smooth_l = r_unique_l
     liquid_med_smooth = liquid_med
 
-# Theoretical Liquid Boundary
+# Theoretical Liquid Boundary: Ps* = 0.5 * (1.0 + (r0/rmax)^2)
 theory_rmax_norm = np.linspace(XMIN, XMAX, 600)
-p_star_theory_l = 0.5 * (1.0 + 1.0 / theory_rmax_norm)
+p_star_theory_l = 0.5 * (1.0 + 1.0 / (theory_rmax_norm ** 2))
 
 # ---------------------------------------------------------------------------
 # 1. Generate Static Figure (Matplotlib)
