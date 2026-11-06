@@ -93,14 +93,17 @@ for label in ["Diploid", "Polyploid", "Aneuploid"]:
     
     p_hk = 1.0 - (1.0 - p_hk_mut) * (1.0 - p_hk_unmask)
     
-    # 2. Allele-count threshold (>5n) violation in daughter
+    # 2. Allele-count threshold (> 5 * N_genes = 225) violation upon missegregation
+    # In polyploid: whole chromosome (+45) kills daughter if at 5n (225 + 45 > 225); or kills mother if at 1n (1n -> 0n)
+    # In aneuploid: chunk transfer of size L_trans kills daughter if A_m + L_trans > 225 (margin = 225 - 45 * eff_p)
     if label == "Diploid":
         p_ploidy = np.zeros_like(p_hk)
     elif label == "Polyploid":
         p_ploidy = m_arr * (nc5_arr + nc1_arr)
-    else:  # Aneuploid: chunk only overflows slot 5 if it hits a 5-copy locus
-        f_at_5 = np.clip((ep_arr - 3.0) / 2.0, 0.0, 1.0) * 0.5
-        p_ploidy = m_arr * (nc5_arr * f_at_5 + nc1_arr)
+    else:  # Aneuploid
+        margin = np.maximum(0.0, 225.0 - ep_arr * 45.0)
+        p_over_cap = np.clip((38.0 - margin) / 38.0, 0.0, 1.0)
+        p_ploidy = m_arr * p_over_cap
         
     # 3. Total death probability & Effective growth propensity r_eff = r * (1 - p_tot)
     p_tot = 1.0 - (1.0 - p_hk) * (1.0 - p_ploidy)
