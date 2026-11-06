@@ -60,12 +60,12 @@ function simulation_liquid(tiss::LiquidTissue, n_chr_init::Int, n_steps::Int,
                     pres_tot += count_ones(p_c)
                     mut_tot  += count_ones(tiss.chromosomes[c, idx] & p_c)
                 end
-                eff_p_sum += pres_tot / tiss.N_genes
-                if 1 <= nc <= 5
-                    nc_counts[nc] += 1
-                    if pres_tot > 0
-                        nc_mut_sums[nc] += mut_tot / pres_tot
-                    end
+                eff_p = pres_tot / tiss.N_genes
+                eff_p_sum += eff_p
+                p_bin = clamp(round(Int, eff_p), 1, 5)
+                nc_counts[p_bin] += 1
+                if pres_tot > 0
+                    nc_mut_sums[p_bin] += mut_tot / pres_tot
                 end
             end
             push!(res.eff_ploidy, eff_p_sum / n_canc)

@@ -28,6 +28,8 @@ function OptimizedResults(state, mu, r, m, n_chrs, tumor_density, dcells_density
     )
 end
 
+const MAX_CHR_SLOTS = 80
+
 # Optimized Tissue using Struct of Arrays (SoA)
 mutable struct OptimizedTissue
     L::Int
@@ -39,9 +41,10 @@ mutable struct OptimizedTissue
     r::Vector{Float64}
     m::Vector{Float64}
     
-    # Chromosomes: stored as a matrix [6, L*L] of UInt64 (max 6 chromosomes as per death condition)
+    # Chromosomes: stored as a matrix [MAX_CHR_SLOTS, L*L] of UInt64
+    # Each slot c in 1:n_chrs[idx] represents a distinct chromosome or chromosome fragment.
     # Each UInt64 bit represents a gene mutation (0 = WT, 1 = mutated).
-    # presence: bitmask tracking whether each gene locus is physically present (1) or deleted/absent (0).
+    # presence: bitmask tracking whether each gene locus is physically present (1) or absent (0) on slot c.
     chromosomes::Matrix{UInt64}
     presence::Matrix{UInt64}
     n_chrs::Vector{Int8}
@@ -87,8 +90,8 @@ function OptimizedTissue(L, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm
     mu = fill(mu0, N)
     r = fill(r0, N)
     m = zeros(Float64, N)
-    chromosomes = zeros(UInt64, 6, N)
-    presence = zeros(UInt64, 6, N)
+    chromosomes = zeros(UInt64, MAX_CHR_SLOTS, N)
+    presence = zeros(UInt64, MAX_CHR_SLOTS, N)
     n_chrs = fill(Int8(n_chrs_init), N)
     
     # Build masks
@@ -168,10 +171,19 @@ end
 
 function check_death_optimized(tiss::OptimizedTissue, idx::Int)
     nc = tiss.n_chrs[idx]
-    if nc == 0 || nc > 5
+    if nc == 0 || nc >= size(tiss.chromosomes, 1)
         return true
     end
     if tiss.state[idx] != 0 && tiss.mu[idx] == 0.0
+        return true
+    end
+    
+    # Total allele count check: nullisomy (0 alleles) or hyperploid overload (> 5 * N_genes)
+    total_alleles = 0
+    @inbounds for c in 1:nc
+        total_alleles += count_ones(tiss.presence[c, idx])
+    end
+    if total_alleles == 0 || total_alleles > 5 * tiss.N_genes
         return true
     end
     
@@ -193,20 +205,23 @@ function missegregate_cell_pair!(tiss, i::Int, target_idx::Int, misseg_type::Str
     mode = misseg_type == "hybrid" ? (rand() < 0.5 ? "whole" : "chunk") : misseg_type
     
     if mode == "chunk"
-        # Chunk-based chromosome missegregation (segmental aneuploidy)
-        N_genes = tiss.N_genes
-        min_cut = N_genes <= 10 ? 1 : 3
-        max_cut = N_genes - min_cut
-        len_cut = rand(0:N_genes)
-        if len_cut >= min_cut && len_cut <= max_cut
-            # Contiguous bitwise slice with wrap-around
-            start_bit = rand(0:(N_genes - 1))
-            slice_mask = UInt64(0)
-            for bit_idx in 0:(len_cut - 1)
-                bit = (start_bit + bit_idx) % N_genes
-                slice_mask |= (UInt64(1) << bit)
+        # Chunk-based chromosome missegregation (segmental aneuploidy):
+        # Cut the selected chromosome/fragment along its present length L_chr.
+        # If either resulting fragment has fewer than min_cut (3) alleles, transfer the whole chromosome/fragment.
+        L_chr = count_ones(pres_to_move)
+        min_cut = tiss.N_genes <= 10 ? 1 : 3
+        len_cut = rand(0:L_chr)
+        if L_chr >= 2 * min_cut && len_cut >= min_cut && len_cut <= (L_chr - min_cut)
+            start_k = rand(0:(L_chr - 1))
+            actual_slice = UInt64(0)
+            temp = pres_to_move
+            for k in 0:(L_chr - 1)
+                lowest_bit = temp & -temp
+                temp &= temp - 1
+                if (k - start_k + L_chr) % L_chr < len_cut
+                    actual_slice |= lowest_bit
+                end
             end
-            actual_slice = slice_mask & pres_to_move
         else
             actual_slice = pres_to_move
         end
@@ -219,41 +234,29 @@ function missegregate_cell_pair!(tiss, i::Int, target_idx::Int, misseg_type::Str
         chunk_muts = chr_to_move & actual_slice
         chunk_pres = actual_slice
 
-        # 1. Remove transferred loci (both presence and mutation bits) from mother's donor slot
+        # 1. Remove transferred loci from mother's selected chromosome/fragment (no mixing across chromosomes)
         tiss.chromosomes[chr_idx, i] &= ~actual_slice
         tiss.presence[chr_idx, i]    &= ~actual_slice
 
-        # Compact mother's allele copy-slots downward so copy c always occupies slot c
-        for c in 1:(tiss.n_chrs[i]-1)
-            for c_above in (c+1):tiss.n_chrs[i]
-                can_drop = tiss.presence[c_above, i] & ~tiss.presence[c, i]
-                if can_drop != 0
-                    tiss.presence[c, i]          |= can_drop
-                    tiss.chromosomes[c, i]       |= (tiss.chromosomes[c_above, i] & can_drop)
-                    tiss.presence[c_above, i]    &= ~can_drop
-                    tiss.chromosomes[c_above, i] &= ~can_drop
-                end
+        # If the donor chromosome slot is now completely empty, remove the empty slot by shifting remaining slots down
+        if tiss.presence[chr_idx, i] == 0
+            nc_m = tiss.n_chrs[i]
+            @inbounds for c in chr_idx:(nc_m - 1)
+                tiss.chromosomes[c, i] = tiss.chromosomes[c + 1, i]
+                tiss.presence[c, i]    = tiss.presence[c + 1, i]
             end
-        end
-        while tiss.n_chrs[i] > 0 && tiss.presence[tiss.n_chrs[i], i] == 0
-            tiss.n_chrs[i] -= 1
+            tiss.chromosomes[nc_m, i] = UInt64(0)
+            tiss.presence[nc_m, i]    = UInt64(0)
+            tiss.n_chrs[i] = nc_m - Int8(1)
         end
 
-        # 2. Pack transferred loci into daughter's lowest available allele copy-slots (1..6)
-        rem_pres = chunk_pres
-        rem_muts = chunk_muts
-        for c in 1:6
-            rem_pres == 0 && break
-            can_place = rem_pres & ~tiss.presence[c, target_idx]
-            if can_place != 0
-                tiss.presence[c, target_idx]    |= can_place
-                tiss.chromosomes[c, target_idx] |= (rem_muts & can_place)
-                rem_pres &= ~can_place
-                rem_muts &= ~can_place
-                if c > tiss.n_chrs[target_idx]
-                    tiss.n_chrs[target_idx] = Int8(c)
-                end
-            end
+        # 2. Append transferred chromosome/fragment as a new separate slot in the daughter cell
+        nc_d = tiss.n_chrs[target_idx]
+        if nc_d < size(tiss.chromosomes, 1)
+            new_slot = nc_d + Int8(1)
+            tiss.n_chrs[target_idx] = new_slot
+            tiss.presence[new_slot, target_idx]    = chunk_pres
+            tiss.chromosomes[new_slot, target_idx] = chunk_muts
         end
     end
 end
@@ -285,10 +288,18 @@ function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, miss
             end
             
             # Daughter copies mother
+            nc_m = tiss.n_chrs[i]
+            nc_old = tiss.n_chrs[target_idx]
             tiss.state[target_idx] = tiss.state[i]
-            tiss.n_chrs[target_idx] = tiss.n_chrs[i]
-            tiss.chromosomes[:, target_idx] .= tiss.chromosomes[:, i]
-            tiss.presence[:, target_idx] .= tiss.presence[:, i]
+            tiss.n_chrs[target_idx] = nc_m
+            @inbounds for c in 1:nc_m
+                tiss.chromosomes[c, target_idx] = tiss.chromosomes[c, i]
+                tiss.presence[c, target_idx]    = tiss.presence[c, i]
+            end
+            @inbounds for c in (nc_m + 1):nc_old
+                tiss.chromosomes[c, target_idx] = UInt64(0)
+                tiss.presence[c, target_idx]    = UInt64(0)
+            end
             tiss.mu[target_idx] = tiss.mu[i]
             tiss.r[target_idx] = tiss.r[i]
             tiss.m[target_idx] = tiss.m[i]
@@ -335,13 +346,16 @@ function substitute_optimized_old!(tiss::OptimizedTissue, n_chrs_init::Int, miss
     end
     
     for idx in unique(dead_indices)
+        nc_dead = tiss.n_chrs[idx]
+        @inbounds for c in 1:nc_dead
+            tiss.chromosomes[c, idx] = UInt64(0)
+            tiss.presence[c, idx]    = UInt64(0)
+        end
         tiss.state[idx] = 2
         tiss.r[idx] = 0.0
         tiss.mu[idx] = 0.0
         tiss.m[idx] = 0.0
         tiss.n_chrs[idx] = 0
-        tiss.chromosomes[:, idx] .= 0
-        tiss.presence[:, idx] .= 0
     end
 end
 
@@ -396,10 +410,18 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
             end
             
             # Daughter copies mother
+            nc_m = tiss.n_chrs[i]
+            nc_old = tiss.n_chrs[target_idx]
             tiss.state[target_idx] = tiss.state[i]
-            tiss.n_chrs[target_idx] = tiss.n_chrs[i]
-            tiss.chromosomes[:, target_idx] .= tiss.chromosomes[:, i]
-            tiss.presence[:, target_idx] .= tiss.presence[:, i]
+            tiss.n_chrs[target_idx] = nc_m
+            @inbounds for c in 1:nc_m
+                tiss.chromosomes[c, target_idx] = tiss.chromosomes[c, i]
+                tiss.presence[c, target_idx]    = tiss.presence[c, i]
+            end
+            @inbounds for c in (nc_m + 1):nc_old
+                tiss.chromosomes[c, target_idx] = UInt64(0)
+                tiss.presence[c, target_idx]    = UInt64(0)
+            end
             tiss.mu[target_idx] = tiss.mu[i]
             tiss.r[target_idx] = tiss.r[i]
             tiss.m[target_idx] = tiss.m[i]
@@ -447,13 +469,16 @@ function substitute_optimized!(tiss::OptimizedTissue, n_chrs_init::Int, misseg_t
     end
     
     for idx in unique(dead_indices)
+        nc_dead = tiss.n_chrs[idx]
+        @inbounds for c in 1:nc_dead
+            tiss.chromosomes[c, idx] = UInt64(0)
+            tiss.presence[c, idx]    = UInt64(0)
+        end
         tiss.state[idx] = 2
         tiss.r[idx] = 0.0
         tiss.mu[idx] = 0.0
         tiss.m[idx] = 0.0
         tiss.n_chrs[idx] = 0
-        tiss.chromosomes[:, idx] .= 0
-        tiss.presence[:, idx] .= 0
     end
 end
 

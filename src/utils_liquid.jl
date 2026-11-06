@@ -24,9 +24,10 @@ mutable struct LiquidTissue
     r::Vector{Float64}
     m::Vector{Float64}
     
-    # Chromosomes: stored as a matrix [6, N] of UInt64 (max 6 chromosomes as per death condition)
+    # Chromosomes: stored as a matrix [MAX_CHR_SLOTS, N] of UInt64
+    # Each slot c in 1:n_chrs[idx] represents a distinct chromosome or chromosome fragment.
     # Each UInt64 bit represents a gene mutation (0 = WT, 1 = mutated).
-    # presence: bitmask tracking whether each gene locus is physically present (1) or deleted/absent (0).
+    # presence: bitmask tracking whether each gene locus is physically present (1) or absent (0) on slot c.
     chromosomes::Matrix{UInt64}
     presence::Matrix{UInt64}
     n_chrs::Vector{Int8}
@@ -54,8 +55,8 @@ function LiquidTissue(N, N_I, N_O, N_S, N_M, N_HK, mu0, dmu, r0, dr, rmax, dm, n
     mu = fill(mu0, N)
     r = fill(r0, N)
     m = zeros(Float64, N)
-    chromosomes = zeros(UInt64, 6, N)
-    presence = zeros(UInt64, 6, N)
+    chromosomes = zeros(UInt64, MAX_CHR_SLOTS, N)
+    presence = zeros(UInt64, MAX_CHR_SLOTS, N)
     n_chrs = fill(Int8(n_chrs_init), N)
     
     # Build masks
@@ -119,10 +120,19 @@ end
 
 function check_death_optimized(tiss::LiquidTissue, idx::Int)
     nc = tiss.n_chrs[idx]
-    if nc == 0 || nc > 5
+    if nc == 0 || nc >= size(tiss.chromosomes, 1)
         return true
     end
     if tiss.state[idx] != 0 && tiss.mu[idx] == 0.0
+        return true
+    end
+    
+    # Total allele count check: nullisomy (0 alleles) or hyperploid overload (> 5 * N_genes)
+    total_alleles = 0
+    @inbounds for c in 1:nc
+        total_alleles += count_ones(tiss.presence[c, idx])
+    end
+    if total_alleles == 0 || total_alleles > 5 * tiss.N_genes
         return true
     end
     
@@ -205,13 +215,21 @@ function substitute_liquid!(tiss::LiquidTissue, n_chrs_init::Int, misseg_type::S
             if target_idx == -1; continue; end
 
             # ── Copy mother → daughter ────────────────────────────────────
-            tiss.state[target_idx]          = tiss.state[i]
-            tiss.n_chrs[target_idx]         = tiss.n_chrs[i]
-            tiss.chromosomes[:, target_idx] .= tiss.chromosomes[:, i]
-            tiss.presence[:, target_idx]    .= tiss.presence[:, i]
-            tiss.mu[target_idx]             = tiss.mu[i]
-            tiss.r[target_idx]              = tiss.r[i]
-            tiss.m[target_idx]              = tiss.m[i]
+            nc_m   = tiss.n_chrs[i]
+            nc_old = tiss.n_chrs[target_idx]
+            tiss.state[target_idx]  = tiss.state[i]
+            tiss.n_chrs[target_idx] = nc_m
+            @inbounds for c in 1:nc_m
+                tiss.chromosomes[c, target_idx] = tiss.chromosomes[c, i]
+                tiss.presence[c, target_idx]    = tiss.presence[c, i]
+            end
+            @inbounds for c in (nc_m + 1):nc_old
+                tiss.chromosomes[c, target_idx] = UInt64(0)
+                tiss.presence[c, target_idx]    = UInt64(0)
+            end
+            tiss.mu[target_idx] = tiss.mu[i]
+            tiss.r[target_idx]  = tiss.r[i]
+            tiss.m[target_idx]  = tiss.m[i]
 
             # ── Mutate and update both cells (symmetric division model) ──
             for idx in (i, target_idx)
@@ -255,13 +273,16 @@ function substitute_liquid!(tiss::LiquidTissue, n_chrs_init::Int, misseg_type::S
     end
 
     for idx in unique(new_dead_indices)
-        tiss.state[idx]          = 2
-        tiss.r[idx]              = 0.0
-        tiss.mu[idx]             = 0.0
-        tiss.m[idx]              = 0.0
-        tiss.n_chrs[idx]         = 0
-        tiss.chromosomes[:, idx] .= 0
-        tiss.presence[:, idx]    .= 0
+        nc_dead = tiss.n_chrs[idx]
+        @inbounds for c in 1:nc_dead
+            tiss.chromosomes[c, idx] = UInt64(0)
+            tiss.presence[c, idx]    = UInt64(0)
+        end
+        tiss.state[idx]  = 2
+        tiss.r[idx]      = 0.0
+        tiss.mu[idx]     = 0.0
+        tiss.m[idx]      = 0.0
+        tiss.n_chrs[idx] = 0
     end
 end
 
