@@ -190,11 +190,15 @@ function missegregate_cell_pair!(tiss, i::Int, target_idx::Int, misseg_type::Str
     chr_to_move = tiss.chromosomes[chr_idx, i]
     pres_to_move = tiss.presence[chr_idx, i]
     
-    if misseg_type == "chunk"
+    mode = misseg_type == "hybrid" ? (rand() < 0.5 ? "whole" : "chunk") : misseg_type
+    
+    if mode == "chunk"
         # Chunk-based chromosome missegregation (segmental aneuploidy)
         N_genes = tiss.N_genes
+        min_cut = N_genes <= 10 ? 1 : 3
+        max_cut = N_genes - min_cut
         len_cut = rand(0:N_genes)
-        if len_cut >= 3 && len_cut <= N_genes - 3
+        if len_cut >= min_cut && len_cut <= max_cut
             # Contiguous bitwise slice with wrap-around
             start_bit = rand(0:(N_genes - 1))
             slice_mask = UInt64(0)
