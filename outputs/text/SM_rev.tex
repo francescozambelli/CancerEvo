@@ -62,7 +62,7 @@
 \section{Agent-Based Model Specification: The ODD Protocol}
 \label{sec:odd}
 
-This section provides a standardized, comprehensive description of the \textbf{CancerEvo} individual-based simulation framework following the \textbf{ODD (Overview, Design concepts, Details) protocol} established by Grimm et al.\ (2006, 2010). The model simulates the stochastic eco-evolutionary dynamics of cancer cell populations under somatic point mutations, chromosomal instability, and spatial constraints, comparing a spatially structured solid tumor with a well-mixed liquid tumor.
+This section provides a standardized, comprehensive description of the individual-based simulation framework following the \textit{ODD (Overview, Design concepts, Details) protocol} established by Grimm et al.\ (2006, 2010)~\cite{grimm2006standard,grimm2010odd}. The model simulates the stochastic eco-evolutionary dynamics of cancer cell populations under somatic point mutations, chromosomal instability, and spatial constraints, comparing a spatially structured solid tumor with a well-mixed liquid tumor.
 
 \subsection{Overview}
 
@@ -86,14 +86,18 @@ The primary purpose of the CancerEvo model is to investigate how the balance bet
     \item \textbf{Proliferation Rate}: $r_i \in [r_0, r_{\max}]$, representing the probability per unit time of attempting cell division. Wild-type cells divide at $r_0 = 0.15$, while cancer cells increase their proliferation rate in steps of $\Delta r = 0.008$ per activated driver, capped at $r_{\max} = 0.30$.
     \item \textbf{Point Mutation Rate}: $\mu_i \in [0, 1]$, the per-division probability of acquiring a point mutation at any present, unmutated gene locus. Cancer cells advance their mutation rate in increments of $\Delta\mu$ per inactivated mutator gene.
     \item \textbf{Missegregation Rate}: $m_i \in [0, 1]$, the probability per division of undergoing asymmetric chromosomal non-disjunction or segmental translocation, advancing in increments of $\Delta m$ per inactivated missegregation gene.
-    \item \textbf{Ploidy (Chromosome Copy Number)}: $N_{\text{CHR}, i} \in \{1, 2, \dots, 5\}$, denoting the total number of physical chromosome homologues present in cell $i$. Cells are initialized as diploid ($N_{\text{CHR}} = 2$), except in designated haploid stability sweeps ($N_{\text{CHR}} = 1$). A cell experiencing nullisomy ($N_{\text{CHR}} = 0$) or karyotypic overload ($N_{\text{CHR}} > 5$) dies immediately.
+    \item \textbf{Karyotype, Fragment Count, and Total Allelic Load} ($n_{c, i}$ and $N_{\text{alleles}, i}$): Each cell $i$ maintains $n_{c, i}$ distinct chromosome or chromosome-fragment slots ($c \in \{1, \dots, n_{c, i}\}$). In a healthy diploid cell ($n_c = 2$), each homologue carries $n = N_{\text{genes}} = 45$ alleles, corresponding to a baseline diploid genetic load of $2n = 90$ alleles. Across all active slots in cell $i$, the total number of physically present alleles is
+    \begin{equation}
+        N_{\text{alleles}, i} = \sum_{c=1}^{n_{c, i}} \sum_{g=0}^{N_{\text{genes}}-1} P_{c, g, i},
+    \end{equation}
+    defining an effective ploidy $P_{\text{eff}, i} = N_{\text{alleles}, i} / N_{\text{genes}}$. In the diploid and whole-chromosome polyploid regimes, every slot contains a complete chromosome of $N_{\text{genes}}$ alleles, so $N_{\text{alleles}, i} = n_{c, i} \cdot N_{\text{genes}}$ and $P_{\text{eff}, i} = n_{c, i} \in \{1, \dots, 5\}$. In the segmental aneuploid (chunk) regime, severed chromosomal fragments are stored as independent slots without merging across homologues; thus, $n_{c, i}$ tracks the total number of intact chromosomes plus chromosomal fragments in the cell, while $N_{\text{alleles}, i}$ tracks the total allelic load. Cells are initialized as diploid ($n_c = 2, N_{\text{alleles}} = 2n$), except in designated haploid stability sweeps ($n_c = 1, N_{\text{alleles}} = n$). A cell experiencing complete nullisomy ($N_{\text{alleles}, i} = 0$) or exceeding the maximum genetic load of $5n$ total alleles ($N_{\text{alleles}, i} > 5 N_{\text{genes}}$, i.e., $P_{\text{eff}, i} > 5$) dies immediately.
 \end{itemize}
 
 \paragraph{Genomic Architecture and Locus Representation:}
-Each chromosome copy $c \in \{1, \dots, N_{\text{CHR}}\}$ within cell $i$ contains $N_{\text{genes}} = 45$ functional gene loci, represented computationally by high-performance 64-bit integer bitmasks:
+Each chromosome or chromosome-fragment slot $c \in \{1, \dots, n_{c, i}\}$ within cell $i$ spans up to $N_{\text{genes}} = 45$ functional gene loci, represented computationally by high-performance 64-bit integer bitmasks:
 \begin{itemize}
     \item $\mathbf{C}_{c, i} \in \{0, 1\}^{N_{\text{genes}}}$ (\texttt{chromosomes}): Bitmask tracking somatic point mutations. A bit value of $0$ indicates an intact wild-type allele; a bit value of $1$ indicates a mutated allele.
-    \item $\mathbf{P}_{c, i} \in \{0, 1\}^{N_{\text{genes}}}$ (\texttt{presence}): Bitmask tracking physical gene locus presence. A bit value of $1$ indicates that the locus is physically present on chromosome $c$; a bit value of $0$ indicates that the locus has been deleted (via segmental or whole-chromosome loss).
+    \item $\mathbf{P}_{c, i} \in \{0, 1\}^{N_{\text{genes}}}$ (\texttt{presence}): Bitmask tracking physical gene locus presence on slot $c$. A bit value of $1$ indicates that the locus is physically present on chromosome/fragment $c$; a bit value of $0$ indicates that the locus is absent from slot $c$ (due to segmental truncation or because slot $c$ is a sub-chromosomal fragment).
 \end{itemize}
 The 45 loci are partitioned into five functional classes:
 \begin{enumerate}
@@ -101,7 +105,7 @@ The 45 loci are partitioned into five functional classes:
     \item \textbf{Oncogenes} ($N_O = 10$, bits 10--19): Dominant driver loci whose mutational activation increases cellular proliferation rate $r$.
     \item \textbf{Tumor Suppressor Genes} ($N_S = 10$, bits 20--29): Recessive driver loci whose complete bi-allelic loss/inactivation increases cellular proliferation rate $r$.
     \item \textbf{Missegregation Genes} ($N_M = 5$, bits 30--34): Recessive loci whose inactivation impairs mitotic spindle checkpoints and increases chromosomal missegregation rate $m$.
-    \item \textbf{Essential Housekeeping Genes} ($N_{HK} = 10$, bits 35--44): Strictly essential loci. Complete bi-allelic inactivation or deletion of any single housekeeping gene triggers deterministic cellular death.
+    \item \textbf{Essential Housekeeping Genes} ($N_{HK} = 10$, bits 35--44): Strictly essential loci. Complete inactivation or physical deletion of all copies of any single housekeeping gene triggers deterministic cellular death.
 \end{enumerate}
 
 \paragraph{Spatial and Temporal Scales:}
@@ -136,27 +140,26 @@ Within each discrete simulation time step, the following processes occur sequent
     \end{itemize}
     
     \item \textbf{Clonal Replication and Daughter Placement}:
-    Upon successful replacement, the mother cell remains at site $i$, while the newly generated daughter cell occupies target site $j$. The daughter initially inherits the exact karyotype, presence mask, and rates of the mother.
+    Upon successful replacement, the mother cell remains at site $i$, while the newly generated daughter cell occupies target site $j$. The daughter initially inherits the exact chromosome/fragment slots, presence masks, and rates of the mother.
     
     \item \textbf{Point Mutation}:
-    Both mother cell $i$ and daughter cell $j$ undergo independent somatic mutation. For every chromosome copy $c \in \{1, \dots, N_{\text{CHR}}\}$ and each locus $g \in \{0, \dots, N_{\text{genes}}-1\}$, if the locus is physically present ($\mathbf{P}_{c}[g] = 1$) and currently unmutated ($\mathbf{C}_{c}[g] = 0$), it mutates ($\mathbf{C}_{c}[g] \leftarrow 1$) with independent Bernoulli probability $\mu$.
+    Both mother cell $i$ and daughter cell $j$ undergo independent somatic mutation. For every chromosome/fragment slot $c \in \{1, \dots, n_{c}\}$ and each locus $g \in \{0, \dots, N_{\text{genes}}-1\}$, if the locus is physically present ($\mathbf{P}_{c}[g] = 1$) and currently unmutated ($\mathbf{C}_{c}[g] = 0$), it mutates ($\mathbf{C}_{c}[g] \leftarrow 1$) with independent Bernoulli probability $\mu$.
     
     \item \textbf{Chromosomal Missegregation}:
     With probability $m_i$ (the mother's missegregation rate), an asymmetric segregation error occurs between mother $i$ and daughter $j$:
     \begin{itemize}
-        \item \textit{Whole-Chromosome Mode (Polyploid / Numerical Aneuploidy)}: A chromosome copy is randomly selected from the mother and transferred to the daughter.
-        \item \textit{Chunk Mode (Segmental Aneuploidy)}: A contiguous slice of loci of random length $\ell \in [3, N_{\text{genes}}-3]$ is deleted from one of the mother's homologues and appended to the daughter's lowest available chromosome slot.
+        \item \textit{Whole-Chromosome Mode (Polyploid / Numerical Aneuploidy)}: A chromosome slot $c_{\text{donor}}$ is randomly selected from the mother, removed from the mother's karyotype ($n_{c, i} \leftarrow n_{c, i} - 1$), and appended as a new chromosome slot in the daughter ($n_{c, j} \leftarrow n_{c, j} + 1$).
+        \item \textit{Chunk Mode (Segmental Aneuploidy)}: A chromosome/fragment slot $c_{\text{donor}}$ of present length $l_{\text{chr}}$ is randomly selected from the mother and cut along its length. If either resulting piece contains fewer than $3$ alleles, the entire chromosome/fragment is transferred as in whole-chromosome mode; otherwise, a contiguous slice of $\ell \in [3, l_{\text{chr}}-3]$ present alleles is deleted from slot $c_{\text{donor}}$ in the mother (leaving the truncated remainder in slot $c_{\text{donor}}$ without mixing other chromosomes) and appended to the daughter as a new, independent chromosome-fragment slot ($n_{c, j} \leftarrow n_{c, j} + 1$).
     \end{itemize}
-    The mother's chromosome array is compacted, and daughter chromosome slots are packed up to the maximum capacity of 6.
     
     \item \textbf{Phenotypic Rate Update}:
     The mutation rate $\mu$, division rate $r$, and missegregation rate $m$ of both mother and daughter are updated from their genomic bitmasks following the genotype-to-phenotype mapping rules (see Submodels).
     
     \item \textbf{Viability Check and Cell Death}:
-    Both cells are evaluated for lethal genetic load. A cell suffers deterministic cell death if:
+    Both cells are evaluated for lethal genetic load (both immediately after point mutation and immediately after missegregation). A cell suffers deterministic cell death if:
     \begin{itemize}
-        \item Any essential housekeeping gene ($HK$) has lost all functional wild-type alleles (all copies mutated or deleted).
-        \item The cell has suffered complete nullisomy ($N_{\text{CHR}} = 0$) or excessive karyotypic burden ($N_{\text{CHR}} > 5$).
+        \item Any essential housekeeping gene ($HK$) has lost all functional wild-type alleles (all present copies mutated, or all copies deleted).
+        \item The cell has suffered complete chromosomal loss ($n_c = 0$ or $N_{\text{alleles}} = 0$) or surpassed the maximum genetic load of $5n$ total alleles ($N_{\text{alleles}} > 5 N_{\text{genes}}$).
     \end{itemize}
     Dying cells are converted to dead state ($\text{state} = 2, r = 0, \mu = 0, m = 0$), clearing their genomic bitmasks to create a vacant lattice site.
 \end{enumerate}
@@ -166,7 +169,7 @@ Within each discrete simulation time step, the following processes occur sequent
 \paragraph{Basic Principles:}
 The model integrates classical theoretical paradigms:
 \begin{itemize}
-    \item \textbf{Knudson's Two-Hit Hypothesis}: Tumor suppressor genes, mutator genes, missegregation genes, and housekeeping genes require bi-allelic (or multi-allelic under polyploidy) inactivation to manifest a phenotypic alteration.
+    \item \textbf{Knudson's Two-Hit Hypothesis}: Tumor suppressor genes, mutator genes, missegregation genes, and housekeeping genes require bi-allelic (or multi-allelic under polyploidy/polysomy) inactivation to manifest a phenotypic alteration.
     \item \textbf{Mutator Phenotype Hypothesis (Loeb)}: Somatic mutator mutations accelerate evolutionary search through driver fitness landscapes at the cost of escalating lethal mutational burden.
     \item \textbf{Error Catastrophe / Mutational Meltdown (Eigen)}: When the somatic mutation rate exceeds a critical threshold, negative selection acting on essential genes destroys clonal viability, driving the population into extinction.
     \item \textbf{Spatial Eco-Evolutionary Competition}: Contact inhibition and local Moran dynamics in solid tissues generate mechanical boundary effects absent in well-mixed regimes.
@@ -179,11 +182,11 @@ Complex macro-scale behaviors emerge autonomously from local micro-scale interac
     \item Clonal interference and hitchhiking of passenger mutations during selective sweeps.
     \item Non-equilibrium second-order phase transitions in solid tumors versus bistable first-order transitions in liquid tumors.
     \item Critical slowing down, characterized by variance divergence and autocorrelation peaking near the error catastrophe boundary.
-    \item Emergent karyotype stabilization where aneuploid clones equilibrate around viable ploidies ($N_{\text{CHR}} = 2\text{--}3$) avoiding lethal housekeeping nullisomy.
+    \item Emergent karyotype stabilization where polyploid and aneuploid clones equilibrate below the $5n$ allelic ceiling while balancing redundancy buffering against mitotic unmasking.
 \end{itemize}
 
 \paragraph{Adaptation and Objective:}
-Individual cells do not exhibit purposeful or cognitive adaptation. Cellular adaptation is strictly Darwinian: cells possessing mutations that confer elevated proliferation rates $r_i$ have an increased likelihood of being sampled for division and winning competitive replacement against neighbors, subject to surviving the housekeeping viability filter.
+Individual cells do not exhibit purposeful or cognitive adaptation. Cellular adaptation is strictly Darwinian: cells possessing mutations that confer elevated proliferation rates $r_i$ have an increased likelihood of being sampled for division and winning competitive replacement against neighbors, subject to surviving the housekeeping and allelic-load viability filters.
 
 \paragraph{Sensing and Interaction:}
 Dividing cells sense the physical presence (living vs.\ dead) and replication rates of their immediate Moore neighbors (in solid tumors) or globally sampled partners (in liquid tumors). Physical interactions are mediated entirely through space competition (displacing neighbors) and opportunistic colonization of vacant dead-cell sites.
@@ -196,19 +199,19 @@ Stochasticity is explicitly modeled at all microscopic stages:
     \item Uniform random selection of target neighbors within the Moore neighborhood.
     \item Moran acceptance probability for replacement events.
     \item Bernoulli trials for point mutations across present, unmutated loci.
-    \item Random slice coordinates (start bit and length) during chunk missegregation.
+    \item Random slice coordinates (start allele and cut length) during chunk missegregation.
     \item Stochastic spatial localization of initial tumor seed cells.
 \end{itemize}
 
 \paragraph{Collectives and Observation:}
-Cells form clonal collectives sharing identical mutational profiles or karyotypes. At the population level, the model tracks global tumor density $f_C(t)$, dead cell density $f_{\text{dead}}(t)$, mean mutation rate $\langle \mu(t) \rangle$, mean division rate $\langle r(t) \rangle$, mean missegregation rate $\langle m(t) \rangle$, effective ploidy distributions $P(N_{\text{CHR}})$, locus-specific activation frequencies, and extinction times $T_{\text{ext}}$.
+Cells form clonal collectives sharing identical mutational profiles or karyotypes. At the population level, the model tracks global tumor density $f_C(t)$, dead cell density $f_{\text{dead}}(t)$, mean mutation rate $\langle \mu(t) \rangle$, mean division rate $\langle r(t) \rangle$, mean missegregation rate $\langle m(t) \rangle$, effective ploidy $P_{\text{eff}}(t) = N_{\text{alleles}}(t)/N_{\text{genes}}$, chromosome/fragment count $n_c(t)$, locus-specific activation frequencies, and extinction times $T_{\text{ext}}$.
 
 \subsection{Details}
 
 \subsubsection{Initialization}
 Simulations are initialized on a tissue grid of $L \times L$ sites (or global pool of size $N = L^2$):
 \begin{itemize}
-    \item \textbf{Background Healthy Tissue}: All $N$ sites are initialized as healthy wild-type cells ($\text{state} = 0, N_{\text{CHR}} = 2$). All 45 loci on both chromosome homologues are physically present ($\mathbf{P} = \text{mask\_all}$) and unmutated ($\mathbf{C} = 0$), yielding baseline division rate $r_{\text{WT}} = r_0 = 0.15$, mutation rate $\mu_0 = 0.0$, and missegregation rate $m_0 = 0.0$.
+    \item \textbf{Background Healthy Tissue}: All $N$ sites are initialized as healthy wild-type cells ($\text{state} = 0, n_c = 2$). All 45 loci on both chromosome homologues are physically present ($\mathbf{P} = \text{mask\_all}$) and unmutated ($\mathbf{C} = 0$), yielding baseline division rate $r_{\text{WT}} = r_0 = 0.15$, mutation rate $\mu_0 = 0.0$, and missegregation rate $m_0 = 0.0$.
     \item \textbf{Cancer Seed Placement}:
     \begin{itemize}
         \item \textit{Solid Model}: Cancer seed cells are placed as a compact circular cluster centered at $(L/2, L/2)$ with radius $R_{\text{pert}} = r_{\text{pert}} \cdot L$. Default radius is $r_{\text{pert}} = 0.005$ ($\sim 5$ cells) for ensemble runs, $r_{\text{pert}} = 0.05$ ($\sim 314$ cells) for phase diagrams and interventions, and 10 cells for bifurcation runs (see Table~\ref{tab:simulation_configs}).
@@ -223,20 +226,20 @@ The model is an autonomous, self-contained system and does not rely on exogenous
 \subsubsection{Submodels}
 
 \paragraph{Submodel 1: Genotype-to-Phenotype Mapping (Boolean Locus Logic)}
-For cell $i$ with $N_{\text{CHR}}$ chromosomes, let $P_{c, g} \in \{0, 1\}$ and $C_{c, g} \in \{0, 1\}$ denote the presence and mutation status of locus $g \in \{0, \dots, N_{\text{genes}}-1\}$ on chromosome $c \in \{1, \dots, N_{\text{CHR}}\}$.
-A locus possesses a functional wild-type allele if at least one chromosome copy carries a present, unmutated version:
+For cell $i$ with $n_{c, i}$ chromosome/fragment slots, let $P_{c, g} \in \{0, 1\}$ and $C_{c, g} \in \{0, 1\}$ denote the physical presence and mutation status of locus $g \in \{0, \dots, N_{\text{genes}}-1\}$ on slot $c \in \{1, \dots, n_{c, i}\}$.
+A locus possesses a functional wild-type allele if at least one chromosome or fragment slot carries a present, unmutated copy:
 \begin{equation}
-    \text{FuncWT}(g) = \bigvee_{c=1}^{N_{\text{CHR}}} \left( P_{c, g} \land \neg C_{c, g} \right)
+    \text{FuncWT}(g) = \bigvee_{c=1}^{n_{c, i}} \left( P_{c, g} \land \neg C_{c, g} \right)
 \end{equation}
-Consequently, a recessive locus is completely inactivated if no chromosome carries a functional wild-type allele:
+Consequently, a recessive locus is completely inactivated if no chromosome or fragment slot carries a functional wild-type allele:
 \begin{equation}
-    \text{Inactivated}(g) = \neg \text{FuncWT}(g) = \bigwedge_{c=1}^{N_{\text{CHR}}} \left( \neg P_{c, g} \lor C_{c, g} \right)
+    \text{Inactivated}(g) = \neg \text{FuncWT}(g) = \bigwedge_{c=1}^{n_{c, i}} \left( \neg P_{c, g} \lor C_{c, g} \right)
 \end{equation}
 Active gene counts are computed according to biological dominance rules:
 \begin{itemize}
     \item \textbf{Dominant Oncogenes} ($\mathcal{O}$, bits 10--19): An oncogene is activated if \emph{any} present copy is mutated:
     \begin{equation}
-        k_O = \sum_{g \in \mathcal{O}} \bigvee_{c=1}^{N_{\text{CHR}}} \left( P_{c, g} \land C_{c, g} \right)
+        k_O = \sum_{g \in \mathcal{O}} \bigvee_{c=1}^{n_{c, i}} \left( P_{c, g} \land C_{c, g} \right)
     \end{equation}
     \item \textbf{Recessive Tumor Suppressors} ($\mathcal{S}$, bits 20--29):
     \begin{equation}
@@ -257,21 +260,21 @@ Phenotypic rates are evaluated as:
 \end{equation}
 where baseline parameters ($r_0, \Delta r, r_{\max}, \mu_0$) are listed in Table~\ref{tab:baseline_params}.
 
-\paragraph{Submodel 2: Lethal Mutational Load and Cell Death}
-Cell death is evaluated deterministically. A cell is non-viable and converted to dead state ($\text{state}_i \leftarrow 2$) if it satisfies any of the following biological lethality criteria:
+\paragraph{Submodel 2: Lethal Mutational Load and Total Allelic Boundaries}
+Cell death is evaluated deterministically. Let $N_{\text{alleles}, i} = \sum_{c=1}^{n_{c, i}} \sum_{g=0}^{N_{\text{genes}}-1} P_{c, g, i}$ denote the total number of physically present alleles across all chromosomes and chromosome fragments in cell $i$, and let $n = N_{\text{genes}} = 45$ denote the haploid allele count per intact chromosome. A cell is non-viable and converted to dead state ($\text{state}_i \leftarrow 2$) if it satisfies any of the following biological lethality criteria:
 \begin{equation}
-    \left[ \exists g \in \mathcal{HK} \quad \text{such that} \quad \text{Inactivated}(g) = 1 \right] \quad \lor \quad N_{\text{CHR}, i} = 0 \quad \lor \quad N_{\text{CHR}, i} > 5
+    \left[ \exists g \in \mathcal{HK} \quad \text{such that} \quad \text{Inactivated}(g) = 1 \right] \quad \lor \quad N_{\text{alleles}, i} = 0 \quad \lor \quad N_{\text{alleles}, i} > 5 N_{\text{genes}}
 \end{equation}
 
 \subparagraph{Application to Aneuploid and Heteroploid Cells:}
-The presence-aware Boolean logic ($\text{Inactivated}(g) = \bigwedge_{c} [\neg P_{c,g} \lor C_{c,g}]$) governs cell fate across numerical and segmental aneuploidy in three distinct operational regimes:
+The presence-aware Boolean logic ($\text{Inactivated}(g) = \bigwedge_{c} [\neg P_{c,g} \lor C_{c,g}]$) and independent fragment representation govern cell fate across numerical and segmental aneuploidy in four distinct operational regimes:
 \begin{enumerate}
-    \item \textbf{Locus Nullisomy (Segmental or Whole-Chromosome Loss)}: If a cell loses an allele of housekeeping gene $g$ through chunk deletion or chromosome loss, the locus becomes hemizygous ($P_{c,g} = 1$ on only one homologue). If that remaining copy is subsequent deleted ($\forall c, P_{c,g} = 0$), the locus suffers physical nullisomy, immediately rendering $\text{Inactivated}(g) = 1$ and triggering instantaneous cell death.
-    \item \textbf{Hemizygous Vulnerability}: In a cell that is hemizygous for housekeeping gene $g$ (due to prior segmental deletion or monosomy, $N_{\text{CHR}} = 1$), a single somatic point mutation on the lone surviving allele ($C_{1,g} \leftarrow 1$) eliminates the only functional copy ($\text{FuncWT}(g) = 0$), causing cell death. In contrast to diploid cells (which require two hits), hemizygous clones possess zero buffering capacity.
-    \item \textbf{Polyploid Buffering and Cryptic Damage}: In polysomic or polyploid cells ($N_{\text{CHR}} \in \{3, 4, 5\}$), a housekeeping locus remains functional as long as at least one intact copy survives. These cells can accumulate deleterious mutations on multiple copies without dying (buffering capacity). However, if subsequent missegregation transfers away or deletes the single remaining functional copy, the cell is left exclusively with mutated alleles, triggering delayed catastrophic collapse (karyotypic fragility).
-    \item \textbf{Global Ploidy Bounds}: A cell dies immediately if it suffers total chromosome loss ($N_{\text{CHR}} = 0$, complete nullisomy) or exceeds the maximum viable karyotype limit ($N_{\text{CHR}} > 5$, representing proteotoxic stress and severe mitotic catastrophe).
+    \item \textbf{Locus Nullisomy (Segmental or Whole-Chromosome Loss)}: If a cell loses an allele of housekeeping gene $g$ through chunk deletion or whole-chromosome loss, the local copy number $k_{g, i} = \sum_{c=1}^{n_{c, i}} P_{c, g, i}$ decreases. If all physical copies of locus $g$ are lost ($k_{g, i} = 0$, i.e., $\forall c, P_{c,g} = 0$), the locus suffers physical nullisomy, immediately rendering $\text{Inactivated}(g) = 1$ and triggering instantaneous cell death.
+    \item \textbf{Hemizygous Vulnerability}: In a cell that is hemizygous for housekeeping gene $g$ (due to prior segmental deletion or monosomy, $k_{g, i} = 1$), a single somatic point mutation on the lone surviving allele eliminates the only functional copy ($\text{FuncWT}(g) = 0$), causing cell death. In contrast to diploid cells (which require two hits), hemizygous clones possess zero buffering capacity at that locus.
+    \item \textbf{Polyploid Buffering and Cryptic Damage}: In polysomic or polyploid cells ($k_{g, i} \ge 3$), a housekeeping locus remains functional as long as at least one intact copy survives. These cells can accumulate deleterious mutations on up to $k_{g, i} - 1$ copies without dying (buffering capacity). However, if subsequent missegregation transfers away or deletes the single remaining functional copy, the cell is left exclusively with mutated alleles, triggering delayed catastrophic collapse (karyotypic fragility).
+    \item \textbf{Hyperploid Genetic Load Ceiling ($N_{\text{alleles}, i} > 5n$)}: Regardless of whether alleles are organized into whole chromosomes or sub-chromosomal fragments, a cell cannot survive if its total allelic load exceeds $5n = 5 N_{\text{genes}} = 225$ alleles (equivalent to an effective ploidy $P_{\text{eff}, i} = N_{\text{alleles}, i} / N_{\text{genes}} > 5.0$). In the \emph{Whole-Chromosome (Polyploid)} regime, where every slot carries a full chromosome of $N_{\text{genes}}$ alleles ($N_{\text{alleles}, i} = n_{c, i} N_{\text{genes}}$), gaining a 6th chromosome pushes $N_{\text{alleles}, j}$ from $5n$ to $6n$, causing immediate hyperploid death ($n_{c, j} = 6 > 5$). In the \emph{Segmental (Aneuploid)} regime, cells can harbor multiple sub-chromosomal fragments ($n_{c, i} > 5$) provided their cumulative allele count remains within the viable budget $N_{\text{alleles}, i} \le 5 N_{\text{genes}}$; a segmental transfer triggers hyperploid lethality in the recipient daughter if and only if adding the transferred fragment's $\ell$ alleles causes $N_{\text{alleles}, j} + \ell > 5 N_{\text{genes}}$. Biologically, this $5n$ total-allele cap models the upper physiological limit on total genomic DNA content, replication stress, and mitotic spindle capacity (see Section~\ref{sec:SM_karyotype} for quantitative internal-state dynamics).
 \end{enumerate}
-Crucially, lethality is evaluated twice within every division event: first immediately following point mutation, and re-evaluated immediately following chromosome/chunk transfer for both mother and daughter cells. If a transfer deprives the mother of its last functional housekeeping allele or pushes the daughter's ploidy beyond 5, that cell is converted to dead site ($\text{state} = 2, r = 0, \mu = 0, m = 0$), clearing all genomic arrays.
+Crucially, lethality is evaluated twice within every division event: first immediately following point mutation, and re-evaluated immediately following chromosome/chunk transfer for both mother and daughter cells. If a transfer deprives the mother of its last functional housekeeping allele or pushes the daughter's total allele count above $5 N_{\text{genes}}$, that cell is immediately converted to a dead site ($\text{state} = 2, r = 0, \mu = 0, m = 0$), clearing all genomic arrays.
 
 \paragraph{Submodel 3: Moran Competition and Replacement Dynamics}
 When dividing mother cell $i$ targets neighbor site $j$:
@@ -284,17 +287,17 @@ When dividing mother cell $i$ targets neighbor site $j$:
 \end{equation}
 In the solid model, if dead neighbors exist in the Moore neighborhood $\mathcal{N}_i$, dead sites are targeted with probability $n_{\text{dead}} / n_{\text{neigh}}$ to prioritize filling tissue voids before displacing living neighbors.
 
-\paragraph{Submodel 4: Chromosomal Missegregation Mechanics}
-When missegregation occurs (with probability $m_i$):
+\paragraph{Submodel 4: Chromosomal Missegregation and Fragment Mechanics}
+When missegregation occurs (with probability $m_i$), genetic material is asymmetrically transferred from mother $i$ to daughter $j$ while strictly preserving the individual identity of each chromosome and fragment:
 \begin{itemize}
-    \item \textbf{Whole-Chromosome Transfer}: A random chromosome $c_{\text{donor}} \in \{1, \dots, N_{\text{CHR}, i}\}$ is selected from mother $i$. The full chromosome (mutations and presence masks) is removed from mother $i$ and transferred into the lowest unoccupied slot of daughter $j$.
-    \item \textbf{Chunk-Based Segmental Missegregation}: A cut length $\ell \in \{3, \dots, N_{\text{genes}}-3\}$ and start locus $g_{\text{start}} \in \{0, \dots, N_{\text{genes}}-1\}$ are chosen uniformly at random. A contiguous bitwise mask of length $\ell$ with periodic wrap-around is defined:
-    \begin{equation}
-        \mathbf{M}_{\text{chunk}} = \bigvee_{b=0}^{\ell-1} \left( 1 \ll \left[ (g_{\text{start}} + b) \pmod{N_{\text{genes}}} \right] \right)
-    \end{equation}
-    The slice $\mathbf{S} = \mathbf{M}_{\text{chunk}} \land \mathbf{P}_{c_{\text{donor}}, i}$ is removed from the mother's homologue ($\mathbf{P}_{c_{\text{donor}}, i} \leftarrow \mathbf{P}_{c_{\text{donor}}, i} \land \neg\mathbf{S}$, $\mathbf{C}_{c_{\text{donor}}, i} \leftarrow \mathbf{C}_{c_{\text{donor}}, i} \land \neg\mathbf{S}$) and integrated into the daughter cell across available slots $c \in \{1, \dots, 6\}$.
+    \item \textbf{Whole-Chromosome Transfer}: A chromosome slot $c_{\text{donor}} \in \{1, \dots, n_{c, i}\}$ is selected uniformly at random from mother $i$. The full bitmask of that slot ($\mathbf{S} = \mathbf{P}_{c_{\text{donor}}, i}$) is selected for transfer.
+    \item \textbf{Chunk-Based Segmental Missegregation}: A donor slot $c_{\text{donor}} \in \{1, \dots, n_{c, i}\}$ is selected uniformly at random from mother $i$. Let $l_{\text{chr}} = \sum_{g=0}^{N_{\text{genes}}-1} P_{c_{\text{donor}}, g, i}$ be the number of alleles physically present on slot $c_{\text{donor}}$. A cut length $\ell \in \{0, \dots, l_{\text{chr}}\}$ is drawn uniformly at random. If $l_{\text{chr}} \ge 6$ and $3 \le \ell \le l_{\text{chr}} - 3$, a starting index $k_{\text{start}} \in \{0, \dots, l_{\text{chr}}-1\}$ is chosen uniformly among the present alleles of slot $c_{\text{donor}}$, and the contiguous block of $\ell$ present alleles (wrapping circularly around the $l_{\text{chr}}$ present alleles of that chromosome/fragment) defines the transferred locus mask $\mathbf{S} \subset \mathbf{P}_{c_{\text{donor}}, i}$. Otherwise (if $\ell < 3$ or $l_{\text{chr}} - \ell < 3$, so that either resulting piece would contain fewer than $3$ alleles), the event is treated as a whole-chromosome/fragment transfer and the entire slot $\mathbf{S} = \mathbf{P}_{c_{\text{donor}}, i}$ is transferred.
 \end{itemize}
-Following transfer, the mother cell compacts its remaining chromosome slots, and both mother and daughter re-evaluate their viability and phenotypic rates.
+Once the transferred locus mask $\mathbf{S}$ and its associated mutation bits $\mathbf{M}_{\text{trans}} = \mathbf{C}_{c_{\text{donor}}, i} \land \mathbf{S}$ are extracted, the mother and daughter karyotypes are updated without mixing across chromosomes:
+\begin{enumerate}
+    \item \textbf{Donor Mother Truncation or Slot Removal}: The transferred alleles are removed from the mother's selected slot ($\mathbf{P}_{c_{\text{donor}}, i} \leftarrow \mathbf{P}_{c_{\text{donor}}, i} \land \neg\mathbf{S}$, $\mathbf{C}_{c_{\text{donor}}, i} \leftarrow \mathbf{C}_{c_{\text{donor}}, i} \land \neg\mathbf{S}$). If $\mathbf{P}_{c_{\text{donor}}, i} \neq \mathbf{0}$ (a partial segmental cut), the remaining $l_{\text{chr}} - \ell \ge 3$ alleles stay in slot $c_{\text{donor}}$ as a truncated chromosome, and no other chromosome slots are altered. If and only if slot $c_{\text{donor}}$ is now completely empty ($\mathbf{P}_{c_{\text{donor}}, i} = \mathbf{0}$), slots $(c_{\text{donor}}+1) \dots n_{c, i}$ are shifted down by one index to close the empty slot and $n_{c, i} \leftarrow n_{c, i} - 1$.
+    \item \textbf{Recipient Daughter Fragment Append}: The transferred chromosome or fragment is appended to the daughter cell as a new, independent chromosome slot at index $n_{c, j} \leftarrow n_{c, j} + 1$, with $\mathbf{P}_{n_{c, j}, j} = \mathbf{S}$ and $\mathbf{C}_{n_{c, j}, j} = \mathbf{M}_{\text{trans}}$. Unpopulated loci on the new fragment have $P_{n_{c, j}, g, j} = 0$, ensuring that absent loci never act as wild-type alleles in recessive phenotype evaluations.
+\end{enumerate}
 
 \clearpage
 
@@ -818,18 +821,18 @@ During cell division, mortality arises from two distinct mechanistic pathways (F
         p_{\mathrm{d},\mathcal{H}}^{(\mathrm{mut})} = 1 - \bigl(1 - \mu^{k_{\mathrm{WT}}}\bigr)^{N_{\mathcal{H}}},
     \end{equation}
     or (ii) an asymmetric chromosomal or segmental loss (occurring with probability $m/2$ in the donor mother cell) strips the last remaining wild-type copy of a locus whose other $k - 1$ copies have already been mutated.
-    \item \textbf{Hyperploid ($>5n$) and Nullisomic ($0n$) Allele-Threshold Violation ($\bar{p}_{\mathrm{d},\mathrm{ploidy}}$, dotted curves):} A missegregation event triggers immediate structural lethality if the recipient daughter exceeds the maximum viable copy number of $5$ alleles at any locus (or if the donor loses its sole remaining chromosome copy). In Whole-Chromosome Polyploidy ($P$), where all loci share a uniform copy number $N_{\text{CHR}}$, any missegregation in a cell at $N_{\text{CHR}} = 5$ pushes the daughter to $N_{\text{CHR}} = 6$, yielding $\bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(P)} = m \bigl(f_{n_c=5} + f_{n_c=1}\bigr)$. In Segmental Aneuploidy ($A$), where the mean effective copy number per locus plateaus at an intermediate value ($\bar{k} \approx 3.76$ across $n_c = 5$ active slots), a random chromosomal fragment only breaches the $5$-copy cap if the severed segment overlaps a locus already present at $5$ copies, substantially reducing the boundary hazard ($\bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(A)} \ll \bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(P)}$).
+    \item \textbf{Hyperploid ($>5n$) and Nullisomic ($0n$) Allele-Threshold Violation ($\bar{p}_{\mathrm{d},\mathrm{ploidy}}$, dotted curves):} A missegregation event triggers immediate structural lethality if the recipient daughter's total allelic load exceeds $5n = 5 N_{\text{genes}}$ alleles ($N_{\text{alleles}} > 5 N_{\text{genes}}$, or if the donor loses its sole remaining chromosome/fragment copy, $N_{\text{alleles}} = 0$). In Whole-Chromosome Polyploidy ($P$), where every slot is a full chromosome of $N_{\text{genes}}$ alleles ($N_{\text{alleles}} = n_c N_{\text{genes}}$), any missegregation in a cell at $n_c = 5$ pushes the daughter to $n_c = 6$ ($6n > 5n$), yielding $\bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(P)} = m \bigl(f_{n_c=5} + f_{n_c=1}\bigr)$. In Segmental Aneuploidy ($A$), where sub-chromosomal fragments are transferred and the population stabilizes at an effective ploidy below the $5n$ ceiling, only fragments whose length $\ell$ pushes the recipient daughter's total allele count above $5 N_{\text{genes}}$ ($N_{\text{alleles}} + \ell > 5 N_{\text{genes}}$) trigger hyperploid death, substantially reducing the boundary hazard ($\bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(A)} \ll \bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(P)}$).
 \end{enumerate}
 
 Combining these two contributions, $\bar{p}_{\mathrm{d},\mathrm{tot}} = 1 - (1 - \bar{p}_{\mathrm{d},\mathcal{H}})(1 - \bar{p}_{\mathrm{d},\mathrm{ploidy}})$, explains the three evolutionary regimes observed in the macroscopic tumor growth curves (Fig.~\ref{fig:SM_karyotype_mechanisms}a--b):
 \begin{itemize}
-    \item \textbf{Phase I --- Early Redundancy Buffering ($t \lesssim 750$):} Extra chromosome copies in $P$ and $A$ provide immediate allelic redundancy ($k_{\mathrm{WT}} > 2$), shielding cells from recessive $\mathcal{H}$ inactivation ($\bar{p}_{\mathrm{d},\mathcal{H}}(P) \le \bar{p}_{\mathrm{d},\mathcal{H}}(A) < \bar{p}_{\mathrm{d},\mathcal{H}}(D)$) before a significant fraction of the population reaches the $5n$ boundary. Consequently, $\bar{r}_{\mathrm{eff}}(P) \ge \bar{r}_{\mathrm{eff}}(A) > \bar{r}_{\mathrm{eff}}(D)$.
-    \item \textbf{Phase II --- The $5n$ Ploidy Boundary Transition ($750 \lesssim t \lesssim 1450$):} Whole-chromosome gains rapidly drive the $P$ population against the $N_{\text{CHR}} = 5$ cap, causing $\bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(P)}$ (brown dotted curve) to surge to $\approx 0.047$ per division. Because Segmental Aneuploidy ($A$, teal dotted curve) maintains an intermediate mean copy number ($\bar{k} \approx 3.76$), its $>5n$ boundary mortality remains more than fivefold lower ($\approx 0.009$), allowing $A$ to overtake $P$ ($\bar{r}_{\mathrm{eff}}(A) > \bar{r}_{\mathrm{eff}}(P) > \bar{r}_{\mathrm{eff}}(D)$) and establish the largest cumulative tumor mass.
+    \item \textbf{Phase I --- Early Redundancy Buffering ($t \lesssim 750$):} Extra chromosome or fragment copies in $P$ and $A$ provide immediate allelic redundancy ($k_{\mathrm{WT}} > 2$), shielding cells from recessive $\mathcal{H}$ inactivation ($\bar{p}_{\mathrm{d},\mathcal{H}}(P) \le \bar{p}_{\mathrm{d},\mathcal{H}}(A) < \bar{p}_{\mathrm{d},\mathcal{H}}(D)$) before a significant fraction of the population reaches the $5n$ boundary. Consequently, $\bar{r}_{\mathrm{eff}}(P) \ge \bar{r}_{\mathrm{eff}}(A) > \bar{r}_{\mathrm{eff}}(D)$.
+    \item \textbf{Phase II --- The $5n$ Ploidy Boundary Transition ($750 \lesssim t \lesssim 1450$):} Whole-chromosome gains rapidly drive the $P$ population against the $5n$ ($n_c = 5$) cap, causing $\bar{p}_{\mathrm{d},\mathrm{ploidy}}^{(P)}$ (brown dotted curve) to surge to $\approx 0.047$ per division. Because Segmental Aneuploidy ($A$, teal dotted curve) transfers smaller sub-chromosomal fragments and maintains a lower mean effective ploidy below the $5n$ ceiling, its $>5n$ boundary mortality remains substantially lower, allowing $A$ to overtake $P$ ($\bar{r}_{\mathrm{eff}}(A) > \bar{r}_{\mathrm{eff}}(P) > \bar{r}_{\mathrm{eff}}(D)$) and establish the largest cumulative tumor mass.
     \item \textbf{Phase III --- Stationary Buffer Saturation ($t \gtrsim 1450$):} In the long-time limit, ongoing point mutations saturate the cryptic redundancy buffer across all karyotypes ($k_{\mathrm{WT}} \to 1$; Fig.~\ref{fig:SM_karyotype_mechanisms}c). Once viable cells retain only a single unmutated copy per essential gene, point-mutation mortality converges toward the same baseline across all regimes, while ongoing missegregation imposes a permanent mortality overhead ($\bar{p}_{\mathrm{d},\mathrm{ploidy}}$ plus chromosomal unmasking) on $P$ and $A$, yielding the asymptotic ordering $\bar{p}_{\mathrm{d},\mathrm{tot}}(D) < \bar{p}_{\mathrm{d},\mathrm{tot}}(A) < \bar{p}_{\mathrm{d},\mathrm{tot}}(P)$ and $\bar{r}_{\mathrm{eff}}(D) > \bar{r}_{\mathrm{eff}}(A) > \bar{r}_{\mathrm{eff}}(P)$.
 \end{itemize}
 
 \subsection{Cryptic Recessive Damage Accumulation and Buffer Erosion}
-Figure~\ref{fig:SM_karyotype_mechanisms}c directly quantifies the internal genetic load buffered by multi-copy redundancy via the fraction of present essential housekeeping alleles that are mutated ($\mathrm{mut}_{\mathcal{H}}$) in surviving cells. Because complete inactivation of any essential locus is lethal, a viable cell with $k$ copies at an essential locus can harbor at most $k - 1$ mutated alleles. In Diploid ($D$) cells ($k = 2$), $\mathrm{mut}_{\mathcal{H}}$ is strictly bounded by the viability ceiling $(2 - 1)/2 = 0.50$ (black dotted line). By contrast, Whole-Chromosome Polyploid ($P$) and Segmental Aneuploid ($A$) cells survive while accumulating a massive cryptic reservoir of inactivated essential alleles, saturating at $(5 - 1)/5 = 0.80$ in $P$ and $\approx 0.76$ in $A$. Once this $(k - 1)/k$ redundancy buffer is completely filled, the protective survival advantage of polyploidy and aneuploidy is exhausted, converting chromosomal instability from an early adaptive buffer into a late-stage liability.
+Figure~\ref{fig:SM_karyotype_mechanisms}c directly quantifies the internal genetic load buffered by multi-copy redundancy via the fraction of present essential housekeeping alleles that are mutated ($\mathrm{mut}_{\mathcal{H}}$) in surviving cells. Because complete inactivation of any essential locus is lethal, a viable cell with $k$ copies at an essential locus can harbor at most $k - 1$ mutated alleles. In Diploid ($D$) cells ($k = 2$), $\mathrm{mut}_{\mathcal{H}}$ is strictly bounded by the viability ceiling $(2 - 1)/2 = 0.50$ (black dotted line). By contrast, Whole-Chromosome Polyploid ($P$) and Segmental Aneuploid ($A$) cells survive while accumulating a massive cryptic reservoir of inactivated essential alleles, saturating at $(5 - 1)/5 = 0.80$ in $P$ and $\approx 0.76\text{--}0.82$ in $A$. Once this $(k - 1)/k$ redundancy buffer is completely filled, the protective survival advantage of polyploidy and aneuploidy is exhausted, converting chromosomal instability from an early adaptive buffer into a late-stage liability.
 
 \begin{figure*}[htbp]
     \centering
@@ -837,125 +840,8 @@ Figure~\ref{fig:SM_karyotype_mechanisms}c directly quantifies the internal genet
     \caption{\textbf{Internal-state mechanistic dynamics across karyotypic regimes in solid tumors.}
     \textbf{(a)} Raw cellular replication rate $\bar{r}(t)$ (dashed curves) versus effective growth propensity $\bar{r}_{\mathrm{eff}}(t) = \bar{r}(t)(1 - \bar{p}_{\mathrm{d},\mathrm{tot}}(t))$ (solid curves). Because $\bar{r}(t)$ rapidly saturates at $r_{\max} = 0.30$ across all regimes, inter-karyotype growth differences are governed by differential cellular survival rather than intrinsic division speed.
     \textbf{(b)} Decomposition of the per-division death probability $\bar{p}_{\mathrm{d},\mathrm{tot}}(t)$ (solid curves) into essential housekeeping ($\mathcal{H}$) loss-of-function lethality ($\bar{p}_{\mathrm{d},\mathcal{H}}$, dashed curves) and hyperploid ($>5n$) allele-threshold lethality ($\bar{p}_{\mathrm{d},\mathrm{ploidy}}$, dotted curves).
-    \textbf{(c)} Mutated fraction of present essential housekeeping alleles ($\mathrm{mut}_{\mathcal{H}}$) in surviving cells, demonstrating cryptic recessive damage accumulation above the diploid viability ceiling ($1/2 = 0.50$, black dotted line) up to the polyploid ($4/5 = 0.80$) and aneuploid ($\approx 0.76$) saturation limits. Curves and shaded bands denote ensemble means $\pm 1$ s.d.\ across surviving tumor realizations ($500$ replicates per regime).}
+    \textbf{(c)} Mutated fraction of present essential housekeeping alleles ($\mathrm{mut}_{\mathcal{H}}$) in surviving cells, demonstrating cryptic recessive damage accumulation above the diploid viability ceiling ($1/2 = 0.50$, black dotted line) up to the polyploid ($4/5 = 0.80$) and aneuploid saturation limits. Curves and shaded bands denote ensemble means $\pm 1$ s.d.\ across surviving tumor realizations ($500$ replicates per regime).}
     \label{fig:SM_karyotype_mechanisms}
 \end{figure*}
 
 \end{document}
-
-
-
-We collect every process that changes $C_k$, grouping by physical origin:
-
-\paragraph{Term 1 --- Mother leaves class $k$ (loss).} The mother cell leaves class $k$ if she either promotes to any higher class $k+j$ or dies. This happens with total probability $1 - \alpha_k$, where $\alpha_k = P_{k \to k}$ is the faithful cloning probability:
-\begin{equation}
-    \text{(mother loss)} = -r_m\, f_k\, \phi_k\, (1 - \alpha_k)
-\end{equation}
-
-\paragraph{Term 2 --- Daughter clonal expansion (gain).} The daughter is placed on an available target (with effective probability $\phi_k$) and faithfully clones into class $k$ (probability $\alpha_k$). This combines rows 3 and 6 of Table~\ref{tab:transitions}:
-\begin{equation}
-    \text{(daughter clone)} = +r_m\, f_k\, \phi_k\, \alpha_k
-\end{equation}
-where $\phi_k = p_D + f_W \beta_{cw} + \sum_j f_j \beta_{cc}$ captures all possible successful placements.
-
-\paragraph{Term 3 --- Cancer--cancer self-displacement (loss).} When a class-$k$ cell (call it cell~A) divides and its daughter targets \emph{another} class-$k$ cell (cell~B), cell~B is always removed. The daughter then undergoes mutation, leading to three possible outcomes:
-
-\begin{enumerate}
-    \item[\textbullet] Daughter clones faithfully ($\alpha_k$): cell~B is lost, but a new class-$k$ cell appears $\Rightarrow$ \textbf{net change = 0}.
-    \item[\textbullet] Daughter promotes ($P_{k \to k+j}$): cell~B is lost, daughter enters class $k+j$ $\Rightarrow$ \textbf{net change = $-1$ for class $k$}.
-    \item[\textbullet] Daughter dies ($\delta_k$): cell~B is lost, daughter dies $\Rightarrow$ \textbf{net change = $-1$ for class $k$}.
-\end{enumerate}
-
-In the ODE, this split is handled across two terms: Term~2 captures the gain from the first outcome (daughter clones, weighted by $\alpha_k$), while Term~3 captures the \emph{unconditional} loss of cell~B. Their net contribution is $r_m f_k^2 (\alpha_k - 1)/2 < 0$:
-\begin{equation}
-    \text{(self-displacement loss)} = -r_m\, \frac{f_k^2}{2}
-\end{equation}
-
-\paragraph{Term 4 --- Displacement by other cancer classes (loss).} Class-$k$ cells can be displaced by daughters from any other cancer class $j \neq k$:
-\begin{equation}
-    \text{(cross-class loss)} = -f_k \sum_{j \neq k} r_m\, f_j\, \beta_{cc}
-\end{equation}
-
-\paragraph{Term 5 --- Wild-type clearance (loss).} WT cells can divide and displace cancer class $k$ via Moran competition (row 9 of Table~\ref{tab:transitions}):
-\begin{equation}
-    \text{(WT clearance)} = -r_0\, f_W\, f_k\, \beta_{wc}
-\end{equation}
-
-\paragraph{Term 6 --- Promotion influx from all lower classes (gain).} Class $k$ receives cells from all classes $i < k$ through both mother and daughter promotions (transition probability $P_{i \to k}$). Since both occur only upon successful division:
-\begin{equation}
-    \text{(promotion influx)} = \sum_{i=1}^{k-1} 2\, r_m\, f_i\, \phi_i\, P_{i \to k}
-\end{equation}
-The factor $2$ reflects the dual source (mother + daughter) scaled by the division success probability $\phi_i$ and the multi-step promotion probability $P_{i \to k}$.
-
-
-
-Here is an improved, publication-ready version of your text optimized for *PLOS Computational Biology*.
-
-This draft enhances the rigorous, formal language required for a computational biology journal, standardizes the mathematical indices and variable notation ($N_{\mathcal{I}}$, $p_{\mu,i}$, and $\mu_{\infty}$), corrects the description of the transition matrix $\mathbf{A}$ (which is strictly **lower-bidiagonal**, not tridiagonal), resolves broken punctuation (like unclosed parentheses), and clarifies the biological rationale driving your asymptotic limits.
-
----
-
-### Revised Text
-
-The specific mutation rate around which the system stabilizes emerges naturally from intrinsic population dynamics shaped by evolutionary pressures. We focus our analysis on a regime where both the cellular replication rate and the mutational burden of housekeeping genes have reached saturation. This scenario occurs frequently within our framework due to the robust selective advantages associated with maximum proliferation and the accelerated early accumulation of housekeeping ($\mathcal{H}$) gene mutations.
-
-At this stage, the tumor population can be conceptualized as a collection of distinct subpopulations, each defined by its number of phenotypically altered instability ($\mathcal{I}$) genes. Because a cell must possess at least one mutated $\mathcal{I}$ gene to be classified as malignant, the population can be partitioned into $N_{\mathcal{I}}$ discrete classes, denoted $x_1, \dots, x_{N_{\mathcal{I}}}$, where $x_i$ represents the fraction of cells harboring exactly $i$ mutated $\mathcal{I}$ genes. The sum over all subpopulation fractions is strictly conserved:
-\begin{equation}
-\sum_{i=1}^{N_{\mathcal{I}}} x_i = 1.
-\end{equation}
-Transitions between these subpopulations are driven by three primary microscopic processes: (i) *reproduction*, wherein a cell replicates and its daughter stochastically replaces another individual to satisfy a constant carrying capacity; (ii) *death*, resulting from lethal mutational hits to the remaining unmutated housekeeping ($\mathcal{H}$) alleles; and (iii) *mutation*, involving a novel hit to a functional $\mathcal{I}$ gene that pushes the cell into the next higher instability class.
-
-Using a Master Equation approach, the temporal evolution of these subpopulation densities can be modeled as:
-\begin{equation}
-\begin{aligned}
-\frac{dx_1}{dt} &= r x_1 \big(1 - p_{\mathrm{d},1} - p_{\mu,1}\big) - \Phi x_1, \[4pt]
-\frac{dx_i}{dt} &= r x_i \big(1 - p_{\mathrm{d},i} - p_{\mu,i}\big) + r x_{i-1} p_{\mu,i-1} - \Phi x_i, \[4pt]
-\frac{dx_{N_{\mathcal{I}}}}{dt} &= r x_{N_{\mathcal{I}}} \big(1 - p_{\mathrm{d},N_{\mathcal{I}}}\big) + r x_{N_{\mathcal{I}}-1} p_{\mu,N_{\mathcal{I}}-1} - \Phi x_{N_{\mathcal{I}}},
-\end{aligned}
-\label{eq:pop}
-\end{equation}
-where $2 \le i \le N_{\mathcal{I}}-1$. In a compact vector form, this system represents a standard discrete replicator-mutator equation:
-\begin{equation}
-\frac{d\mathbf{x}}{dt} = r \mathbf{A}\mathbf{x} - \Phi \mathbf{x},
-\end{equation}
-where $\mathbf{x} = (x_1, x_2, \ldots, x_{N_{\mathcal{I}}})^{\mathrm{T}}$ is the population state vector, $\Phi$ is a dynamic normalization factor (representing the average population fitness) that enforces a constant total tissue size, and $\mathbf{A}$ is a lower-bidiagonal transition matrix with the following structure:
-\begin{widetext}
-
-$$\mathbf{A} =
-\begin{pmatrix}
-1 - p_{\mathrm{d},1} - p_{\mu,1} & 0 & 0 & \cdots & 0 \\[4pt]
-p_{\mu,1} & 1 - p_{\mathrm{d},2} - p_{\mu,2} & 0 & \cdots & 0 \\[4pt]
-0 & p_{\mu,2} & 1 - p_{\mathrm{d},3} - p_{\mu,3} & \cdots & 0 \\[4pt]
-\vdots & \vdots & \vdots & \ddots & \vdots \\[4pt]
-0 & 0 & 0 & p_{\mu,N_{\mathcal{I}}-1} & 1 - p_{\mathrm{d},N_{\mathcal{I}}}
-\end{pmatrix}.$$
-
-\end{widetext}
-Within this matrix, the class-dependent death probability $p_{\text{d},1}$ is defined as:
-\begin{equation}
-p_{\text{d},i} = 1 - (1 - i \cdot \Delta\mu)^{N_{\mathcal{H}}}.
-\end{equation.
-To calculate the forward transition probability $p_{\mu,i}$ between successive instability classes, we consider a limiting case where each instability gene carries at most one unmutated allele. This configuration represents the asymptotic state of the system because the accumulation of mutations eventually saturates the underlying phenotype due to the AND-gate logic governing the gene classes. In this limiting case, the forward mutation probability from class $i$ to class $i+1$ scales as:
-\begin{equation}
-p_{\mu,i} = 1 - (1 - i \cdot \Delta\mu)^{(N_{\mathcal{I}} - i)}.
-\end{equation}
-Because back-mutations are omitted and simultaneous multi-step jumps are neglected as higher-order effects, transitions are strictly unidirectional. The resulting probabilities for a representative $10$-population model are reported in Fig.~\ref{fig:pop_dyn}d.
-
-From this analytical framework, it is possible to compute the stationary concentration for each malignant subpopulation (see Materials and Methods for the full derivation), which can then be directly validated against findings from long-term stochastic simulations. Fig.~\ref{fig:pop_dyn}a demonstrates that the simulated system successfully converges to a stable distribution of subpopulation densities, matching the theoretical predictions with high fidelity (Fig.~\ref{fig:pop_dyn}c). Furthermore, as illustrated in Fig.~\ref{fig:pop_dyn}b, the long-term, population-averaged mutation rate across the tissue fluctuates stably around the predicted asymptotic value $\mu_{\infty}$. This quantitative alignment highlights the predictive reproducibility of our analytical reduction and supports the conclusion that the linear growth phases observed in simulations correspond to stable, ecological-like equilibria among competing clonal subpopulations under conditions of growth-rate and housekeeping saturation.
-
-Crucially, this emergent equilibrium state does not coincide with the boundary between tumor proliferation and extinction; rather, it acts as a stable dynamical attractor deep within the viable phase space. In contrast, the phase transition line—governed by the exact threshold where replication forces balance mutation-induced cell death—remains critical in determining whether the neoplastic population can escape early stochastic reabsorption and establish this linear growth phase in the first place.
-
-Finally, this framework provides an explicit explanation for why some tumors, despite temporarily settling into a stable mutational state, are driven to delayed extinction if they cross above the phase transition line. Because mutation transitions are strictly unidirectional, if stochastic fluctuations or intense selective sweeps cause the absolute loss of all cells in the lowest mutational classes, the tumor cannot regenerate them. Consequently, the lower boundary of the matrix shifts, making the lowest active class $x_j$ instead of $x_1$. This truncation forces a permanent upward shift in the baseline mutation rate across the entire remaining tumor population, escalating the mutational burden and driving the system into an irreversible shrinking phase.
-
----
-
-### Key Refinements Explained:
-
-1. **Mathematical Nomenclature (Matrix Structure):** The original text characterized matrix $\mathbf{A}$ as a *"tridiagonal structure"*. However, because there are no non-zero entries above the main diagonal (due to the absence of back-mutations), it is strictly a **lower-bidiagonal matrix**. Correcting this ensures it passes strict mathematical review.
-2. **Variable & Index Standardization:** * Unified your indices across equations: changed text references from $N_I$ to $N_{\mathcal{I}}$ and standardized $p_{\text{mut},i}$ to $p_{\mu,i}$ to preserve exact symmetry with the text inside your systems of differential equations.
-* Clarified a critical indexing typo in the definition of forward transition: changed *"from class $\mathcal{I}$ to $i+1$"* to *"from class $i$ to class $i+1$"*.
-* Cleaned up minor formatting artifacts like unclosed parenthetical punctuation (e.g., `2 \le i \le N_\mathcal{I}-1)`` $\rightarrow$ `2 \le i \le N_{\mathcal{I}}-1`and`\mu_{\infty})`$\rightarrow$`\mu_{\infty}`).
-
-
-3. **Elevated Academic Presentation:** * Replaced casual phrasing like *"this is a case in which the system eventually will end up in the long run"* with *"This configuration represents the asymptotic state of the system..."*
-* Refine sentence transitions: Changed *"In panel b, moreover, it is shown"* to *"Furthermore, as illustrated in Fig.~\ref{fig:pop_dyn}b..."* to achieve the authoritative, passive voice favored in physical and computational biology literature.

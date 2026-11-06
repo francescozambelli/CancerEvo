@@ -698,7 +698,7 @@ Simulations proceed dynamically until one of two mutually exclusive termination 
 
 \subsection*{Simulation Parameters}
 
-The complete configurations of the simulation parameters utilized across the distinct computational analyses in this study are detailed in Tables 3, 4, and 5 within Section 2 of the Supplementary Materials.
+The complete agent-based model specification following the standard ODD (Overview, Design concepts, Details) protocol is provided in Section~1 of the Supplementary Materials, and the configurations of the simulation parameters utilized across the distinct computational analyses in this study are detailed in Tables~3, 4, and 5 within Section~3 of the Supplementary Materials.
 
 \subsection*{Analytical derivation of stationary mutational populations densities for the solid tumor case}
 
@@ -722,14 +722,14 @@ $$x_1^* = \left( 1 + \sum_{i=2}^{N_I} \prod_{j=2}^i \frac{p_{\mu, j-1}}{(p_{d,j}
 \subsection*{Mean-field analytical derivation for the liquid tumor case}
 
 We developed an exact analytical framework describing a well-mixed liquid tumor model under a constant population size constraint. The cellular population is partitioned by densities into healthy wild-type cells ($f_W$), empty dead slots ($p_D$), and discrete cancer sub-populations ($f_k$), where $k \in \{1, \dots, N_I\}$ denotes the number of mutated instability genes. Cellular replacement is governed by a Moran-like competition process where cells divide at intrinsic rates ($r_{\text{max}}$ for cancer, $r_0$ for wild-type) and displace targets based on relative fitness.  
-A fundamental premise of our framework is that stochastic mutation and viability checks occur strictly upon successful cellular division. During division, a cancer cell's per-locus mutation probability scales linearly with its instability class ($\mu_k = k \cdot \Delta\mu$). A cell survives this process only if all essential housekeeping loci remain unmutated, establishing a baseline survival probability. We exacted this stochastic process into a combinatorial formulation that dictates three potential post-replication fates for both mother and daughter cells: faithful cloning ($\alpha_k$), multi-step promotion to a higher instability class ($P_{k \to k+j}$), or lethal mutation ($\delta_k$). Full details of the possible transitions and associated probabilities are reported in Supplementary Materials, section 1.1, Tab.2. 
+A fundamental premise of our framework is that stochastic mutation and viability checks occur strictly upon successful cellular division. During division, a cancer cell's per-locus mutation probability scales linearly with its instability class ($\mu_k = k \cdot \Delta\mu$). A cell survives this process only if all essential housekeeping loci remain unmutated, establishing a baseline survival probability. We exacted this stochastic process into a combinatorial formulation that dictates three potential post-replication fates for both mother and daughter cells: faithful cloning ($\alpha_k$), multi-step promotion to a higher instability class ($P_{k \to k+j}$), or lethal mutation ($\delta_k$). Full details of the possible transitions and associated probabilities are reported in Supplementary Materials, Section~2.1, Table~2. 
 
 By applying the thermodynamic limit ($N \to \infty$), we transitioned from a discrete stochastic master equation, which maps all microscopic transitions, into a continuous system of ordinary differential equations (ODEs). These ODEs track the dynamic balances of the system, including faithful clonal expansion, mutational promotion influx from upstream classes, and cellular loss due to lethal mutations, wild-type clearance, and spatial self-displacement.  
 
 Performing a linear stability analysis on the healthy fixed point yielded a unified growth foothold inequality: $r_{\text{max}} (2\alpha_1 - 1) > r_0$. This inequality explicitly defines the boundary where a tumor's net mutational survival overcomes homeostatic wild-type division.  
 
 Provided the foothold inequality is satisfied, the system reaches a steady-state equilibrium. By setting the ODEs to zero, we derived the tumor's non-equilibrium stationary subpopulation densities ($f_k^*$) sequentially through a standard quadratic formulation. This exact solution accounts for the self-interaction, net growth, and upstream mutational influx of each instability class.  
-The fully detailed derivation is reported in Supplementary Material, section 1.
+The fully detailed derivation is reported in Supplementary Material, Section~2.
 
 \vspace{0.2 cm}
 

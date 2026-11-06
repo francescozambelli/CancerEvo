@@ -1,0 +1,891 @@
+%apsrev4-2.bst 2019-01-14 (MD) hand-edited version of apsrev4-1.bst
+%Control: key (0)
+%Control: author (72) initials jnrlst
+%Control: editor formatted (1) identically to author
+%Control: production of article title (-1) disabled
+%Control: page (0) single
+%Control: year (1) truncated
+%Control: production of eprint (0) enabled
+\begin{thebibliography}{71}%
+\makeatletter
+\providecommand \@ifxundefined [1]{%
+ \@ifx{#1\undefined}
+}%
+\providecommand \@ifnum [1]{%
+ \ifnum #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \@ifx [1]{%
+ \ifx #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \natexlab [1]{#1}%
+\providecommand \enquote  [1]{``#1''}%
+\providecommand \bibnamefont  [1]{#1}%
+\providecommand \bibfnamefont [1]{#1}%
+\providecommand \citenamefont [1]{#1}%
+\providecommand \href@noop [0]{\@secondoftwo}%
+\providecommand \href [0]{\begingroup \@sanitize@url \@href}%
+\providecommand \@href[1]{\@@startlink{#1}\@@href}%
+\providecommand \@@href[1]{\endgroup#1\@@endlink}%
+\providecommand \@sanitize@url [0]{\catcode `\\12\catcode `\$12\catcode
+  `\&12\catcode `\#12\catcode `\^12\catcode `\_12\catcode `\%12\relax}%
+\providecommand \@@startlink[1]{}%
+\providecommand \@@endlink[0]{}%
+\providecommand \url  [0]{\begingroup\@sanitize@url \@url }%
+\providecommand \@url [1]{\endgroup\@href {#1}{\urlprefix }}%
+\providecommand \urlprefix  [0]{URL }%
+\providecommand \Eprint [0]{\href }%
+\providecommand \doibase [0]{https://doi.org/}%
+\providecommand \selectlanguage [0]{\@gobble}%
+\providecommand \bibinfo  [0]{\@secondoftwo}%
+\providecommand \bibfield  [0]{\@secondoftwo}%
+\providecommand \translation [1]{[#1]}%
+\providecommand \BibitemOpen [0]{}%
+\providecommand \bibitemStop [0]{}%
+\providecommand \bibitemNoStop [0]{.\EOS\space}%
+\providecommand \EOS [0]{\spacefactor3000\relax}%
+\providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
+\let\auto@bib@innerbib\@empty
+%</preamble>
+\bibitem [{\citenamefont {Cairns}(1975)}]{Cairns1975}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Cairns}},\ }\href {https://doi.org/10.1038/255197a0} {\bibfield  {journal}
+  {\bibinfo  {journal} {Nature}\ }\textbf {\bibinfo {volume} {255}},\ \bibinfo
+  {pages} {197–200} (\bibinfo {year} {1975})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Merlo}\ \emph {et~al.}(2006)\citenamefont {Merlo},
+  \citenamefont {Pepper}, \citenamefont {Reid},\ and\ \citenamefont
+  {Maley}}]{Merlo2006-sh}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {L.~M.~F.}\
+  \bibnamefont {Merlo}}, \bibinfo {author} {\bibfnamefont {J.~W.}\ \bibnamefont
+  {Pepper}}, \bibinfo {author} {\bibfnamefont {B.~J.}\ \bibnamefont {Reid}},\
+  and\ \bibinfo {author} {\bibfnamefont {C.~C.}\ \bibnamefont {Maley}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Nat. Rev. Cancer}\
+  }\textbf {\bibinfo {volume} {6}},\ \bibinfo {pages} {924} (\bibinfo {year}
+  {2006})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Basanta}\ and\ \citenamefont
+  {Anderson}(2017)}]{basanta2017homeostasis}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {D.}~\bibnamefont
+  {Basanta}}\ and\ \bibinfo {author} {\bibfnamefont {A.~R.}\ \bibnamefont
+  {Anderson}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Cold
+  Spring Harbor perspectives in medicine}\ }\textbf {\bibinfo {volume} {7}},\
+  \bibinfo {pages} {a028332} (\bibinfo {year} {2017})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Gatenby}\ and\ \citenamefont
+  {Vincent}(2003)}]{gatenby2003evolutionary}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~A.}\ \bibnamefont
+  {Gatenby}}\ and\ \bibinfo {author} {\bibfnamefont {T.~L.}\ \bibnamefont
+  {Vincent}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Cancer research}\ }\textbf {\bibinfo {volume} {63}},\ \bibinfo {pages}
+  {6212} (\bibinfo {year} {2003})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Gatenby}\ and\ \citenamefont
+  {Brown}(2018)}]{gatenby2018evolution}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Gatenby}}\ and\ \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Brown}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Cold
+  Spring Harbor perspectives in medicine}\ }\textbf {\bibinfo {volume} {8}},\
+  \bibinfo {pages} {a033415} (\bibinfo {year} {2018})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Gatenby}\ and\ \citenamefont
+  {Brown}(2020)}]{gatenby2020integrating}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~A.}\ \bibnamefont
+  {Gatenby}}\ and\ \bibinfo {author} {\bibfnamefont {J.~S.}\ \bibnamefont
+  {Brown}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Nature
+  reviews Clinical oncology}\ }\textbf {\bibinfo {volume} {17}},\ \bibinfo
+  {pages} {675} (\bibinfo {year} {2020})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Vendramin}\ \emph {et~al.}(2021)\citenamefont
+  {Vendramin}, \citenamefont {Litchfield},\ and\ \citenamefont
+  {Swanton}}]{Vendramin2021}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Vendramin}}, \bibinfo {author} {\bibfnamefont {K.}~\bibnamefont
+  {Litchfield}},\ and\ \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont
+  {Swanton}},\ }\bibfield  {journal} {\bibinfo  {journal} {The EMBO Journal}\
+  }\textbf {\bibinfo {volume} {40}},\ \href
+  {https://doi.org/10.15252/embj.2021108389} {10.15252/embj.2021108389}
+  (\bibinfo {year} {2021})\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Thompson}\ \emph {et~al.}(2010)\citenamefont
+  {Thompson}, \citenamefont {Bakhoum},\ and\ \citenamefont
+  {Compton}}]{thompson2010mechanisms}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.~L.}\ \bibnamefont
+  {Thompson}}, \bibinfo {author} {\bibfnamefont {S.~F.}\ \bibnamefont
+  {Bakhoum}},\ and\ \bibinfo {author} {\bibfnamefont {D.~A.}\ \bibnamefont
+  {Compton}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Current biology}\ }\textbf {\bibinfo {volume} {20}},\ \bibinfo {pages}
+  {R285} (\bibinfo {year} {2010})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Hanahan}\ and\ \citenamefont
+  {Weinberg}(2011)}]{HanahanWeinberg2011}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {D.}~\bibnamefont
+  {Hanahan}}\ and\ \bibinfo {author} {\bibfnamefont {R.~A.}\ \bibnamefont
+  {Weinberg}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Cell}\ }\textbf {\bibinfo {volume} {144}},\ \bibinfo {pages} {646} (\bibinfo
+  {year} {2011})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Hanahan}(2022)}]{Hanahan2022}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {D.}~\bibnamefont
+  {Hanahan}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Cancer Discovery}\ }\textbf {\bibinfo {volume} {12}},\ \bibinfo {pages} {31}
+  (\bibinfo {year} {2022})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Negrini}\ \emph {et~al.}(2010)\citenamefont
+  {Negrini}, \citenamefont {Gorgoulis},\ and\ \citenamefont
+  {Halazonetis}}]{Negrini2010}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Negrini}}, \bibinfo {author} {\bibfnamefont {V.~G.}\ \bibnamefont
+  {Gorgoulis}},\ and\ \bibinfo {author} {\bibfnamefont {T.~D.}\ \bibnamefont
+  {Halazonetis}},\ }\href {https://doi.org/10.1038/nrm2858} {\bibfield
+  {journal} {\bibinfo  {journal} {Nature Reviews Molecular Cell Biology}\
+  }\textbf {\bibinfo {volume} {11}},\ \bibinfo {pages} {220–228} (\bibinfo
+  {year} {2010})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Chen}\ \emph {et~al.}(2025)\citenamefont {Chen},
+  \citenamefont {Agustinus}, \citenamefont {Li}, \citenamefont {Dibona},\ and\
+  \citenamefont {Bakhoum}}]{chen2025chromosomal}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {X.}~\bibnamefont
+  {Chen}}, \bibinfo {author} {\bibfnamefont {A.~S.}\ \bibnamefont {Agustinus}},
+  \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont {Li}}, \bibinfo {author}
+  {\bibfnamefont {M.}~\bibnamefont {Dibona}},\ and\ \bibinfo {author}
+  {\bibfnamefont {S.~F.}\ \bibnamefont {Bakhoum}},\ }\href@noop {} {\bibfield
+  {journal} {\bibinfo  {journal} {Nature Reviews Genetics}\ }\textbf {\bibinfo
+  {volume} {26}},\ \bibinfo {pages} {31} (\bibinfo {year} {2025})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Drews}\ \emph {et~al.}(2022)\citenamefont {Drews},
+  \citenamefont {Hernando}, \citenamefont {Tarabichi}, \citenamefont {Haase},
+  \citenamefont {Lesluyes}, \citenamefont {Smith}, \citenamefont
+  {Morrill~Gavarr{\'o}}, \citenamefont {Couturier}, \citenamefont {Liu},
+  \citenamefont {Schneider} \emph {et~al.}}]{drews2022pan}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~M.}\ \bibnamefont
+  {Drews}}, \bibinfo {author} {\bibfnamefont {B.}~\bibnamefont {Hernando}},
+  \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont {Tarabichi}}, \bibinfo
+  {author} {\bibfnamefont {K.}~\bibnamefont {Haase}}, \bibinfo {author}
+  {\bibfnamefont {T.}~\bibnamefont {Lesluyes}}, \bibinfo {author}
+  {\bibfnamefont {P.~S.}\ \bibnamefont {Smith}}, \bibinfo {author}
+  {\bibfnamefont {L.}~\bibnamefont {Morrill~Gavarr{\'o}}}, \bibinfo {author}
+  {\bibfnamefont {D.-L.}\ \bibnamefont {Couturier}}, \bibinfo {author}
+  {\bibfnamefont {L.}~\bibnamefont {Liu}}, \bibinfo {author} {\bibfnamefont
+  {M.}~\bibnamefont {Schneider}}, \emph {et~al.},\ }\href@noop {} {\bibfield
+  {journal} {\bibinfo  {journal} {Nature}\ }\textbf {\bibinfo {volume} {606}},\
+  \bibinfo {pages} {976} (\bibinfo {year} {2022})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Hosea}\ \emph
+  {et~al.}(2024{\natexlab{a}})\citenamefont {Hosea}, \citenamefont {Hillary},
+  \citenamefont {Naqvi}, \citenamefont {Wu},\ and\ \citenamefont
+  {Kasim}}]{hosea2024two}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Hosea}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Hillary}},
+  \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Naqvi}}, \bibinfo
+  {author} {\bibfnamefont {S.}~\bibnamefont {Wu}},\ and\ \bibinfo {author}
+  {\bibfnamefont {V.}~\bibnamefont {Kasim}},\ }\href@noop {} {\bibfield
+  {journal} {\bibinfo  {journal} {Signal transduction and targeted therapy}\
+  }\textbf {\bibinfo {volume} {9}},\ \bibinfo {pages} {75} (\bibinfo {year}
+  {2024}{\natexlab{a}})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Loeb}(2001)}]{loeb_mutator_2001}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {L.~A.}\ \bibnamefont
+  {Loeb}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Cancer
+  Research}\ }\textbf {\bibinfo {volume} {61}},\ \bibinfo {pages} {3230}
+  (\bibinfo {year} {2001})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Breivik}(2005)}]{breivik2005evolutionary}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Breivik}},\ }in\ \href@noop {} {\emph {\bibinfo {booktitle} {Seminars in
+  cancer biology}}},\ Vol.~\bibinfo {volume} {15}\ (\bibinfo {organization}
+  {Elsevier},\ \bibinfo {year} {2005})\ pp.\ \bibinfo {pages}
+  {51--60}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sheltzer}\ and\ \citenamefont
+  {Amon}(2011)}]{sheltzer2011aneuploidy}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.~M.}\ \bibnamefont
+  {Sheltzer}}\ and\ \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Amon}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Trends
+  in Genetics}\ }\textbf {\bibinfo {volume} {27}},\ \bibinfo {pages} {446}
+  (\bibinfo {year} {2011})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Gordon}\ \emph {et~al.}(2012)\citenamefont {Gordon},
+  \citenamefont {Resio},\ and\ \citenamefont {Pellman}}]{Gordon2012}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {D.~J.}\ \bibnamefont
+  {Gordon}}, \bibinfo {author} {\bibfnamefont {B.}~\bibnamefont {Resio}},\ and\
+  \bibinfo {author} {\bibfnamefont {D.}~\bibnamefont {Pellman}},\ }\href
+  {https://doi.org/10.1038/nrg3123} {\bibfield  {journal} {\bibinfo  {journal}
+  {Nature Reviews Genetics}\ }\textbf {\bibinfo {volume} {13}},\ \bibinfo
+  {pages} {189–203} (\bibinfo {year} {2012})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Chunduri}\ and\ \citenamefont
+  {Storchov{\'a}}(2019)}]{chunduri2019diverse}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {N.~K.}\ \bibnamefont
+  {Chunduri}}\ and\ \bibinfo {author} {\bibfnamefont {Z.}~\bibnamefont
+  {Storchov{\'a}}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Nature Cell Biology}\ }\textbf {\bibinfo {volume} {21}},\ \bibinfo {pages}
+  {54} (\bibinfo {year} {2019})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Lengauer}\ \emph {et~al.}(1998)\citenamefont
+  {Lengauer}, \citenamefont {Kinzler},\ and\ \citenamefont
+  {Vogelstein}}]{Lengauer1998}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {C.}~\bibnamefont
+  {Lengauer}}, \bibinfo {author} {\bibfnamefont {K.~W.}\ \bibnamefont
+  {Kinzler}},\ and\ \bibinfo {author} {\bibfnamefont {B.}~\bibnamefont
+  {Vogelstein}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Nature}\ }\textbf {\bibinfo {volume} {396}},\ \bibinfo {pages} {643}
+  (\bibinfo {year} {1998})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Maley}\ \emph {et~al.}(2017)\citenamefont {Maley},
+  \citenamefont {Aktipis}, \citenamefont {Graham}, \citenamefont {Sottoriva},
+  \citenamefont {Boddy}, \citenamefont {Janiszewska}, \citenamefont {Silva},
+  \citenamefont {Gerlinger}, \citenamefont {Yuan}, \citenamefont {Pienta},
+  \citenamefont {Anderson}, \citenamefont {Gatenby}, \citenamefont {Swanton},
+  \citenamefont {Posada}, \citenamefont {Wu}, \citenamefont {Schiffman},
+  \citenamefont {Hwang}, \citenamefont {Polyak}, \citenamefont {Anderson},
+  \citenamefont {Brown}, \citenamefont {Greaves},\ and\ \citenamefont
+  {Shibata}}]{Maley2017}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {C.~C.}\ \bibnamefont
+  {Maley}}, \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Aktipis}},
+  \bibinfo {author} {\bibfnamefont {T.~A.}\ \bibnamefont {Graham}}, \bibinfo
+  {author} {\bibfnamefont {A.}~\bibnamefont {Sottoriva}}, \bibinfo {author}
+  {\bibfnamefont {A.~M.}\ \bibnamefont {Boddy}}, \bibinfo {author}
+  {\bibfnamefont {M.}~\bibnamefont {Janiszewska}}, \bibinfo {author}
+  {\bibfnamefont {A.~S.}\ \bibnamefont {Silva}}, \bibinfo {author}
+  {\bibfnamefont {M.}~\bibnamefont {Gerlinger}}, \bibinfo {author}
+  {\bibfnamefont {Y.}~\bibnamefont {Yuan}}, \bibinfo {author} {\bibfnamefont
+  {K.~J.}\ \bibnamefont {Pienta}}, \bibinfo {author} {\bibfnamefont {K.~S.}\
+  \bibnamefont {Anderson}}, \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Gatenby}}, \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont {Swanton}},
+  \bibinfo {author} {\bibfnamefont {D.}~\bibnamefont {Posada}}, \bibinfo
+  {author} {\bibfnamefont {C.-I.}\ \bibnamefont {Wu}}, \bibinfo {author}
+  {\bibfnamefont {J.~D.}\ \bibnamefont {Schiffman}}, \bibinfo {author}
+  {\bibfnamefont {E.~S.}\ \bibnamefont {Hwang}}, \bibinfo {author}
+  {\bibfnamefont {K.}~\bibnamefont {Polyak}}, \bibinfo {author} {\bibfnamefont
+  {A.~R.~A.}\ \bibnamefont {Anderson}}, \bibinfo {author} {\bibfnamefont
+  {J.~S.}\ \bibnamefont {Brown}}, \bibinfo {author} {\bibfnamefont
+  {M.}~\bibnamefont {Greaves}},\ and\ \bibinfo {author} {\bibfnamefont
+  {D.}~\bibnamefont {Shibata}},\ }\href {https://doi.org/10.1038/nrc.2017.69}
+  {\bibfield  {journal} {\bibinfo  {journal} {Nature Reviews Cancer}\ }\textbf
+  {\bibinfo {volume} {17}},\ \bibinfo {pages} {605} (\bibinfo {year}
+  {2017})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Bakhoum}\ and\ \citenamefont
+  {Cantley}(2018)}]{bakhoum2018multifaceted}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.~F.}\ \bibnamefont
+  {Bakhoum}}\ and\ \bibinfo {author} {\bibfnamefont {L.~C.}\ \bibnamefont
+  {Cantley}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Cell}\ }\textbf {\bibinfo {volume} {174}},\ \bibinfo {pages} {1347}
+  (\bibinfo {year} {2018})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sol{\'e}}(2011)}]{sole2011phase}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont
+  {Sol{\'e}}},\ }\href@noop {} {\emph {\bibinfo {title} {Phase transitions}}},\
+  Vol.~\bibinfo {volume} {16}\ (\bibinfo  {publisher} {Princeton University
+  Press},\ \bibinfo {year} {2011})\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Gatenby}\ and\ \citenamefont
+  {Frieden}(2002)}]{gatenby2002application}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~A.}\ \bibnamefont
+  {Gatenby}}\ and\ \bibinfo {author} {\bibfnamefont {B.~R.}\ \bibnamefont
+  {Frieden}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Cancer Research}\ }\textbf {\bibinfo {volume} {62}},\ \bibinfo {pages}
+  {3675} (\bibinfo {year} {2002})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sol{\'e}}(2003)}]{Sole2003-ne}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont
+  {Sol{\'e}}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Eur.
+  Phys. J. B}\ }\textbf {\bibinfo {volume} {35}},\ \bibinfo {pages} {117}
+  (\bibinfo {year} {2003})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sol{\'e}}\ and\ \citenamefont
+  {Deisboeck}(2004)}]{Sole2004-bf}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont
+  {Sol{\'e}}}\ and\ \bibinfo {author} {\bibfnamefont {T.~S.}\ \bibnamefont
+  {Deisboeck}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {J.
+  Theor. Biol.}\ }\textbf {\bibinfo {volume} {228}},\ \bibinfo {pages} {47}
+  (\bibinfo {year} {2004})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Tejero}\ \emph {et~al.}(2010)\citenamefont {Tejero},
+  \citenamefont {Mar{\'\i}n},\ and\ \citenamefont
+  {Montero}}]{tejero2010effect}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {H.}~\bibnamefont
+  {Tejero}}, \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Mar{\'\i}n}},\
+  and\ \bibinfo {author} {\bibfnamefont {F.}~\bibnamefont {Montero}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Journal of
+  theoretical biology}\ }\textbf {\bibinfo {volume} {262}},\ \bibinfo {pages}
+  {733} (\bibinfo {year} {2010})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sol{\'e}}\ \emph {et~al.}(2014)\citenamefont
+  {Sol{\'e}}, \citenamefont {Valverde}, \citenamefont {Rodriguez-Caso},\ and\
+  \citenamefont {Sardany{\'e}s}}]{sole2014can}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont
+  {Sol{\'e}}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Valverde}},
+  \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont {Rodriguez-Caso}},\ and\
+  \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont {Sardany{\'e}s}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Bioessays}\
+  }\textbf {\bibinfo {volume} {36}},\ \bibinfo {pages} {503} (\bibinfo {year}
+  {2014})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Manrubia}\ \emph {et~al.}(2010)\citenamefont
+  {Manrubia}, \citenamefont {Domingo},\ and\ \citenamefont
+  {L{\'a}zaro}}]{manrubia2010pathways}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.~C.}\ \bibnamefont
+  {Manrubia}}, \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {Domingo}},\
+  and\ \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {L{\'a}zaro}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Philosophical
+  Transactions of the Royal Society B: Biological Sciences}\ }\textbf {\bibinfo
+  {volume} {365}},\ \bibinfo {pages} {1943} (\bibinfo {year}
+  {2010})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Perales}\ and\ \citenamefont
+  {Domingo}(2015)}]{perales2015antiviral}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {C.}~\bibnamefont
+  {Perales}}\ and\ \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont
+  {Domingo}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Quasispecies: From Theory to Experimental Systems}\ ,\ \bibinfo {pages}
+  {323}} (\bibinfo {year} {2015})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sardany{\'e}s}\ \emph {et~al.}(2024)\citenamefont
+  {Sardany{\'e}s}, \citenamefont {Perales}, \citenamefont {Domingo},\ and\
+  \citenamefont {Elena}}]{Sardanyes2024}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Sardany{\'e}s}}, \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont
+  {Perales}}, \bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {Domingo}},\
+  and\ \bibinfo {author} {\bibfnamefont {S.~F.}\ \bibnamefont {Elena}},\ }\href
+  {https://doi.org/10.1038/s44298-024-00066-w} {\bibfield  {journal} {\bibinfo
+  {journal} {npj Viruses}\ }\textbf {\bibinfo {volume} {2}},\ \bibinfo {pages}
+  {54} (\bibinfo {year} {2024})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Aguadé‐Gorgorió}\ \emph
+  {et~al.}(2023)\citenamefont {Aguadé‐Gorgorió}, \citenamefont {Costa},\
+  and\ \citenamefont {Solé}}]{SoleBioessasy2023}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {G.}~\bibnamefont
+  {Aguadé‐Gorgorió}}, \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Costa}},\ and\ \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont {Solé}},\
+  }\bibfield  {journal} {\bibinfo  {journal} {BioEssays}\ }\textbf {\bibinfo
+  {volume} {45}},\ \href {https://doi.org/10.1002/bies.202200215}
+  {10.1002/bies.202200215} (\bibinfo {year} {2023})\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Crotty}\ \emph {et~al.}(2001)\citenamefont {Crotty},
+  \citenamefont {Cameron},\ and\ \citenamefont {Andino}}]{crotty2001rna}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Crotty}}, \bibinfo {author} {\bibfnamefont {C.~E.}\ \bibnamefont
+  {Cameron}},\ and\ \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Andino}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Proceedings of the National Academy of Sciences}\ }\textbf {\bibinfo
+  {volume} {98}},\ \bibinfo {pages} {6895} (\bibinfo {year}
+  {2001})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sol{\'e}}\ \emph {et~al.}(2006)\citenamefont
+  {Sol{\'e}}, \citenamefont {Sardany{\'e}s}, \citenamefont {D{\'\i}ez},\ and\
+  \citenamefont {Mas}}]{sole2006information}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont
+  {Sol{\'e}}}, \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Sardany{\'e}s}}, \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {D{\'\i}ez}},\ and\ \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Mas}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Journal
+  of theoretical biology}\ }\textbf {\bibinfo {volume} {240}},\ \bibinfo
+  {pages} {353} (\bibinfo {year} {2006})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Swanstrom}\ and\ \citenamefont
+  {Schinazi}(2022)}]{swanstrom2022lethal}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Swanstrom}}\ and\ \bibinfo {author} {\bibfnamefont {R.~F.}\ \bibnamefont
+  {Schinazi}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Science}\ }\textbf {\bibinfo {volume} {375}},\ \bibinfo {pages} {497}
+  (\bibinfo {year} {2022})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Chatterjee}\ \emph {et~al.}(2023)\citenamefont
+  {Chatterjee}, \citenamefont {Bhattacharya}, \citenamefont {Dhama},
+  \citenamefont {Lee},\ and\ \citenamefont
+  {Chakraborty}}]{chatterjee2023molnupiravir}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Chatterjee}}, \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont
+  {Bhattacharya}}, \bibinfo {author} {\bibfnamefont {K.}~\bibnamefont {Dhama}},
+  \bibinfo {author} {\bibfnamefont {S.-S.}\ \bibnamefont {Lee}},\ and\ \bibinfo
+  {author} {\bibfnamefont {C.}~\bibnamefont {Chakraborty}},\ }\href@noop {}
+  {\bibfield  {journal} {\bibinfo  {journal} {Molecular Therapy Nucleic Acids}\
+  }\textbf {\bibinfo {volume} {33}},\ \bibinfo {pages} {49} (\bibinfo {year}
+  {2023})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sardanyés}\ \emph {et~al.}(2017)\citenamefont
+  {Sardanyés}, \citenamefont {Martínez}, \citenamefont {Simó},\ and\
+  \citenamefont {Solé}}]{Sardanyes2017JMB}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Sardanyés}}, \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Martínez}}, \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont {Simó}},\
+  and\ \bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont {Solé}},\ }\href
+  {https://doi.org/10.1007/s00285-016-1062-9} {\bibfield  {journal} {\bibinfo
+  {journal} {Journal of Mathematical Biology}\ }\textbf {\bibinfo {volume}
+  {74}},\ \bibinfo {pages} {1589} (\bibinfo {year} {2017})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Sardanyés}\ and\ \citenamefont
+  {Alarcón}(2018)}]{Sardanyes2018SciRep}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Sardanyés}}\ and\ \bibinfo {author} {\bibfnamefont {T.}~\bibnamefont
+  {Alarcón}},\ }\href {https://doi.org/10.1038/s41598-018-19552-2} {\bibfield
+  {journal} {\bibinfo  {journal} {Scientific Reports}\ }\textbf {\bibinfo
+  {volume} {8}},\ \bibinfo {pages} {1027} (\bibinfo {year} {2018})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Sardanyés}\ \emph {et~al.}(2018)\citenamefont
+  {Sardanyés}, \citenamefont {Martínez},\ and\ \citenamefont
+  {Simó}}]{Sardanyes2018RSOS}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Sardanyés}}, \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Martínez}},\ and\ \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont
+  {Simó}},\ }\href {https://doi.org/10.1098/rsos.171304} {\bibfield  {journal}
+  {\bibinfo  {journal} {Royal Society Open Science}\ }\textbf {\bibinfo
+  {volume} {5}},\ \bibinfo {pages} {171304} (\bibinfo {year}
+  {2018})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Andor}\ \emph {et~al.}(2017)\citenamefont {Andor},
+  \citenamefont {Maley},\ and\ \citenamefont {Ji}}]{andor2017genomic}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {N.}~\bibnamefont
+  {Andor}}, \bibinfo {author} {\bibfnamefont {C.~C.}\ \bibnamefont {Maley}},\
+  and\ \bibinfo {author} {\bibfnamefont {H.~P.}\ \bibnamefont {Ji}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Cancer research}\
+  }\textbf {\bibinfo {volume} {77}},\ \bibinfo {pages} {2179} (\bibinfo {year}
+  {2017})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {van Dijk}\ \emph {et~al.}(2021)\citenamefont {van
+  Dijk}, \citenamefont {Van Den~Bosch}, \citenamefont {Lenos}, \citenamefont
+  {El~Makrini}, \citenamefont {Nijman}, \citenamefont {van Essen},
+  \citenamefont {Lansu}, \citenamefont {Boekhout}, \citenamefont {Hageman},
+  \citenamefont {Fitzgerald} \emph {et~al.}}]{van2021chromosomal}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {E.}~\bibnamefont {van
+  Dijk}}, \bibinfo {author} {\bibfnamefont {T.}~\bibnamefont {Van Den~Bosch}},
+  \bibinfo {author} {\bibfnamefont {K.~J.}\ \bibnamefont {Lenos}}, \bibinfo
+  {author} {\bibfnamefont {K.}~\bibnamefont {El~Makrini}}, \bibinfo {author}
+  {\bibfnamefont {L.~E.}\ \bibnamefont {Nijman}}, \bibinfo {author}
+  {\bibfnamefont {H.~F.}\ \bibnamefont {van Essen}}, \bibinfo {author}
+  {\bibfnamefont {N.}~\bibnamefont {Lansu}}, \bibinfo {author} {\bibfnamefont
+  {M.}~\bibnamefont {Boekhout}}, \bibinfo {author} {\bibfnamefont {J.~H.}\
+  \bibnamefont {Hageman}}, \bibinfo {author} {\bibfnamefont {R.~C.}\
+  \bibnamefont {Fitzgerald}}, \emph {et~al.},\ }\href@noop {} {\bibfield
+  {journal} {\bibinfo  {journal} {Nature communications}\ }\textbf {\bibinfo
+  {volume} {12}},\ \bibinfo {pages} {3188} (\bibinfo {year}
+  {2021})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Zerbib}\ \emph {et~al.}(2025)\citenamefont {Zerbib},
+  \citenamefont {Bloomberg},\ and\ \citenamefont
+  {Ben-David}}]{zerbib2025targeting}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Zerbib}}, \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Bloomberg}},\
+  and\ \bibinfo {author} {\bibfnamefont {U.}~\bibnamefont {Ben-David}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Trends in Cancer}\
+  } (\bibinfo {year} {2025})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Jackson}\ and\ \citenamefont
+  {Loeb}(1998)}]{JacksonLoeb1998}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.~L.}\ \bibnamefont
+  {Jackson}}\ and\ \bibinfo {author} {\bibfnamefont {L.~A.}\ \bibnamefont
+  {Loeb}},\ }\href {https://doi.org/10.1093/genetics/148.4.1483} {\bibfield
+  {journal} {\bibinfo  {journal} {Genetics}\ }\textbf {\bibinfo {volume}
+  {148}},\ \bibinfo {pages} {1483} (\bibinfo {year} {1998})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Araten}\ \emph {et~al.}(2005)\citenamefont {Araten},
+  \citenamefont {Golde}, \citenamefont {Zhang}, \citenamefont {Thaler},
+  \citenamefont {Gargiulo}, \citenamefont {Notaro},\ and\ \citenamefont
+  {Luzzatto}}]{Araten2005}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {D.~J.}\ \bibnamefont
+  {Araten}}, \bibinfo {author} {\bibfnamefont {D.~W.}\ \bibnamefont {Golde}},
+  \bibinfo {author} {\bibfnamefont {R.~H.}\ \bibnamefont {Zhang}}, \bibinfo
+  {author} {\bibfnamefont {H.~T.}\ \bibnamefont {Thaler}}, \bibinfo {author}
+  {\bibfnamefont {L.}~\bibnamefont {Gargiulo}}, \bibinfo {author}
+  {\bibfnamefont {R.}~\bibnamefont {Notaro}},\ and\ \bibinfo {author}
+  {\bibfnamefont {L.}~\bibnamefont {Luzzatto}},\ }\href
+  {https://doi.org/10.1158/0008-5472.CAN-04-1198} {\bibfield  {journal}
+  {\bibinfo  {journal} {Cancer Research}\ }\textbf {\bibinfo {volume} {65}},\
+  \bibinfo {pages} {8111} (\bibinfo {year} {2005})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Werner}\ and\ \citenamefont
+  {Sottoriva}(2018)}]{WernerSottoriva2018}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {B.}~\bibnamefont
+  {Werner}}\ and\ \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Sottoriva}},\ }\href {https://doi.org/10.1371/journal.pcbi.1006233}
+  {\bibfield  {journal} {\bibinfo  {journal} {PLOS Computational Biology}\
+  }\textbf {\bibinfo {volume} {14}},\ \bibinfo {pages} {e1006233} (\bibinfo
+  {year} {2018})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Clara-Trujillo}\ \emph {et~al.}(2020)\citenamefont
+  {Clara-Trujillo}, \citenamefont {Gallego~Ferrer} \emph
+  {et~al.}}]{clara2020nonsolid}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Clara-Trujillo}}, \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont
+  {Gallego~Ferrer}}, \emph {et~al.},\ }\href
+  {https://doi.org/10.3390/ijms21165747} {\bibfield  {journal} {\bibinfo
+  {journal} {International Journal of Molecular Sciences}\ }\textbf {\bibinfo
+  {volume} {21}},\ \bibinfo {pages} {5747} (\bibinfo {year}
+  {2020})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Mancini}\ \emph {et~al.}(2021)\citenamefont {Mancini}
+  \emph {et~al.}}]{mancini2021tumor}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.~J.~C.}\
+  \bibnamefont {Mancini}} \emph {et~al.},\ }\href
+  {https://doi.org/10.3389/fimmu.2021.766275} {\bibfield  {journal} {\bibinfo
+  {journal} {Frontiers in Immunology}\ }\textbf {\bibinfo {volume} {12}},\
+  \bibinfo {pages} {766275} (\bibinfo {year} {2021})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Vakiti}\ \emph {et~al.}(2024)\citenamefont {Vakiti}
+  \emph {et~al.}}]{vakiti2024aml}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Vakiti}} \emph {et~al.},\ }\href@noop {} {\bibinfo {title} {Acute myeloid
+  leukemia}},\ \bibinfo {howpublished} {StatPearls, NCBI Bookshelf} (\bibinfo
+  {year} {2024}),\ \bibinfo {note} {describes AML as a rapidly progressing
+  myeloid neoplasm characterized by clonal expansion of immature blasts in bone
+  marrow and peripheral blood}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Shimony}\ \emph {et~al.}(2023)\citenamefont
+  {Shimony}, \citenamefont {Stahl},\ and\ \citenamefont
+  {Stone}}]{shimony2023aml}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Shimony}}, \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont {Stahl}},\
+  and\ \bibinfo {author} {\bibfnamefont {R.~M.}\ \bibnamefont {Stone}},\ }\href
+  {https://doi.org/10.1002/ajh.26822} {\bibfield  {journal} {\bibinfo
+  {journal} {American Journal of Hematology}\ }\textbf {\bibinfo {volume}
+  {98}},\ \bibinfo {pages} {502} (\bibinfo {year} {2023})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Terwilliger}\ and\ \citenamefont
+  {Abdul-Hay}(2017)}]{terwilliger2017all}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {T.}~\bibnamefont
+  {Terwilliger}}\ and\ \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont
+  {Abdul-Hay}},\ }\href {https://doi.org/10.1038/bcj.2017.53} {\bibfield
+  {journal} {\bibinfo  {journal} {Blood Cancer Journal}\ }\textbf {\bibinfo
+  {volume} {7}},\ \bibinfo {pages} {e577} (\bibinfo {year} {2017})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Yap}\ \emph {et~al.}(2026)\citenamefont {Yap},
+  \citenamefont {Manning}, \citenamefont {Sapra}, \citenamefont {Mills},\ and\
+  \citenamefont {O’Connor}}]{yap2026targeting}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {T.~A.}\ \bibnamefont
+  {Yap}}, \bibinfo {author} {\bibfnamefont {H.~C.}\ \bibnamefont {Manning}},
+  \bibinfo {author} {\bibfnamefont {P.}~\bibnamefont {Sapra}}, \bibinfo
+  {author} {\bibfnamefont {G.~B.}\ \bibnamefont {Mills}},\ and\ \bibinfo
+  {author} {\bibfnamefont {M.~J.}\ \bibnamefont {O’Connor}},\ }\href@noop {}
+  {\bibfield  {journal} {\bibinfo  {journal} {Cell}\ }\textbf {\bibinfo
+  {volume} {189}},\ \bibinfo {pages} {2278} (\bibinfo {year}
+  {2026})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Janssen}\ and\ \citenamefont
+  {Medema}(2013)}]{janssen2013genetic}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Janssen}}\ and\ \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Medema}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Oncogene}\ }\textbf {\bibinfo {volume} {32}},\ \bibinfo {pages} {4459}
+  (\bibinfo {year} {2013})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Huang}(2013)}]{huang2013genetic}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Huang}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Cancer
+  and Metastasis Reviews}\ }\textbf {\bibinfo {volume} {32}},\ \bibinfo {pages}
+  {423} (\bibinfo {year} {2013})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Martin}\ \emph {et~al.}(2010)\citenamefont {Martin},
+  \citenamefont {Hewish}, \citenamefont {Lord},\ and\ \citenamefont
+  {Ashworth}}]{martin2010genomic}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.~A.}\ \bibnamefont
+  {Martin}}, \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont {Hewish}},
+  \bibinfo {author} {\bibfnamefont {C.~J.}\ \bibnamefont {Lord}},\ and\
+  \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Ashworth}},\ }\href@noop
+  {} {\bibfield  {journal} {\bibinfo  {journal} {The Journal of Pathology: A
+  Journal of the Pathological Society of Great Britain and Ireland}\ }\textbf
+  {\bibinfo {volume} {220}},\ \bibinfo {pages} {281} (\bibinfo {year}
+  {2010})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Hussain}\ \emph {et~al.}(2025)\citenamefont
+  {Hussain}, \citenamefont {Rahman},\ and\ \citenamefont
+  {Ramteke}}]{hussain2025genomic}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Hussain}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Rahman}},\
+  and\ \bibinfo {author} {\bibfnamefont {A.~S.}\ \bibnamefont {Ramteke}},\ }in\
+  \href@noop {} {\emph {\bibinfo {booktitle} {Molecular Targets in Cancer
+  Therapy: Understanding Cellular Pathways for Therapeutic Interventions}}}\
+  (\bibinfo  {publisher} {Springer},\ \bibinfo {year} {2025})\ pp.\ \bibinfo
+  {pages} {227--240}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Amor}\ and\ \citenamefont
+  {Sol{\'e}}(2014)}]{Amor2014-jv}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {D.~R.}\ \bibnamefont
+  {Amor}}\ and\ \bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont
+  {Sol{\'e}}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Phys. Rev. E Stat. Nonlin. Soft Matter Phys.}\ }\textbf {\bibinfo {volume}
+  {90}},\ \bibinfo {pages} {022710} (\bibinfo {year} {2014})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Weinstein}(2002)}]{Weinstein2002}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {I.~B.}\ \bibnamefont
+  {Weinstein}},\ }\href {https://doi.org/10.1126/science.1073096} {\bibfield
+  {journal} {\bibinfo  {journal} {Science}\ }\textbf {\bibinfo {volume}
+  {297}},\ \bibinfo {pages} {63} (\bibinfo {year} {2002})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Gerlinger}\ \emph {et~al.}(2012)\citenamefont
+  {Gerlinger}, \citenamefont {Rowan}, \citenamefont {Horswell}, \citenamefont
+  {Larkin}, \citenamefont {Endesfelder}, \citenamefont {Gronroos},
+  \citenamefont {Martinez}, \citenamefont {Matthews}, \citenamefont {Stewart},
+  \citenamefont {Tarpey}, \citenamefont {Varela}, \citenamefont {Phillimore},
+  \citenamefont {Begum}, \citenamefont {McDonald}, \citenamefont {Butler},
+  \citenamefont {Jones}, \citenamefont {Raine}, \citenamefont {Latimer},
+  \citenamefont {Santos}, \citenamefont {Nohadani}, \citenamefont {Eklund},
+  \citenamefont {Spencer-Dene}, \citenamefont {Clark}, \citenamefont
+  {Pickering}, \citenamefont {Stamp}, \citenamefont {Gore}, \citenamefont
+  {Szallasi}, \citenamefont {Downward}, \citenamefont {Futreal},\ and\
+  \citenamefont {Swanton}}]{Gerlinger2012}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {M.}~\bibnamefont
+  {Gerlinger}}, \bibinfo {author} {\bibfnamefont {A.~J.}\ \bibnamefont
+  {Rowan}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Horswell}},
+  \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont {Larkin}}, \bibinfo
+  {author} {\bibfnamefont {D.}~\bibnamefont {Endesfelder}}, \bibinfo {author}
+  {\bibfnamefont {E.}~\bibnamefont {Gronroos}}, \bibinfo {author}
+  {\bibfnamefont {P.}~\bibnamefont {Martinez}}, \bibinfo {author}
+  {\bibfnamefont {N.}~\bibnamefont {Matthews}}, \bibinfo {author}
+  {\bibfnamefont {A.}~\bibnamefont {Stewart}}, \bibinfo {author} {\bibfnamefont
+  {P.}~\bibnamefont {Tarpey}}, \bibinfo {author} {\bibfnamefont
+  {I.}~\bibnamefont {Varela}}, \bibinfo {author} {\bibfnamefont
+  {B.}~\bibnamefont {Phillimore}}, \bibinfo {author} {\bibfnamefont
+  {S.}~\bibnamefont {Begum}}, \bibinfo {author} {\bibfnamefont {N.~Q.}\
+  \bibnamefont {McDonald}}, \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Butler}}, \bibinfo {author} {\bibfnamefont {D.}~\bibnamefont {Jones}},
+  \bibinfo {author} {\bibfnamefont {K.}~\bibnamefont {Raine}}, \bibinfo
+  {author} {\bibfnamefont {C.}~\bibnamefont {Latimer}}, \bibinfo {author}
+  {\bibfnamefont {C.~R.}\ \bibnamefont {Santos}}, \bibinfo {author}
+  {\bibfnamefont {M.}~\bibnamefont {Nohadani}}, \bibinfo {author}
+  {\bibfnamefont {A.~C.}\ \bibnamefont {Eklund}}, \bibinfo {author}
+  {\bibfnamefont {B.}~\bibnamefont {Spencer-Dene}}, \bibinfo {author}
+  {\bibfnamefont {G.}~\bibnamefont {Clark}}, \bibinfo {author} {\bibfnamefont
+  {L.}~\bibnamefont {Pickering}}, \bibinfo {author} {\bibfnamefont
+  {G.}~\bibnamefont {Stamp}}, \bibinfo {author} {\bibfnamefont
+  {M.}~\bibnamefont {Gore}}, \bibinfo {author} {\bibfnamefont {Z.}~\bibnamefont
+  {Szallasi}}, \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont {Downward}},
+  \bibinfo {author} {\bibfnamefont {P.~A.}\ \bibnamefont {Futreal}},\ and\
+  \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont {Swanton}},\ }\href
+  {https://doi.org/10.1056/NEJMoa1113205} {\bibfield  {journal} {\bibinfo
+  {journal} {New England Journal of Medicine}\ }\textbf {\bibinfo {volume}
+  {366}},\ \bibinfo {pages} {883} (\bibinfo {year} {2012})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {McGranahan}\ \emph {et~al.}(2016)\citenamefont
+  {McGranahan}, \citenamefont {Furness}, \citenamefont {Rosenthal},
+  \citenamefont {Ramskov}, \citenamefont {Lyngaa}, \citenamefont {Saini},
+  \citenamefont {Jamal-Hanjani}, \citenamefont {Wilson}, \citenamefont
+  {Birkbak}, \citenamefont {Hiley}, \citenamefont {Watkins}, \citenamefont
+  {Shafi}, \citenamefont {Murugaesu}, \citenamefont {Mitter}, \citenamefont
+  {Akarca}, \citenamefont {Linares}, \citenamefont {Marafioti}, \citenamefont
+  {Henry}, \citenamefont {Van~Allen}, \citenamefont {Miao}, \citenamefont
+  {Schilling}, \citenamefont {Schadendorf}, \citenamefont {Garraway},
+  \citenamefont {Makarov}, \citenamefont {Rizvi}, \citenamefont {Snyder},
+  \citenamefont {Hellmann}, \citenamefont {Merghoub}, \citenamefont {Wolchok},
+  \citenamefont {Shukla}, \citenamefont {Wu}, \citenamefont {Peggs},
+  \citenamefont {Chan}, \citenamefont {Hadrup}, \citenamefont {Quezada},\ and\
+  \citenamefont {Swanton}}]{McGranahan2016}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {N.}~\bibnamefont
+  {McGranahan}}, \bibinfo {author} {\bibfnamefont {A.~J.~S.}\ \bibnamefont
+  {Furness}}, \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont {Rosenthal}},
+  \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Ramskov}}, \bibinfo
+  {author} {\bibfnamefont {R.}~\bibnamefont {Lyngaa}}, \bibinfo {author}
+  {\bibfnamefont {S.~K.}\ \bibnamefont {Saini}}, \bibinfo {author}
+  {\bibfnamefont {M.}~\bibnamefont {Jamal-Hanjani}}, \bibinfo {author}
+  {\bibfnamefont {G.~A.}\ \bibnamefont {Wilson}}, \bibinfo {author}
+  {\bibfnamefont {N.~J.}\ \bibnamefont {Birkbak}}, \bibinfo {author}
+  {\bibfnamefont {C.~T.}\ \bibnamefont {Hiley}}, \bibinfo {author}
+  {\bibfnamefont {T.~B.~K.}\ \bibnamefont {Watkins}}, \bibinfo {author}
+  {\bibfnamefont {S.}~\bibnamefont {Shafi}}, \bibinfo {author} {\bibfnamefont
+  {N.}~\bibnamefont {Murugaesu}}, \bibinfo {author} {\bibfnamefont
+  {R.}~\bibnamefont {Mitter}}, \bibinfo {author} {\bibfnamefont {A.~U.}\
+  \bibnamefont {Akarca}}, \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Linares}}, \bibinfo {author} {\bibfnamefont {T.}~\bibnamefont {Marafioti}},
+  \bibinfo {author} {\bibfnamefont {J.~Y.}\ \bibnamefont {Henry}}, \bibinfo
+  {author} {\bibfnamefont {E.~M.}\ \bibnamefont {Van~Allen}}, \bibinfo {author}
+  {\bibfnamefont {D.}~\bibnamefont {Miao}}, \bibinfo {author} {\bibfnamefont
+  {B.}~\bibnamefont {Schilling}}, \bibinfo {author} {\bibfnamefont
+  {D.}~\bibnamefont {Schadendorf}}, \bibinfo {author} {\bibfnamefont {L.~A.}\
+  \bibnamefont {Garraway}}, \bibinfo {author} {\bibfnamefont {V.}~\bibnamefont
+  {Makarov}}, \bibinfo {author} {\bibfnamefont {N.~A.}\ \bibnamefont {Rizvi}},
+  \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Snyder}}, \bibinfo
+  {author} {\bibfnamefont {M.~D.}\ \bibnamefont {Hellmann}}, \bibinfo {author}
+  {\bibfnamefont {T.}~\bibnamefont {Merghoub}}, \bibinfo {author}
+  {\bibfnamefont {J.~D.}\ \bibnamefont {Wolchok}}, \bibinfo {author}
+  {\bibfnamefont {S.~A.}\ \bibnamefont {Shukla}}, \bibinfo {author}
+  {\bibfnamefont {C.~J.}\ \bibnamefont {Wu}}, \bibinfo {author} {\bibfnamefont
+  {K.~S.}\ \bibnamefont {Peggs}}, \bibinfo {author} {\bibfnamefont {T.~A.}\
+  \bibnamefont {Chan}}, \bibinfo {author} {\bibfnamefont {S.~R.}\ \bibnamefont
+  {Hadrup}}, \bibinfo {author} {\bibfnamefont {S.~A.}\ \bibnamefont
+  {Quezada}},\ and\ \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont
+  {Swanton}},\ }\href {https://doi.org/10.1126/science.aaf1490} {\bibfield
+  {journal} {\bibinfo  {journal} {Science}\ }\textbf {\bibinfo {volume}
+  {351}},\ \bibinfo {pages} {1463} (\bibinfo {year} {2016})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Sansregret}\ \emph {et~al.}(2018)\citenamefont
+  {Sansregret}, \citenamefont {Vanhaesebroeck},\ and\ \citenamefont
+  {Swanton}}]{Sansregret2018}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {L.}~\bibnamefont
+  {Sansregret}}, \bibinfo {author} {\bibfnamefont {B.}~\bibnamefont
+  {Vanhaesebroeck}},\ and\ \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont
+  {Swanton}},\ }\href {https://doi.org/10.1038/nrclinonc.2017.198} {\bibfield
+  {journal} {\bibinfo  {journal} {Nature Reviews Clinical Oncology}\ }\textbf
+  {\bibinfo {volume} {15}},\ \bibinfo {pages} {139} (\bibinfo {year}
+  {2018})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Hosea}\ \emph
+  {et~al.}(2024{\natexlab{b}})\citenamefont {Hosea}, \citenamefont {Hillary},\
+  and\ \citenamefont {Kasim}}]{Hosea2024}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Hosea}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Hillary}},\
+  and\ \bibinfo {author} {\bibfnamefont {V.}~\bibnamefont {Kasim}},\ }\href
+  {https://doi.org/10.1038/s41392-024-01767-7} {\bibfield  {journal} {\bibinfo
+  {journal} {Signal Transduction and Targeted Therapy}\ }\textbf {\bibinfo
+  {volume} {9}},\ \bibinfo {pages} {75} (\bibinfo {year}
+  {2024}{\natexlab{b}})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Bakhoum}\ \emph {et~al.}(2015)\citenamefont
+  {Bakhoum}, \citenamefont {Ngo}, \citenamefont {Laughney}, \citenamefont
+  {Cavallo}, \citenamefont {Murphy}, \citenamefont {Ly}, \citenamefont {Shah},
+  \citenamefont {Sriram}, \citenamefont {Watkins}, \citenamefont {Taunk},
+  \citenamefont {Duran}, \citenamefont {Pauli}, \citenamefont {Shaw},
+  \citenamefont {Chirieac}, \citenamefont {Hopkins}, \citenamefont {Clevers},
+  \citenamefont {Giannakis}, \citenamefont {Schreiber}, \citenamefont
+  {Iafrate}, \citenamefont {Hammerman}, \citenamefont {Ramaswamy},
+  \citenamefont {Jacks}, \citenamefont {Henske}, \citenamefont {Cantley},\ and\
+  \citenamefont {Compton}}]{Bakhoum2015}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.~F.}\ \bibnamefont
+  {Bakhoum}}, \bibinfo {author} {\bibfnamefont {B.}~\bibnamefont {Ngo}},
+  \bibinfo {author} {\bibfnamefont {A.~M.}\ \bibnamefont {Laughney}}, \bibinfo
+  {author} {\bibfnamefont {J.-A.}\ \bibnamefont {Cavallo}}, \bibinfo {author}
+  {\bibfnamefont {C.~J.}\ \bibnamefont {Murphy}}, \bibinfo {author}
+  {\bibfnamefont {P.}~\bibnamefont {Ly}}, \bibinfo {author} {\bibfnamefont
+  {P.}~\bibnamefont {Shah}}, \bibinfo {author} {\bibfnamefont {R.~K.}\
+  \bibnamefont {Sriram}}, \bibinfo {author} {\bibfnamefont {T.~B.~K.}\
+  \bibnamefont {Watkins}}, \bibinfo {author} {\bibfnamefont {N.~K.}\
+  \bibnamefont {Taunk}}, \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont
+  {Duran}}, \bibinfo {author} {\bibfnamefont {C.}~\bibnamefont {Pauli}},
+  \bibinfo {author} {\bibfnamefont {A.~T.}\ \bibnamefont {Shaw}}, \bibinfo
+  {author} {\bibfnamefont {L.~R.}\ \bibnamefont {Chirieac}}, \bibinfo {author}
+  {\bibfnamefont {B.~D.}\ \bibnamefont {Hopkins}}, \bibinfo {author}
+  {\bibfnamefont {H.}~\bibnamefont {Clevers}}, \bibinfo {author} {\bibfnamefont
+  {M.}~\bibnamefont {Giannakis}}, \bibinfo {author} {\bibfnamefont {S.~L.}\
+  \bibnamefont {Schreiber}}, \bibinfo {author} {\bibfnamefont {A.~J.}\
+  \bibnamefont {Iafrate}}, \bibinfo {author} {\bibfnamefont {P.~S.}\
+  \bibnamefont {Hammerman}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Ramaswamy}}, \bibinfo {author} {\bibfnamefont {T.}~\bibnamefont {Jacks}},
+  \bibinfo {author} {\bibfnamefont {E.~P.}\ \bibnamefont {Henske}}, \bibinfo
+  {author} {\bibfnamefont {L.~C.}\ \bibnamefont {Cantley}},\ and\ \bibinfo
+  {author} {\bibfnamefont {D.~A.}\ \bibnamefont {Compton}},\ }\href
+  {https://doi.org/10.1038/ncomms6990} {\bibfield  {journal} {\bibinfo
+  {journal} {Nature Communications}\ }\textbf {\bibinfo {volume} {6}},\
+  \bibinfo {pages} {5990} (\bibinfo {year} {2015})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {da~Costa}\ \emph {et~al.}(2023)\citenamefont
+  {da~Costa}, \citenamefont {Chowdhury}, \citenamefont {Shapiro}, \citenamefont
+  {D'Andrea},\ and\ \citenamefont {Konstantinopoulos}}]{daCosta2023}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.~A. B.~A.}\
+  \bibnamefont {da~Costa}}, \bibinfo {author} {\bibfnamefont {D.}~\bibnamefont
+  {Chowdhury}}, \bibinfo {author} {\bibfnamefont {G.~I.}\ \bibnamefont
+  {Shapiro}}, \bibinfo {author} {\bibfnamefont {A.~D.}\ \bibnamefont
+  {D'Andrea}},\ and\ \bibinfo {author} {\bibfnamefont {P.~A.}\ \bibnamefont
+  {Konstantinopoulos}},\ }\href {https://doi.org/10.1038/s41573-022-00558-5}
+  {\bibfield  {journal} {\bibinfo  {journal} {Nature Reviews Drug Discovery}\
+  }\textbf {\bibinfo {volume} {22}},\ \bibinfo {pages} {38} (\bibinfo {year}
+  {2023})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Longo}\ \emph {et~al.}(2024)\citenamefont {Longo}
+  \emph {et~al.}}]{Longo2024}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {L.~V.~G.}\
+  \bibnamefont {Longo}} \emph {et~al.},\ }\href
+  {https://doi.org/10.3324/haematol.2023.282838} {\bibfield  {journal}
+  {\bibinfo  {journal} {Haematologica}\ }\textbf {\bibinfo {volume} {109}},\
+  \bibinfo {pages} {578} (\bibinfo {year} {2024})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sol{\'e}}\ \emph {et~al.}(2002)\citenamefont
+  {Sol{\'e}}, \citenamefont {Alonso},\ and\ \citenamefont
+  {McKane}}]{sole2002self}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.~V.}\ \bibnamefont
+  {Sol{\'e}}}, \bibinfo {author} {\bibfnamefont {D.}~\bibnamefont {Alonso}},\
+  and\ \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {McKane}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Philosophical
+  Transactions of the Royal Society B: Biological Sciences}\ }\textbf {\bibinfo
+  {volume} {357}},\ \bibinfo {pages} {667} (\bibinfo {year}
+  {2002})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Gao}\ \emph {et~al.}(2016)\citenamefont {Gao},
+  \citenamefont {Davis}, \citenamefont {McDonald}, \citenamefont {Sei},
+  \citenamefont {Shi}, \citenamefont {Wang}, \citenamefont {Tsai},
+  \citenamefont {Casasent}, \citenamefont {Waters}, \citenamefont {Zhang} \emph
+  {et~al.}}]{gao2016punctuated}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {R.}~\bibnamefont
+  {Gao}}, \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Davis}}, \bibinfo
+  {author} {\bibfnamefont {T.~O.}\ \bibnamefont {McDonald}}, \bibinfo {author}
+  {\bibfnamefont {E.}~\bibnamefont {Sei}}, \bibinfo {author} {\bibfnamefont
+  {X.}~\bibnamefont {Shi}}, \bibinfo {author} {\bibfnamefont {Y.}~\bibnamefont
+  {Wang}}, \bibinfo {author} {\bibfnamefont {P.-C.}\ \bibnamefont {Tsai}},
+  \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Casasent}}, \bibinfo
+  {author} {\bibfnamefont {J.}~\bibnamefont {Waters}}, \bibinfo {author}
+  {\bibfnamefont {H.}~\bibnamefont {Zhang}}, \emph {et~al.},\ }\href@noop {}
+  {\bibfield  {journal} {\bibinfo  {journal} {Nature genetics}\ }\textbf
+  {\bibinfo {volume} {48}},\ \bibinfo {pages} {1119} (\bibinfo {year}
+  {2016})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Bolhaqueiro}\ \emph {et~al.}(2019)\citenamefont
+  {Bolhaqueiro}, \citenamefont {Ponsioen}, \citenamefont {Bakker},
+  \citenamefont {Klaasen}, \citenamefont {Kucukkose}, \citenamefont {van
+  Jaarsveld}, \citenamefont {Vivi{\'e}}, \citenamefont {Verlaan-Klink},
+  \citenamefont {Hami}, \citenamefont {Spierings} \emph
+  {et~al.}}]{bolhaqueiro2019ongoing}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.~C.}\ \bibnamefont
+  {Bolhaqueiro}}, \bibinfo {author} {\bibfnamefont {B.}~\bibnamefont
+  {Ponsioen}}, \bibinfo {author} {\bibfnamefont {B.}~\bibnamefont {Bakker}},
+  \bibinfo {author} {\bibfnamefont {S.~J.}\ \bibnamefont {Klaasen}}, \bibinfo
+  {author} {\bibfnamefont {E.}~\bibnamefont {Kucukkose}}, \bibinfo {author}
+  {\bibfnamefont {R.~H.}\ \bibnamefont {van Jaarsveld}}, \bibinfo {author}
+  {\bibfnamefont {J.}~\bibnamefont {Vivi{\'e}}}, \bibinfo {author}
+  {\bibfnamefont {I.}~\bibnamefont {Verlaan-Klink}}, \bibinfo {author}
+  {\bibfnamefont {N.}~\bibnamefont {Hami}}, \bibinfo {author} {\bibfnamefont
+  {D.~C.}\ \bibnamefont {Spierings}}, \emph {et~al.},\ }\href@noop {}
+  {\bibfield  {journal} {\bibinfo  {journal} {Nature genetics}\ }\textbf
+  {\bibinfo {volume} {51}},\ \bibinfo {pages} {824} (\bibinfo {year}
+  {2019})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Aguad{\'e}-Gorgori{\'o}}\ and\ \citenamefont
+  {Sol{\'e}}(2019)}]{aguade2019genetic}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {G.}~\bibnamefont
+  {Aguad{\'e}-Gorgori{\'o}}}\ and\ \bibinfo {author} {\bibfnamefont
+  {R.}~\bibnamefont {Sol{\'e}}},\ }\href@noop {} {\bibfield  {journal}
+  {\bibinfo  {journal} {Journal for immunotherapy of cancer}\ }\textbf
+  {\bibinfo {volume} {7}},\ \bibinfo {pages} {345} (\bibinfo {year}
+  {2019})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Aguad{\'e}-Gorgori{\'o}}(2026)}]{aguade2026tumor}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {G.}~\bibnamefont
+  {Aguad{\'e}-Gorgori{\'o}}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo
+  {journal} {Journal of Theoretical Biology}\ ,\ \bibinfo {pages} {112421}}
+  (\bibinfo {year} {2026})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Aguad{\'e}-Gorgori{\'o}}\ and\ \citenamefont
+  {Sol{\'e}}(2020)}]{aguade2020tumour}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {G.}~\bibnamefont
+  {Aguad{\'e}-Gorgori{\'o}}}\ and\ \bibinfo {author} {\bibfnamefont
+  {R.}~\bibnamefont {Sol{\'e}}},\ }\href@noop {} {\bibfield  {journal}
+  {\bibinfo  {journal} {Journal of the Royal Society Interface}\ }\textbf
+  {\bibinfo {volume} {17}},\ \bibinfo {pages} {20200736} (\bibinfo {year}
+  {2020})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Pounraj}\ \emph {et~al.}(2024)\citenamefont
+  {Pounraj}, \citenamefont {Chen}, \citenamefont {Ma}, \citenamefont
+  {Mazzieri}, \citenamefont {Dolcetti},\ and\ \citenamefont
+  {Rehm}}]{pounraj2024targeting}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Pounraj}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Chen}},
+  \bibinfo {author} {\bibfnamefont {L.}~\bibnamefont {Ma}}, \bibinfo {author}
+  {\bibfnamefont {R.}~\bibnamefont {Mazzieri}}, \bibinfo {author}
+  {\bibfnamefont {R.}~\bibnamefont {Dolcetti}},\ and\ \bibinfo {author}
+  {\bibfnamefont {B.~H.}\ \bibnamefont {Rehm}},\ }\href@noop {} {\bibfield
+  {journal} {\bibinfo  {journal} {Cancer research}\ }\textbf {\bibinfo {volume}
+  {84}},\ \bibinfo {pages} {353} (\bibinfo {year} {2024})}\BibitemShut
+  {NoStop}%
+\end{thebibliography}%
