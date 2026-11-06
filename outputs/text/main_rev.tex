@@ -1,0 +1,794 @@
+\documentclass[10pt, aps, rmp,  twocolumn, superscriptaddress, floatfix, showkeys]{revtex4-2}
+\usepackage[shortlabels]{enumitem}
+\bibliographystyle{apsrev4-2}
+%\usepackage[latin1]{inputenc}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{calrsfs} 
+\usepackage{times}
+\usepackage[sort&compress]{natbib}
+\usepackage{subfigure}
+\usepackage{xcolor}
+\usepackage{calrsfs}
+\usepackage{soul}
+\usepackage{booktabs, multirow}
+\usepackage{comment}
+\usepackage{verbatim}
+\usepackage{framed}
+\usepackage{lineno}
+\usepackage{ulem}
+\linenumbers
+
+
+\usepackage{xcolor}
+\usepackage{mdframed}
+
+\newmdenv[
+  backgroundcolor=gray!10,
+  linecolor=gray!10,
+  linewidth=0pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=10pt,
+  innerbottommargin=10pt,
+  skipabove=10pt,
+  skipbelow=10pt
+]{graybox}
+
+% Preamble code to extract detailed section word counts
+\newcommand{\detailtexcount}[1]{%
+  \immediate\write18{texcount -v -merge -q #1.tex > #1.wcdet}%
+  \verbatiminput{#1.wcdet}%
+}
+
+\providecommand{\keywords}[1]{\textbf{\textit{Keywords---}} #1}
+
+
+\begin{document}
+\newcommand{\rev}[1]{\textcolor{blue}{#1}}
+\newcommand{\tbd}[1]{\textcolor{blue}{[TBD] #1}}
+
+%\title{Alternative genome instability states in a digital model of tumorigenesis with whole genome duplication}
+
+%\title{Evolution of critical cancer instability after whole genome duplication}
+%\title{Evolutionary paths towards critical cancer instability}
+%\title{Self-Organized cancer fragility emerges from chromosomal instability}
+\title{Critical Fragility Emerges from Chromosomal Instability in Cancer}
+%\title{Genomically unstable evolution drives tumours to the edge of viability}
+
+\providecommand{\CSL}{Complex Systems  Lab, Universitat Pompeu
+  Fabra,   Dr Aiguader   88,   08003   Barcelona,   Spain}
+\providecommand{\ICREA}{Instituci\'o Catalana de la Recerca i Estudis Avancats, Psg Lluis Companys, Barcelona,   Spain}
+\providecommand{\IBE}{Institut de Biologia Evolutiva, CSIC-UPF, Pg Maritim de la Barceloneta 37, 08003 Barcelona, Spain}
+\providecommand{\SFI}{Santa Fe  Institute, 1399 Hyde  Park Road, Santa Fe  NM   87501,  USA} 
+\providecommand{\ISEM}{ISEM, University Montpellier, CNRS, IRD, Montpellier, France}
+\providecommand{\CRM}{Centre de Recerca Matem\`atica (CRM). Edifici C, Campus de Belaterra 08193 Cerdanyola del Vallès, Barcelona, Spain}
+
+\providecommand{\CRG}{Centre de Regulació Genòmica, Dr Aiguader 88, 003, Barcelona, Spain}
+  
+\providecommand{\DFA}{Department of Physics and Astronomy ``Galileo Galilei'', University of Padova, Padova, Italy}
+
+\author{Francesco Zambelli}
+\thanks{Corresponding authors:\\francesco.zambelli.1@phd.unipd.it, ricard.sole@upf.edu}
+\affiliation{\DFA}
+\affiliation{\CSL}
+\author{Gianluca D'Addese}
+\affiliation{\CSL}     
+\author{Quim Marti Baena}
+\affiliation{\CRG}      
+\author{Josep Sardany\'es}
+\affiliation{\CRM}      
+\author{Guim Aguad\'e-Gorgori\'o}   
+\affiliation{\ISEM}
+\author{Ricard Sol\'e}
+\thanks{Corresponding authors:\\francesco.zambelli.1@phd.unipd.it, ricard.sole@upf.edu}
+\affiliation{\CSL}
+\affiliation{\IBE}   
+\affiliation{\ICREA}
+\affiliation{\SFI}   
+
+
+\vspace{0.4 cm}
+\begin{abstract}
+\vspace{0.2 cm}  
+%Genomic instability is a key driver of tumor evolution, enabling diversification and adaptation under selective pressures. However, this instability also pushes cancer cells toward highly disordered genomic states that challenge cellular viability. Using a computational model that explicitly incorporates chromosomes and key gene classes involved in growth, mutation, and segregation fidelity, we show that tumor evolution consistently leads to critical thresholds of instability, i.e., states at the edge of viability. These thresholds emerge through different routes, including elevated mutation rates and chromosomal instability. In all cases, tumors spontaneously evolve towards a critical boundary where further instability compromises fitness, making them intrinsically fragile. This evolutionary convergence on critical states suggests that instability itself may be a therapeutic vulnerability. Our \textit{in silico} experiments demonstrate that perturbing genome maintenance mechanisms can tip tumor populations past the point of recovery, offering a novel strategy to exploit the limits of cancer evolution.
+Genomic instability is a major driver of tumor evolution, promoting diversification and adaptation while simultaneously increasing the accumulation of deleterious alterations. How tumor populations balance these opposing effects remains poorly understood. Here, we introduce a computational framework that explicitly represents diploid genomes, functional gene classes, point mutations, and chromosome-segregation errors in spatially constrained and well-mixed tumor populations. We identify a viability boundary separating sustained tumor expansion from instability-induced population collapse. Within the viable regime, mutation and selection generate a stable distribution of genomic-instability classes that is accurately captured by an analytical replicator--mutator description. Near the viability boundary, tumor dynamics exhibit prolonged extinction transients and strong sensitivity to stochastic fluctuations, with important differences between solid and liquid architectures. Chromosomal alterations further modify growth by creating transient benefits through increased gene dosage and genetic redundancy, while ultimately increasing genomic fragility. Finally, simulated interventions show that eliminating low-instability subpopulations or increasing the global mutational burden can displace tumors beyond their viability boundary and trigger irreversible collapse. These results identify genome instability as both an evolutionary advantage and an intrinsic vulnerability, providing a quantitative framework for developing therapies that exploit the limits of tumor evolution.
+
+\end{abstract}
+
+\keywords{Cancer, Tumor Growth, Genomic Instability, Error Threshold}
+
+\maketitle
+
+\section*{Author Summary}
+\begin{graybox}
+%Cancer is an ecological and evolutionary process driven by genomic instability. Although instability allows tumor cells to adapt rapidly under selective pressure, 
+%it also generates deleterious genetic damage that can ultimately compromise their 
+%survival. Here, we develop a computational framework that explicitly models diploid 
+%genomes, chromosomal instability, and key functional gene classes to investigate how 
+%tumors navigate this evolutionary trade-off. Our simulations show that tumor 
+%populations evolve toward an edge of viability, maximizing their evolutionary 
+%potential while avoiding mutational collapse. This convergence reveals an intrinsic 
+%vulnerability: increasing genomic instability or selectively eliminating 
+%low-instability clones can push tumors beyond their viability threshold, triggering 
+%irreversible population collapse. These findings suggest that, rather than merely 
+%slowing tumor growth, therapies that exploit the evolutionary limits imposed by 
+%chromosomal instability may provide a strategy for driving tumors to extinction.
+{\small Cancer cells can accumulate genetic changes that promote growth and adaptation, but excessive genomic instability can damage essential functions and threaten survival. We developed a computational model to examine how tumors balance these effects. The model represents diploid genomes and genes controlling proliferation, survival, mutation, and chromosome segregation, comparing solid tumors with freely mixing liquid tumors. We identify a viability boundary separating sustained growth from collapse caused by excessive genomic damage. Within the viable region, mutation and selection generate a stable mixture of cells with different instability levels. Near the boundary, tumor evolution becomes sensitive to random fluctuations, and extinction may follow prolonged transients. Simulated interventions show that increasing genomic damage or eliminating the stable cells sustaining tumor growth can push the population beyond this boundary, suggesting  that genomic instability is both a driver of cancer evolution and an intrinsic vulnerability that could be exploited therapeutically.}
+\end{graybox}
+
+
+\section*{Introduction}
+
+Cancer is fundamentally an evolutionary process in which somatic cell populations generate heritable variation that is subsequently shaped by selection, genetic drift, and ecological interactions within tissues \cite{Cairns1975,Merlo2006-sh,basanta2017homeostasis}. This evolutionary nature of cancer has profound implications for our understanding of disease progression and treatment \cite{gatenby2003evolutionary,gatenby2018evolution,gatenby2020integrating,Vendramin2021}. A central enabling condition for this process is chromosomal instability (CIN), which is now recognized as an enabling hallmark of cancer because it greatly accelerates the generation of genetic diversity upon which selection can act \cite{thompson2010mechanisms,HanahanWeinberg2011,Hanahan2022,Negrini2010,chen2025chromosomal}. CIN is present in more than $90 \%$ of solid tumors and in many hematologic malignancies \cite{drews2022pan,hosea2024two}. It plays a dual role: on one hand, it promotes adaptation, tumor progression, and therapeutic resistance; on the other, it increases the accumulation of deleterious genetic alterations that compromise cellular function and viability \cite{loeb_mutator_2001,breivik2005evolutionary,Negrini2010,sheltzer2011aneuploidy,Gordon2012,chunduri2019diverse}.
+This duality gives rise to a fundamental paradox. In healthy tissues, genomic stability is essential to maintain cellular fitness and organismal function. By contrast, the high rates of chromosomal missegregation and genome rearrangement associated with CIN should, in principle, drive populations toward declining fitness and eventual loss of viability. However, many cancers not only persist under these conditions, but also continue to grow, adapt, and evolve. How can tumor populations survive and prosper in the face of such a widespread genomic instability?
+
+
+Genomic instability encompasses a spectrum of mechanisms that operate at different scales. Defects in DNA repair pathways can increase mutation rates, whereas chromosomal instability (CIN) generates chromosome missegregation, aneuploidy, copy-number changes, and structural rearrangements (Fig.~\ref{fig:chromosomes}a-d) \cite{Lengauer1998,Gordon2012}. Large-scale events such as 
+whole-genome duplication and chromothripsis further demonstrate that tumor evolution is often punctuated by abrupt genomic transitions rather than proceeding solely through gradual mutation accumulation \cite{Negrini2010,Vendramin2021}. Although mechanistically 
+distinct, these processes share a common consequence: they increase genomic disorder and reshape the trade-off between adaptive potential and cellular viability. As a result, tumor progression can be viewed as the evolutionary dynamics of populations moving through a landscape determined by the impact of genomic instability.
+
+\begin{figure*}
+\centering 
+\includegraphics[width=0.89\textwidth]{images/FIG_GenomicPaths.pdf}
+\caption{\textbf{Schematic representation of the alternative outcomes of chromosome segregation events considered in the model.}
+(a) Correct segregation generates two daughter cells with identical chromosome complements. 
+(b) Partial chromosome missegregation (MSG) leads to the gain or loss of a subset of 
+chromosomes, producing aneuploid daughter cells. (c) Whole-genome duplication results in 
+polyploid cells and may also generate non-viable progeny. (d) Whole-chromosome missegregation 
+causes extensive chromosome imbalance, yielding daughter cells with large-scale genomic 
+alterations. These alternative outcomes constitute the basic chromosomal events incorporated 
+into the model and determine the generation of genomic diversity and instability. %\textcolor{violet}{\bf In the first cell, I would write cell with duplicated chromosomes before mitosis. Use consistent chromosome numbers and banding patterns, clearly distinguishing correct segregation, segmental missegregation, whole-genome duplication, and reciprocal whole-chromosome gain or loss.}
+}
+\label{fig:chromosomes}
+\end{figure*}
+
+A central question in cancer evolution is whether genomic instability drives tumors toward a 
+restricted class of evolutionary states. Maley et al. proposed an evolutionary and ecological framework for classifying neoplasms \citep{Maley2017}, emphasizing the roles of intratumoral diversity, evolutionary dynamics, and ecological constraints. This perspective raises the question of whether genomic instability itself imposes additional restrictions on the evolutionary states accessible to tumor populations.
+
+Although tumors follow diverse mutational and 
+chromosomal trajectories, advanced cancers often exhibit remarkably similar hallmarks that include 
+extensive genomic disorder, high intratumoral heterogeneity, and persistent instability 
+\cite{Negrini2010,Hanahan2022}. This convergence raises the possibility that tumor populations 
+evolve toward instability attractors in genome space states that maximize evolutionary 
+potential while remaining compatible with survival. If such attractors exist, cancer evolution
+would not be an unrestricted exploration of genomic configurations, but rather a directed 
+process constrained by the balance between adaptation and genomic damage. Beyond a critical 
+threshold, additional instability would become detrimental, leading to loss of fitness and 
+eventual evolutionary collapse. Evidence from both experiments and theory suggests that such 
+limits may indeed exist. Although cancer cells tolerate levels of mutational and chromosomal 
+disruption that would be lethal to normal cells, excessive instability imposes severe fitness 
+costs and can trigger catastrophic genomic crises \cite{Lengauer1998,Negrini2010,bakhoum2018multifaceted}.
+
+Can the attractor state associated with genomic instability be understood as the outcome of an optimization 
+process? If genomic instability is a self-reinforcing process that nevertheless encounters sharp viability 
+limits \cite{hosea2024two}, then its dynamics may be better understood through the lens of phase transitions 
+\cite{sole2011phase}. In this view, instability promotes adaptation and diversification up to a critical 
+point beyond which further genomic disruption becomes detrimental. The possibility that cancer evolution 
+approaches this viability limit has been previously proposed 
+\cite{gatenby2002application,Sole2003-ne,Sole2004-bf,tejero2010effect,sole2014can}, largely inspired by analogies with RNA viruses. 
+
+Viral populations are known to exhibit error thresholds and lethal mutagenesis, where excessive mutations trigger a catastrophic loss of genetic information and population collapses \cite{manrubia2010pathways,perales2015antiviral,Sardanyes2024}. Together, these studies suggest that the tension between diversity-generating processes and the accumulation of deleterious alterations can produce a highly nonlinear relationship between fitness and genomic instability \cite{SoleBioessasy2023}. Such nonlinearities can generate critical thresholds that separate adaptive from maladaptive evolutionary regimes. This observation led to the conjecture that tumors might also operate near a critical instability limit and that, as in RNA viruses \cite{crotty2001rna,sole2006information,swanstrom2022lethal,chatterjee2023molnupiravir}, pushing cancer populations beyond this limit could provide a therapeutic strategy. Extensions of these haploid models showed that increasing genomic instability can cause an abrupt transition from persistence to extinction \cite{Sole2003-ne,Sole2004-bf,Sardanyes2017JMB,Sardanyes2018SciRep,Sardanyes2018RSOS}. However, whether this instability threshold also applies to diploid genomes undergoing chromosomal instability and complex fitness landscapes remains unresolved.
+
+Several observations are consistent with this picture. In particular, highly unstable tumors often show 
+increased vulnerability and, in some contexts, a more favorable clinical prognosis 
+\cite{andor2017genomic,van2021chromosomal,zerbib2025targeting}. However, the theoretical foundations of these 
+ideas remain incomplete. As mentioned above, most of the previous models were formulated within the 
+mathematical framework developed for
+haploid viral populations that evolve at elevated mutation rates. Whether the same conclusions remain valid 
+for diploid genomes experiencing chromosomal instability (CIN) is far from obvious.
+This distinction is important because CIN does not simply increase the rate of point mutations. Instead, it 
+generates large-scale chromosomal gains, losses, and genome rearrangements that fundamentally alter the 
+structure of the evolutionary landscape. The central question is therefore whether diploid populations 
+undergoing CIN also exhibit generic attractor states associated with critical viability boundaries, and 
+whether these boundaries emerge from the same underlying balance between adaptive variation and mutational 
+burden that characterizes viral error-threshold phenomena.
+
+In this paper, we explore this hypothesis by explicitly modeling diploid cell populations, simulating both solid and 
+liquid tumors, subject to chromosome-level processes such as aneuploidy, chromosome missegregation, and whole-genome 
+duplication. To this end, we develop a unified evolutionary framework that integrates mutational and 
+chromosomal instability within a common theoretical setting. We show that tumor populations consistently 
+evolve toward a critical instability attractor corresponding to the maximum level of genomic disorder 
+compatible with sustained proliferation. Our results suggest that advanced tumors may operate near universal 
+instability limits, thereby exposing an intrinsic fragility that could be exploited therapeutically.
+
+
+\section*{Methods}
+
+\subsection*{Digital genomes model}
+
+
+Our model incorporates multiple levels of complexity, ranging from genes controlling proliferation and mutation to chromosomes, heterogeneous cell populations, and spatial dynamics 
+(Fig.~\ref{fig:logicdynamics}a-f). Genes provide the smallest scale. The whole genome $\cal G$ is represented as a Boolean string defined as
+\[
+{\cal G}= \{ g_1, g_2, \ldots, g_k, \ldots, g_N\},
+\]
+where a given gene $g_i \in \cal G$ can be in two possible states, namely wild-type $g_i=0$ or mutated $g_i=1$. Although previous models of cancer instability have considered homogeneous strings, where each gene has the same impact on fitness~\cite{Sole2003-ne}, in our model, the genome $\cal G$ is divided into several subsets of $n$ genes that have a different impact on cell fate, depending on the dominance and functional role associated with each gene type.
+
+Gain-of-function mutations occur in oncogenes (e.g., RAS or SRC), where alteration of a single allele is sufficient to increase cell growth. The set of ($n$) oncogenes is denoted by ${\cal O}=\{O_i^k\}$, with ($k=1,\ldots,n$) and ($i=1,2$) representing the two alleles. In our Boolean framework, an oncogene acts as an OR gate, producing a positive output whenever at least one allele is mutated:
+$O_1^k \cup O_2^k$ (Fig.~\ref{fig:logicdynamics}a). 
+Thus, only the state with both unmutated alleles has no effect.
+In contrast, loss-of-function mutations affect tumor suppressor genes (e.g., APC or TP53) and housekeeping genes. The set of tumor suppressors gene is given by 
+${\cal T}=\{T_i^k\}$. Their effect requires mutation of both alleles and is represented by an AND gate: $T_1^k \cap T_2^k$,
+which yields a positive output only when both alleles are mutated (Fig. \ref{fig:logicdynamics}b). Such mutations can increase cellular fitness and replication.
+This Boolean representation assumes fully recessive loss-of-function mutations in tumor suppressors and therefore neglects more complex allelic interactions, including dominant-negative effects (as observed in some TP53 mutations), haploinsufficiency, and incomplete dominance. Such mechanisms could modify the relationship between mutational burden, gene dosage, and cellular fitness, but are not explicitly considered in the present minimal framework.
+
+
+Housekeeping genes $({\cal H})$ are assumed to encode functions that are essential for cellular maintenance and viability. They follow the same recessive AND logic as tumor suppressors, but with a different outcome: complete inactivation of all functional copies of any individual locus is lethal, leading to cell death or senescence (Fig.~\ref{fig:logicdynamics}c). Thus, the $\cal H$ class represents the subset of housekeeping genes whose functions are indispensable for cell survival, rather than housekeeping genes in general.
+Examples include genes encoding ribosomal proteins, actin, GAPDH, and ubiquitin (Eisenberg and Levanon, 2003). Figure~\ref{fig:logicdynamics}d-f summarize these three classes of genes and their effects in diploid genomes. As shown below, their combined action determines the cell replication rate, $r(C)$.
+
+%\begin{comment}
+\begin{figure*}
+    \centering 
+    \includegraphics[width=15cm]{images/FIG_methodsCancer}
+    \caption{{\bf Multiscale representation of genome organization, gene function, and cell division in the tumor model.} (a-c) Gene-level representation of the three functional classes considered in the model using Boolean logic. Oncogenes require activation of at least one allele to increase cell proliferation (OR gate), whereas tumor suppressor genes require inactivation of both alleles to affect growth (AND gate). Housekeeping genes also require loss of both alleles, but in this case viability is compromised and cell death ensues. (d) Tumor populations are represented as sets of cells, each carrying a genome. (e) Chromosomes contain genes genes controlling replication, mutation, and chromosome segregation. Their combined effects determine the cellular replication rate $r(C)$ and survival. (f) Semiconservative cell division generates offspring that can inherit mutations and chromosomal alterations. In (g-h) we summarize the modelling of genome architecture and the effects of mutations on cell growth and death. Each cell $C_k$ in the model is equipped with a genome $G(C_k)$ that is composed of for distinct sets of genes, with $n$ different genes in each class (using $n=10$in this work).}
+    \label{fig:logicdynamics}
+\end{figure*}
+%\end{comment}
+
+
+In addition to the three previously described gene subsets, two additional groups contribute to genome stability, both following a loss-of-function mechanism modeled as an AND gate. The mutation repair subset $\mathcal{I}$, including genes such as BRCA1, BLM, and ATM, is responsible for correcting DNA errors; when fully inactivated, these genes lead to a fixed increase in mutation rate, denoted by $\Delta\mu$. The missegregation-related subset $\mathcal{M}$, which includes TP53, MAD2L1, and BUB1B, ensures accurate chromosome segregation during cell division. Mutations in these genes increase the risk of missegregation events, modeled by a parameter $\eta$, which increases $d\eta$ with each gene expressing a defective phenotype. Here we consider all the possible types of misseggregation events after one cell divides, as sketched in Fig. \ref{fig:chromosomes}g-j and accurately described later in the text. In this framework, all genes within a given functional class are assumed to have identical phenotypic effects, and the five classes are represented by independent sets of loci. Although some real genes, such as TP53, participate in multiple cellular functions, pleiotropic effects are not explicitly considered here. Thus, the biological examples associated with each class illustrate their functional roles rather than defining overlapping loci in the model. This simplifying assumption allows us to isolate the fundamental consequences of genomic instability, while heterogeneity in gene effects and functional overlap could modify the quantitative properties of the evolutionary transitions.
+
+
+How does the previous logical description of genetic effects change when multiple copies of a gene are in place? This will occur when we move from the diploid case to aneuploidy. The generalization is easy. If we deal with an oncogene $O^k$ that is now present with multiple copies, i. e. $\{ O_1^k, O_2^k, ... O_{\Phi}^k \}$, where $\Phi=3,4...$, or a tumor suppressor, namely $\{ T_1^k, T_2^k, ... T_{\Phi}^k \}$, the OR and AND rules are generalized as follows:
+\begin{equation}
+\bigcup_{i=1}^{\Phi} O_i^k, \; \; \; \rm{and} \; \; \;\; \; \bigcap_{i=1}^{\Phi} T_i^k. 
+\end{equation}
+In this case, a mutation in a single oncogene generates a response, whereas {\it all} alleles of the tumor suppressor need to be mutated. Each normal cell in our model will be represented by a digital diploid genome $\cal G$ defined in terms of five different subsets of genes. The genome of the $k$th cell, indicated as ${\cal G}(k)$, is thus defined from four subsets, i. e.,
+\begin{equation}
+{\cal G} (k)={\cal I}(k)\cup{\cal O}(k)\cup{\cal T}(k)\cup{\cal M}(k)\cup{\cal H}(k)
+\end{equation}
+Each subset includes $n$ genes (hereafter $n = 10$). At a given moment, genes can be either mutated or not, and we assign labels to keep track of how many are mutated. For example, we denote by $n_o$ and $n^*_o$ the number of wild-type and \textit{mutated} oncogenes, respectively (so that $n_o = n - n^*_o$). The same notation is used for the other gene subsets, with $n_{i,t,m,h}$ and $n^*_{i,t,m,h}$ indicating the number of unmutated and mutated genes, respectively. Considering this genome architecture, the studied system spans an enormous combinatorial space, with $$\vert {\cal G} \vert = 2^{5n} \sim 10^{15}$$ genome states, while the different nature of the genes involved guaranties that the underlying fitness landscape will be far from trivial. 
+
+
+ 
+\subsection*{Replication and mutation rules}
+
+
+
+The model is completed by specifying how genomic alterations affect cell fitness. We extend the diploid framework to include multiple chromosome copies, housekeeping (HK) genes, and the effects of mutation and chromosomal missegregation, both occurring exclusively during cell division.
+ The replication rate of a cell depends on the mutational state of the genes in the sets $\mathcal{O}$ (OR logic) and $\mathcal{T}$ (AND logic). Each gene expressing a mutant phenotype increases replication by $\Delta r$. From a baseline rate $r_0$, the accumulation of driver mutations can increase replication to a maximum.
+\begin{equation}
+r_{\rm lim}=r_0+\Delta r,(N_{\mathcal{O}}+N_{\mathcal{T}}).
+\end{equation}
+To account for physiological constraints, we impose an upper limit $r_{\max}=2r_0$.
+During each replication event, mutations and chromosomal missegregation occur 
+independently with probabilities $\mu$ and $\eta$, respectively.
+
+The value of the mutation rate $\mu$ depends on the mutational state of the genes $\mathcal{I}$. Given that for a healthy cell the probability of an error during DNA replication is on the order of $0.5 \times 10^{-9}$ per base pair per year, we consider its basal value to be negligible, and thus set $\mu_0 = 0$. There are no a priori reasons to assume an upper bound for this parameter; therefore, since each gene with a mutated phenotype contributes an increase of $\Delta \mu$, the maximum value is $\mu_{\max} = \mu_{\lim} = \Delta \mu \, N_{\mathcal{I}}$. Similarly, the rate of missegregation $\eta$ increases with mutations in $\mathcal{M}$ genes, by increasing $\delta \eta$, and we suppose the basal level to be null ($\eta_0=0$), and no a priori boundaries for the definition of the maximum value to be present ($\eta_{max} = \eta_{lim} =\Delta \eta \; N_{\mathcal{M}}$). 
+
+Empirical estimates of somatic mutation rates depend on the locus, cell type, and measurement protocol. Classical estimates are on the order of $2\times10^{-7}$ mutations per gene per cell division \citep{JacksonLoeb1998}, while direct measurements at the \textit{PIG-A} locus in cultured human B-lymphoblastoid cells reported a mean rate of $1.06\times10^{-6}$ per cell division, with considerable variability \citep{Araten2005}. More recent analyses also suggest substantial differences among human tissues, although their per-base-pair estimates are not directly equivalent to per-gene functional mutation probabilities \citep{WernerSottoriva2018}. In our model, $\mu$ is an \emph{effective} probability of altering a modeled functional locus during a division event, rather than a nucleotide-level mutation rate. Consequently, the larger mutation probabilities explored here allow us to characterize instability-driven viability transitions over computationally accessible timescales, but should not be interpreted as experimentally calibrated per-gene mutation rates. The resulting thresholds are predictions in the model's parameter space, not direct estimates of biological mutation-rate thresholds or clinical timescales.
+
+We can formalize the previous relations as:
+\begin{equation}
+    {r}(C) = r_0 +\Delta r\cdot \left [
+\sum_{k=1}^{N_\mathcal{O}} \left ( \bigcup_{j=1}^{\phi} {O}_k^{(j)} \right )+
+ \sum_{l=1}^{N_{\mathcal{T}}} \left ( \bigcap_{i=1}^{\phi} {T}_l^{(i)} \right )
+\right ]
+\end{equation}
+for the cell replication rate, where two kinds of contributions are included, whereas the expressions for mutation rate growth and missegregation are:
+\begin{eqnarray}
+{\mu}(C) = \mu_0 +\Delta\mu\cdot \left [
+\sum_{k=1}^{N_\mathcal{I}} \left ( \bigcap_{j=1}^{\phi} {I}_k^{(j)} \right )\right ] \\
+{\eta}(C) = \eta_0 +d\eta\cdot \left [
+\sum_{k=1}^{N_\mathcal{M}} \left ( \bigcap_{j=1}^{\phi} {M}_k^{(j)} \right )\right ]
+\end{eqnarray}
+For HK genes, any mutant phenotype is lethal due to their essential role in survival. Additional death conditions include the loss of all chromosomes ($=0$) through missegregation and the surpassing of the maximum genetic load, set at $5n$, where $n$ is the number of alleles per chromosome in a healthy cell.
+
+
+\subsection*{Spatial Dynamics Rules}
+
+The tissue is represented by a two-dimensional square lattice,
+$\Omega=\{{\bf r}=(i,j)\}$, of linear size $L=200$, yielding a total of
+$N=L^2=4\times10^4$ lattice sites. Initially, the lattice is filled with healthy diploid cells, with a small number of mutant cells introduced either randomly or locally to represent an incipient tumor. Cancer cells have elevated replication, mutation, and chromosomal missegregation rates ($r>r_0$ and $\mu, \eta>0$). All cells follow the same intracellular rules for mutation inheritance, chromosomal instability, and viability. Upon successful division, the parent cell is replaced by two daughter cells: one remains at the parent's original location, whereas the other occupies a target site determined by the spatial rules described below. Both daughter cells independently undergo mutation and chromosomal alteration events, followed by the corresponding viability checks. Model variants differ only in how cell division and replacement occur. In the {\it solid tumor} framework, cells occupy fixed positions in 2D space. Upon division, a daughter cell can occupy one of the eight sites in the Moore neighborhood. If all neighboring sites are occupied by healthy cells, cell division is prevented by contact inhibition. Otherwise, daughter cells preferentially occupy vacant sites or sites containing dead cells ($r=0$). If all neighboring sites are occupied, \sout{replacement occurs with probability proportional to $1/r_j$, favoring displacement of less fit cells} \rev{a neighbor $j$ is chosen uniformly at random and replacement occurs following the symmetric Moran competition rule with probability
+\begin{equation*}
+P(\mathrm{replacement})=\frac{r_i}{r_i+r_j}.
+\end{equation*}
+}. 
+Here, ($r_j$) denotes the replication rate of the cell occupying the target site \rev{and $r_i$ the one of the replicating cell}. Replacement is not attempted sequentially across all neighboring cells; instead, the target is selected according to the local competition rules described above. Tumor growth therefore proceeds as a contiguous expanding front.
+In the \textit{liquid tumor} framework, spatial constraints are removed, mimicking hematologic cancers or freely circulating cells. Upon division, a daughter cell may occupy any lattice site. Dead sites are selected with probability $n_{\rm dead}/N$ and filled uniformly at random. Otherwise, a living target cell $j$ is chosen uniformly at random. The daughter of the dividing cell $i$, with replication rate $r_i$, replaces the target cell $j$, with replication rate $r_j$, with \rev{the same replacement} probability \rev{used in the solid model}.
+
+Failed replacement attempts are discarded. Mutations and chromosomal missegregation occur only during division. Cells die immediately if they lose essential housekeeping genes, lose all chromosomes, or exceed an allelic load of $5n$. Dead cells are removed from the lattice and become preferential targets for future replacement.
+
+
+\subsection*{Chromosomal recombination and ploidy}
+
+We consider two chromosomal missegregation events, each occurring with probability $\eta$. Whole-chromosome missegregation produces daughter cells with $n_c-1$ and $n_c+1$ chromosomes, generating polyploidy. Fragment missegregation generates aneuploidy: a chromosome is randomly selected and cut along its length $l_{\text{chr}}$. If either fragment has fewer than three alleles, the event is treated as whole-chromosome missegregation; otherwise, alleles are randomly assigned to fragments to avoid correlations from ordered cuts.
+
+
+\section*{Results}
+
+\subsection*{Stochastic and deterministic regimes of tumoral evolutionary escape}
+
+The accumulation of somatic mutations generates vast phenotypic variation within tumor cell populations. Mechanistically, the spatial dynamics of a tumor mass can be conceptualized as an evolutionary system shaped by two opposing forces: a deterministic expansive force, driven by the fitness advantage and increased replication rate of malignant cells relative to healthy tissue, and a contractive force, stemming from the accumulation of deleterious mutations in essential housekeeping genes that compromise cellular viability. Delineating the parameters that govern the equilibrium between these opposing forces is critical to understanding the conditions under which a neoplasm will either undergo sustained expansion or face extinction.  \textit{In silico} simulations reveal three primary evolutionary regimes:
+
+{\bf Stochastic Reabsorption}: When the initial pool of malignant cells is small, the proliferative advantage may fail to overcome localized tissue constraints, allowing stochastic drift to drive the subpopulation to extinction via healthy cell substitution.  
+
+{\bf Sustained Expansion}: The tumor successfully balances genomic instability, keeping mutational and chromosomal damage below lethal thresholds to allow continuous expansion of the tumoral tissue.  
+
+{\bf Mutational Catastrophe}: The genetic burden escalates rapidly, outpacing the metabolic or proliferative capacity of the cancer cells. This excessive mutational load triggers pervasive cell death, ultimately driving the population toward a systemic meltdown and tumor regression.  
+
+The convergence of the system toward any of these specific evolutionary regimes is primarily dictated by the underlying parameter values. A key determinant of these dynamics is the limiting mutation rate, defined as $\mu_{\text{lim}} = \mu_0 + N_I \cdot \Delta\mu$. If $\mu_{\text{lim}}$ remains sufficiently low, the contractive force is minimized, leaving the genomic shrinkage pressure mathematically insufficient to suppress tumor growth. Between the deterministic regimes where tumor expansion or complete eradication are nearly certain outcomes lies a critical boundary zone characterized by non-trivial, emergent behaviors. Within this transition region, the macroscopic fate of the neoplasm becomes highly sensitive to stochastic fluctuations.
+This behavior is illustrated in the phase diagrams of Fig.~\ref{fig:phase_diagram}a and b for solid and liquid tumors, respectively.. 
+
+As expected, low increases in the baseline mutation rate $\Delta\mu$, coupled with elevated increases in the replication rate $\Delta r$, produce a high probability of tumor proliferation. Conversely, if the replication rate falls below a critical threshold or if the mutation rate exceeds a tolerable limit, the contractive force dominates and drives the neoplastic population to near-certain extinction. In particular, the expansion region for the liquid case is larger than that of the solid case, indicating that the relaxation of spatial locality increases evolutionary resilience. This provides a coarse-grained analog of hematologic malignancies, in which malignant cells proliferate within the bone marrow and blood compartments rather than expanding as compact spatially constrained masses. Although leukemias remain structured by marrow niches, stromal interactions, and vascular organization, their disseminated growth reduces some of the local packing and front-propagation constraints characteristic of solid tumors \cite{clara2020nonsolid,mancini2021tumor}. This abstraction is especially relevant for acute myeloid and acute lymphoblastic leukemias, which are aggressive diseases characterized by rapid clonal expansion of immature hematopoietic cells and rapid clinical progression compared to chronic leukemic states \cite{vakiti2024aml,shimony2023aml,terwilliger2017all}.
+
+
+From a simulation dynamics perspective, this difference arises because solid tumors suffer from strong spatial constraints, meaning a large fraction of the tumor's replicative force is wasted on intra-tumoral competition and clonal crowding. In contrast, cells in the liquid framework benefit from a globally mixed structure, offering a much larger cohort of potential healthy targets to substitute upon replication. To elucidate the underlying microscopic mechanisms that tilt the balance toward either evolutionary escape or population collapse, we specifically focus our subsequent \textit{in silico} investigations on simulation parameters that occupy this critical, non-trivial boundary region.
+
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{images/Fig_4.pdf}
+    \caption{{\bf Phase diagrams, transition boundaries, and evolutionary dynamics of tumor expansion and collapse.} (a, c) Phase diagrams mapping tumor cell population fates across variations in mutation rate increment ($\Delta\mu$) and division rate increment ($\Delta r$) for solid (a) and liquid (c) growth frameworks. All other parameters are fixed at default configurations; baseline parameters (stars) lie near boundaries to capture non-trivial behaviors. The liquid framework (c) exhibits tumor expansion across a larger fraction of the phase diagram, indicating higher resilience than the solid framework (a). (b, d) Critical transition boundaries separating tumor expansion and collapse regions, derived from a homogeneous setup where all cells share identical replication rates ($r = r_{\text{max}}$) and mutation rates ($\mu$). Cell \sout{death} \rev{survival} probability is plotted against the normalized division rate ($r_{max}/r_{0}$), comparing theoretical predictions (lines) with simulation data (points) across different boundary constraints. (e-f) Temporal dynamics of tumor evolution based on different karyotype settings. (e) Tumor cell density progression over time is shown across diploid, polyploid, and aneuploid cases, alongside corresponding (f) tumor growth speeds ($dp/dt$, right axis/inset). Diploid and aneuploid populations exhibit continuous parabolic growth, whereas polyploid populations transition to a slower, linear growth phase after an initial rapid acceleration.}
+    \label{fig:phase_diagram}
+\end{figure*}
+
+
+
+\subsection*{Tumor expansion as an escape problem}
+
+By analyzing the temporal evolution of key phenotypic features, we observe that upon escaping early stochastic reabsorption, trajectories sharing identical parameter configurations can diverge significantly. While some stochastic realizations exhibit sustained expansion, others reach a peak in tumor volume before inevitably declining toward extinction. This phenotypic divergence among identical initial conditions strongly suggests the existence of a critical boundary in the parameter space separating growth-permissive regimes from population-collapse regions. Whether a given realization crosses this threshold during its evolutionary trajectory dictates the macroscopic fate of the neoplasm, leading to either long-term malignant fixation or complete mutational meltdown.
+
+
+To rigorously characterize this boundary, we designed a controlled numerical framework that permits the precise manipulation of key parameter spaces. 
+We first consider a simplified limiting case where each cell possesses an haploid karyotype with only a single chromosome.
+Within this setup, the stability ($\mathcal{I}$), oncogene ($\mathcal{O}$), and tumor suppressor ($\mathcal{S}$) gene classes are modeled as fully mutated, thereby fixing both the replication rate $r=r_{\text{max}}$ and the mutation rate $\mu$ of the malignant cells at their maximum potential values. Conversely, because cells carry only a single chromosome copy, the essential housekeeping ($\mathcal{H}$) genes exist in a permanently critical configuration where a single deleterious mutation triggers instant lethality. Under these single-copy conditions, the survival probability of a cancer cell after mutation is:
+$$
+P_s = (1 - \mu)^{N_{\mathcal{H}}}
+$$
+where $N_{\mathcal{H}}$ denotes the total number of housekeeping genes. For each value of $r_{\text{max}}$, we expect a critical mutation threshold $\mu_{\text{crit}}(r_{\text{max}})$ to emerge, such that the tumor mass expands when $\mu < \mu_{\text{crit}}$ and regresses when $\mu > \mu_{\text{crit}}$.
+
+The results of this numerical exploration are reported in Fig.~\ref{fig:phase_diagram}b (solid case) and d (liquid case). It is possible to observe that in general in the liquid case, the tumor expansion regions is substained even for lower survival probabilities $P_s$, thus indicating a higer level of resilience compared to the solid tumor scenario. 
+
+Analytical approximations of these boundaries can be derived from stability arguments in both regimes, represented in the corresponding panels by dashed curves.
+For the solid case, we consider a cancer cell at the tumor boundary, directly adjacent to a wild-type cell. With a rate $r_{\text{max}}$, the cancer cell is selected for division. After the replication and mutation event, both the mother and daughter cells must satisfy viability criteria post-division, and the expected net population change is proportional to $2P_s - 1$. The competitive balance between the expanding neoplasm and the surrounding wild-type tissue ($r_0$) is reached when:
+$$
+r_\text{max} (2P_s^* - 1) = r_0
+$$
+which yields the critical survival probability:
+\begin{equation}
+    P_s^* = {1 \over 2} \left ( 1 + {r_0 \over r_\text{max}} \right )
+    \label{eq:p_abs_solid}
+\end{equation}
+
+This function is represented by the dashed line in Fig.~\ref{fig:phase_diagram}b and captures the general behavior of the findings of the stochastic simulation.
+
+For the liquid case, the full mean field model was derived for the $N\rightarrow\infty$ limit (Supplementary Materials sec.1). By considering the stable state where only wild-type cells are present, it is possible to analytically compute the combination of parameters that leads to sustained tumor growth for a small perturbation in the low-level mutating cancer cell population. 
+This linear stability argument yields a threshold mathematically equivalent to the heuristic boundary discussed above, represented by the red dashed curve in Fig.~\ref{fig:phase_diagram}d. In particular, the agreement between the stochastic lattice simulations and the analytical mean-field prediction increases in accuracy within the asymptotic limit of highly aggressive tumors ($r_{\text{max}}/r_0\rightarrow\infty$). Conversely, the solid tumor framework exhibits robust alignment with the theoretical boundary only in the low replication rate regime, systematically diverging as the maximum division rate increases due to strong 
+spatial correlations and localized competition that violate mean-field assumptions.
+
+To test whether this simplified framework maintains explanatory power in more biologically complex scenarios, we extended our analysis to a full diploid architecture within the solid tumor framework, utilizing two chromosomes and the standard initialization parameters detailed in the Materials and Methods section. 
+This setup allows us to monitor the concurrent evolution of the average cell death probability, cellular replication rates, and overall tumor mass. For diploid cells, the probability of death is generalized to:
+\begin{equation}
+P_{\text{death}} = 1 - (1 - \mu)^{2k N_{\mathcal{H}}} (1 - \mu^2)^{N_{\mathcal{H}}(1 - 2k)}
+\end{equation}
+where $k$ denotes the average fraction of mutated alleles within the housekeeping ($\mathcal{H}$) gene class.
+
+As shown in Figs.~\ref{fig:dynamics}e and f, provided the system's trajectory remains within the growth-permissive expansion region, the tumor exhibits sustained proliferation. However, once the trajectory crosses the critical boundary into the contractive zone, the population enters an irreversible shrinking phase culminating in complete extinction. These results demonstrate that the macroscopic fate of a spatially extended, heterogeneous tumor population can be accurately predicted by tracking its mean microscopic features within a reduced phase space.
+
+A particularly striking emergent feature of this model is that the tumor population does not stabilize around the critical boundary. Intuitively, a negative feedback loop might be expected: accumulating mutations in genome maintenance genes should drive an escalating mutation rate, eventually imposing a genomic fitness cost severe enough to trigger tumor contraction. As the population shrinks, relaxed mutational pressure and altered clonal competition could then favor lower-instability clones, causing growth to resume and generating oscillatory dynamics around the critical line.
+
+Our lattice simulations, however, reveal a fundamentally different macroscopic behavior. Throughout the expansion regime, the average mutation rate does not converge toward or oscillate around the critical line. This stability is explicitly verified in Figs.~\ref{fig:dynamics}b and d, where the green dashed line denotes the average activation level of the instability genes that corresponds to the survival probability on the boundary line for $r=r_{\text{max}}$. Instead, the system fluctuates stably around a non-critical value of $\mu \approx (3.18 \pm 0.03) \times 10^{-2}$, remaining significantly displaced from the boundary. This persistent displacement demonstrates that a simple contraction-driven feedback mechanism is insufficient to explain the system's macrodynamics. Rather, it implies the existence of an alternative regulatory architecture or clonal selection landscape capable of balancing variations in the mutation rate without necessitating a systemic population decline.
+
+%\fz{Sparse ideas, see if and where to put. The asymptotic values for such boundaries computed both in the solid and liquid case, seems to be in contrast with what was found in phasediagram. In fact the line for the liquid case reaches a minimum of Ps of around 0.6, while the solid case reaches almost 0.5, while in the paramterphase, the transitino line on the dmu axis, is further in the liquid case than in the solid, indicating a more robuts system. The apparent contrast is due to the fact that in the left plots we are considering the mutation rate increments, while on the center stationary homogeneous values. In the solid case, the link between the 2 is given by the stationary population distribution, that links the increment dmu to a stationaty value of mu. It is possible to see that there is a pretty sharp cut region in 3a, and it should correpond to the limiting value of mu given rmax =2r0. If we compute it analytically, we have an understimatino, with a value around 0.018 in contrast with the one of around 0.021 we find in the plot. This is because for high values of the mutation rate, secondo order spatial effect come into play, and the mean field approximatino does not work as well anymore. For the liquid case we don't have such a model, but the stationary distributions of the population should be in principle differnt from the one of the solid case, because the transition probailities will depend on the concentration of the cancer, dead and wild type cells. In particular they will substain stationary state that will produce lower average levels of mutation rates also with higher values of the incrementes dmu. SO the mapping between the two graphs is different from the one of the solid case, so there shoudl not be problems.}
+
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{images/Fig_3.pdf}
+    \caption{{\bf Evolutionary trajectories of tumor populations leading to complete malignant fixation or a healthy state recovery.} (a–d) Temporal evolution of average mutation levels (a, c) and activation levels (b, d) over simulation steps for instability ($\mathcal{I}$), oncogenes ($\mathcal{O}$), and housekeeping ($\mathcal{H}$) genes. Due to the distinct Boolean logic governing phenotypic variations for each gene class, activation and average mutation metrics provide different yet complementary profiles of the system's underlying genetic state. Dashed lines denote the theoretical mutation limit for $\mathcal{H}$ genes and the predicted stationary activation state for $\mathcal{I}$ genes. (e–f) 3D phase space trajectories tracked across normalized replication rate ($r/r_0$), mutation-induced cell survival probability after a replication event ($P_s$), and tumor density. Gray-shaded regions on the $z=0$ plane delineate the expansion and collapse regimes derived from Fig.~\ref{fig:phase_diagram}. The left panels (a, b, e) show a trajectory where the balance between growth and instability remains within the growth-permissive domain, yielding sustained tumor expansion. The right panels (c, d, f) show a system intersecting the critical instability boundary, leading to an unsustainable mutational burden, profound fitness degradation, and final population collapse. Crucially, the inversion of the growth trend in panel (f) occurs exactly as the trajectory crosses the phase boundary line.}
+    \label{fig:dynamics}
+\end{figure*}
+
+\subsection*{Tumor stability is driven by stationary ecological processes}
+
+The specific mutation rate around which the system stabilizes emerges naturally from intrinsic population dynamics shaped by evolutionary pressures. We focus our analysis on a regime in which both the cellular replication rate and the mutational burden of housekeeping genes have reached saturation. This scenario occurs frequently within our framework due to the robust selective advantages associated with maximum proliferation and the accelerated early accumulation of housekeeping ($\mathcal{H}$) gene mutations. At this stage, the tumor population can be conceptualized as a collection of distinct subpopulations, each defined by its number of phenotypically altered instability ($\mathcal{I}$) genes. Because a cell must possess at least one mutated I gene to be classified as malignant, the population can be divided into discrete $N_I$ classes, denoted $x_1,…,x_{N_\mathcal{I}}$, where $x_i$ represents the fraction of cells that harbor exactly i mutated I genes. The sum of all fractions of subpopulation is strictly conserved, i.e.,  $\sum_i x_i=1$.
+
+Transitions between these subpopulations are driven by three primary microscopic processes: (i) reproduction, wherein a cell replicates and its daughter stochastically replaces another individual to satisfy a constant carrying capacity; (ii) death, resulting from lethal mutational hits to the remaining unmutated housekeeping alleles; and (iii) mutation, involving a novel hit to a functional I gene that pushes the cell into the next higher instability class.
+
+Using an analytical approach based on the  Eigen-Schuster quasispecies model, the temporal evolution of these subpopulation densities can be approximated by the replicator-mutator equation as follows:
+\begin{equation}
+    \frac{d\mathbf{x}}{dt}=r\mathbf{A}\mathbf{x}-\mathbf{\Phi}\mathbf{x}
+\end{equation}
+where ${\bf x}=(x_1,…,x_{N_{\mathcal{I}}})^T$ is the vector of the state of the population and $\Phi$ is an outflow term keeping population constant.
+
+
+The lower-bidiagonal transition matrix $\mathbf{A}$ encodes strictly unidirectional transitions governed by class-dependent death probabilities, $p_{d,i} =1-(1-i\cdot\Delta\mu)^{N_{\mathcal{H}}}$, and forward mutation probabilities, $p_{mut,i} = 1-(1-i\cdot\Delta\mu)^{(N_{\mathcal{I}}-i)}$. 
+{\small $$\mathbf{A} =
+\begin{pmatrix}
+1 - p_{\mathrm{d},1} - p_{\mu,1} & 0  & \cdots & 0 \\[4pt]
+p_{\mu,1} & 1 - p_{\mathrm{d},2} - p_{\mu,2}  & \cdots & 0 \\[4pt]
+\vdots & \vdots & \vdots & \ddots  \\[4pt]
+0 & 0 & p_{\mu,N_{\mathcal{I}}-1} & 1 - p_{\mathrm{d},N_{\mathcal{I}}}
+\end{pmatrix}.$$}
+
+This configuration represents the asymptotic state where mutation accumulation saturates the underlying phenotype, allowing simultaneous multi-step jumps and back-mutations to be neglected as higher-order effects. Because of high clonal turnover, the tumor mass is conceptualized as a well-mixed system composed of these varying malignant classes. The resulting stable, population-averaged mutation rate serves as a global descriptive variable for the long-term destiny of the evolving tumor, as described above and mapped in Fig.~\ref{fig:phase_diagram}.
+
+To test this prediction against numerical simulations, we computed the stationary concentration for each malignant subpopulation $x_k^*$ (full derivation in Materials and Methods section) to directly validate them against the steady state of the theoretical framework. Figure~\ref{fig:pop_dyn}a demonstrates that the simulated system successfully converges to a stable distribution of subpopulation densities, matching the analytical predictions with high fidelity (Fig.~\ref{fig:pop_dyn}c). Furthermore, as illustrated in Fig.~\ref{fig:pop_dyn}b, the long-term, population-averaged mutation rate across the tissue fluctuates stably around the predicted asymptotic value $\mu_{\infty}$. This quantitative alignment highlights the predictive reproducibility of our analytical reduction and supports the conclusion that the stationary growth phases observed in simulations correspond to stable, ecological-like equilibria among competing clonal subpopulations under conditions of growth-rate and housekeeping saturation.
+
+
+\begin{figure*}
+   \centering
+\includegraphics[width=\linewidth]{images/Fig_trans.pdf}
+ \caption{{\bf Phase transitions and critical slowing down close to the tumor collapse threshold.} Phase transitions in tumor growth for solid (a and c) and liquid (b and d) tumor architectures varying the mutational burden $\Delta\mu$ and the replication advantage $\Delta r$. Each panel displays the size of the tumor after $10^5$ time steps and includes an inset on the left showing the time to extinction, $T_e$, close to the phase transition value. All panels clearly exhibit critical transition behavior, characterized by an abrupt shift in system dynamics upon crossing the transition point. While transitions driven by the replication advantage $\Delta r$ appear sharp, varying the mutational burden $\Delta\mu$ reveals a much richer landscape of dynamical behaviors.  Near the critical boundary, the emergence of new equilibria or the finite simulation times and critical slowing down generate clouds of intermediate states. The liquid architecture also exhibits bistability, with stochastic fluctuations driving either tumor persistence or collapse. Several representative time series are displayed for parameter values involving persistence, collapse, and near-critical dynamics. Parameter values are provided in the Supplementary Table~6.}
+    \label{fig:trans}
+\end{figure*}
+
+
+For the liquid case, a more comprehensive theoretical treatment is accessible due to the absence of spatial constraints. This formal non-linear expansion accounts for multi-step mutational jumps via combinatorial probabilities and explicitly tracks Moran competition between the wild-type and malignant compartments (see Supplementary Materials, Section 1.1). At the stationary state, rather than a simple linear eigenvalue problem, these complex dynamics cleanly reduce to a sequence of exactly solvable quadratic equations governing the equilibrium fraction of each class $x_k^*$ (Supplementary Materials, Section 1.3):
+\begin{equation}
+    A_k(x_k^*)^2-B_kx_k^*-Q_{k-1}=0
+\end{equation}
+where the coefficients capture the exact interplay of intra-tumor self-displacement ($A_k$), net linear growth ($B_k$), and upstream mutational influx ($Q_{k-1}$). Also in this case, the theoretical predictions well overlap with the simulation results, as reported in Fig. 1 from the Supplementary Materials.
+
+Crucially, this emergent equilibrium state does not coincide with the boundary separating tumor proliferation from extinction in either the solid or liquid cases; rather, it acts as a stable dynamical attractor deep within the viable phase space. In contrast, the phase transition line remains critical in determining whether the neoplastic population can escape early stochastic reabsorption and establish this linear growth phase in the first place.
+
+While a heuristic estimate of this boundary for the solid case was outlined previously, for the liquid case it can be formally defined by the Unified Growth Foothold Inequality, derived from the linear stability analysis of the healthy fixed point (Supplementary Materials, Section 1.3):
+\begin{equation}
+r_{\textbf{max}}(2\alpha_1 - 1) > r_0,
+\end{equation}
+which establishes the critical threshold where the founding cancer cell's net clonal expansion drops below the homeostatic wild-type division rate. Substituting the explicit expression for $\alpha_1$ yields exactly Eq.~\eqref{eq:p_abs_solid}. The analytical boundary is plotted against the simulation results in Fig.~\ref{fig:phase_diagram}d, demonstrating that they coincide perfectly in the asymptotic limit.
+
+Finally, this framework explains why some tumors, despite temporarily settling into a stable mutational state, are driven to delayed extinction if they cross above this phase-transition line. Because mutation transitions are strictly unidirectional, if stochastic fluctuations or intense selective sweeps cause the absolute loss of all cells in the lowest mutational classes, the tumor cannot regenerate them. Consequently, the system's lower boundary shifts, making the lowest active class $x_j$ instead of $x_1$. This truncation forces a permanent upward shift in the baseline mutation rate across the entire remaining tumor population, escalating the mutational burden and driving the system into an irreversible shrinking phase.
+
+
+\begin{table*}[htbp]
+\centering
+\caption{\textbf{Summary of tumor survival and growth characteristics across different ploidy states.} Simulation parameters are fixed at: $\mu_0 = 0$, $\Delta\mu = 1.5\times10^{-2}$, $r_0 = 2\times10^{-1}$, $\Delta r = 1.5\times10^{-2}$, $r_{\max} = 2r_0$, $L = 100$, $d_{\rm lim} = 0.4$, $\eta_0 = 0$, $\delta\eta = 2\times10^{-3}$ and $n_{\text{reps}}=500$.}
+\label{tab:tumor_characteristics}
+\begin{ruledtabular}
+\begin{tabular}{lccc}
+\textbf{Metric / Feature} & \textbf{Diploid ($D$)} & \textbf{Polyploid ($P$)} & \textbf{Aneuploid ($A$)} \\ 
+\midrule
+\textbf{Survival Probability} ($P_{\rm surv}$) & & & \\
+\quad Subcritical regime ($\mu_{\rm lim} < \mu_{\rm crit}$) & $\simeq 1$ & $\simeq 1$ & $\simeq 1$ \\
+\quad Supercritical regime ($\mu_{\rm lim} > \mu_{\rm crit}$) & $0.28$ & $0.25$ & $0.36$ \\ 
+\midrule
+\textbf{Growth Velocity} ($s$) & & & \\
+\quad Initial Phase & Slow ($s_D$) & Intermediate ($s_P$) & Fast ($s_A$) \\
+\quad Stationary Regime & Intermediate ($s_D$) & Slow ($s_P$) & Fast ($s_A$) \\
+\bottomrule
+\multicolumn{4}{l}{\small \textit{Note}: Explicit orderings correspond to $s_A > s_P > s_D$ (initial phase) and $s_A > s_D > s_P$ (stationary regime).}
+\end{tabular}
+\end{ruledtabular}
+\end{table*}
+
+
+
+\subsection*{Critical Slowing Down Drives Long Transient Dynamics Near Tumor Growth Phase Transitions}
+
+Having established that tumor viability is bounded by a critical threshold separating sustained expansion from mutational collapse, a central question is how neoplastic populations behave in the immediate vicinity of this boundary. In physical and biological systems, approaching a phase transition often alters the relaxation kinetics of the system, giving rise to emergent macroscopic phenomena such as critical slowing down or bistability. This critical slowing down arises naturally in the vicinity of bifurcations for nonlinear dynamical systems. To elucidate the nature of the viability boundary and the dynamic fate of tumors poised near criticality, we conducted a systematic numerical exploration of equilibrium tumor sizes, extinction times ($T_e$), and population trajectories across parameter sweeps of mutational burden ($\Delta \mu$) and replication advantage ($\Delta r$) in both solid and liquid tumors (Fig.~\ref{fig:trans}).
+Remarkably, despite their distinct spatial structures, both solid and liquid tumors share fundamental hallmarks of critical dynamics near the edge of viability. Most prominently, both frameworks exhibit severe critical slowing down as parameters approach the critical thresholds ($\Delta \mu_c$, $\Delta r_c$), manifested as a sharp, non-linear divergence in the extinction time $T_e$ (Fig.~\ref{fig:trans}a--d, insets). This critical slowing down is equally reflected in the equilibrium tumor size profiles across control parameters. 
+
+
+
+%\begin{figure*}
+ %   \centering
+  %\includegraphics[width=\linewidth]{images/Fig_trans.pdf}
+   % \caption{Phase transitions in tumor growth for solid and liquid tumor architectures.** The figure illustrates how system behavior changes in response to variations of the control parameters: the mutational burden $\Delta\mu$ (panels a, b) and the replication advantage $\Delta r$ (panels c, d). Each panel displays the equilibrium tumor size as a function of the control parameter and features an inset on the left showing the time to extinction $T_e$ as a function of the control parameter. All panels clearly exhibit critical transition behavior, characterized by an abrupt shift in system dynamics upon crossing the transition point. While transitions driven by the replication advantage $\Delta r$ appear sharp, varying the mutational burden $\Delta\mu$ reveals a much richer landscape of dynamical behaviors. In both the solid and liquid architectures, clouds of intermediate points emerge near the critical boundary as a consequence of severe critical slowing down near the bifurcation point combined with the finite time horizon of the simulations. For the liquid architecture (panel b), a prominent bistable region develops, wherein early stochastic fluctuations dictate the ultimate outcome of the system. In panels (a) and (b), insets to the right depict the temporal evolution of tumor size for representative simulation runs. The top and bottom insets illustrate system trajectories in the explosive expansion and mutational meltdown (extinction) regimes, respectively, while the middle insets showcase near-critical dynamical behaviors. In the liquid model, points in the transient cloud represent trajectories where the system hovers near a quasi-stationary state for extended durations. In contrast, in the bistable region, simulations initialized with identical parameter values diverge after a common initial growth phase, either collapsing completely to a healthy state or expanding rapidly to maximum tumor capacity. The full set of detailed parameters used for all simulations is reported in Supplementary Tab.~6.}
+   % \label{fig:trans}
+%\end{figure*}
+
+
+However, the nature of the transition depends strongly on the control parameter being varied. Changes in the replication-rate increment $\Delta r$ produce a sharp transition between deterministic tumor growth and rapid population collapse (Fig.~\ref{fig:trans}c,d). By contrast, changes in the mutation-rate increment $\Delta \mu$ generate a prominent cloud of intermediate population densities near the critical threshold in both solid and liquid architectures (Fig.~\ref{fig:trans}a,b). These intermediate population sizes may reflect two possible scenarios: (i) the tumor remains trapped in an extremely long transient toward collapse, given that tumor sizes are recorded after $10^5$ time steps; or (ii) an additional low-tumor equilibrium exists near or at the bifurcation, potentially associated with a quasi-neutral set of equilibria, as previously identified for haploid models of cancer instability~\cite{Sardanyes2017JMB,Sardanyes2018RSOS,Sardanyes2018SciRep}.
+
+
+A key distinction between solid and liquid tumors lies in the emergence of a clear bistable region in the liquid framework (Fig.~\ref{fig:trans}b), a feature that is not so clear in the solid case. Mechanistically, the relaxation of spatial constraints in liquid tumors enables rapid, globally mixed proliferation. This well-mixed structure brings the effective equilibria governing expansion and extinction into proximity within parameter space. Consequently, the long-term fate of the neoplasm becomes highly sensitive to early stochastic fluctuations, i.e., depending on initial growth dynamics, realization trajectories can be tipped either toward sustained linear growth or complete population extinction.
+
+
+\subsection*{Karyotype heterogeneity affects tumor growth}
+
+Beyond localized nucleotide substitutions, structural alterations to the cellular karyotype introduce macro-level genomic instability that can profoundly shape the expansion dynamics of a neoplasm. To systematically evaluate how different karyotypic architectures impact tumor growth, we expand our modeling framework beyond standard diploid dynamics—where chromosomal configuration remains fixed and instability is restricted to point mutations—to incorporate two distinct regimes of chromosomal structural instability. %\textcolor{violet}{({\bf If I understood it correctly, missegregation has not been incorporated in all the previous results? This is a little bit confusing of what is being added now and what has been modeled so far. I think it should be very clear stated)}}:  
+\begin{itemize}
+    \item \textit{Polyploid Regime}:A structural instability configuration characterized exclusively by the missegregation of entire intact chromosomes during cell division.  
+    \item \textit{Aneuploid Regime}: A structural configuration that allows segmental missegregation, in which sub-chromosomal genomic fragments are severed and asymmetrically transferred between mother and daughter cells. For clarity, the baseline case devoid of structural macro-alterations is designated as Diploid.
+\end{itemize}
+
+
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{images/Fig_5.pdf}
+    \caption{{\bf Evolutionary dynamics and steady-state distribution of genetic instability in solid tumor simulations.} (a) Temporal evolution of subpopulation fractions $x_k$ as a function of simulation steps. The population is stratified by $k$, representing the number of active genetic instability genes per cell ($k \in [1, 10]$). Following initial transient fluctuations, the system relaxes into a stable, non-equilibrium steady state where subpopulations with low genomic instability ($k=1, 2, 3$) dominate the tumor mass. (b) Dynamic trajectory of the global mutation rate $\mu(t)$ (solid teal line) converging toward the theoretically predicted asymptotic limit $\mu_{\infty}$ (dashed black line). The rapid early expansion corresponds to a transient phase of mutational acceleration before stabilizing due to selective pressures. (c) Steady-state subpopulation fractions $x_k^*$ as a function of active instability genes. Simulated empirical distributions derived from the spatial tumor model (colored bars, error bars denote standard deviation across independent realizations) show excellent agreement with the analytical predictions derived from the master equation/mean-field framework (dashed orange line with diamonds, $\text{Theory } x_k^*$). (d) Functional dependence of phenotypic probabilities on the number of active instability genes $k$. The probability of cell death $p_{\text{die}}$ (purple line) increases monotonically with $k$, reflecting the fitness cost of severe genomic breakdowns. Concurrently, the probability of acquiring further mutations $p_{\text{mut}}$ (orange line) exhibits a non-monotonic, concave profile, peaking at intermediate values ($k \approx 6$) before collapsing to zero as cells approach the maximum instability threshold ($k=10$), capturing the metabolic and structural limits of viable mutational acceleration.}
+    \label{fig:pop_dyn}
+\end{figure*}
+
+
+
+Macroscopic temporal tracking demonstrates that these three structural configurations diverge into distinct evolutionary growth signatures (Fig.~\ref{fig:phase_diagram}e-f and Tab.~\ref{tab:tumor_characteristics}). For both diploid and aneuploid scenarios, cumulative tumor volume follows a continuously accelerating parabolic trend over time. Conversely, the Polyploid population displays a clear bipartite growth trajectory: it undergoes a rapid initial parabolic expansion before shifting into a shallower, strictly linear proliferation trend that essentially stabilizes the long-term expansion rate.
+
+
+
+\begin{figure*}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{images/FIG_therapyCIN}
+    \caption{{\bf Evolutionary and population dynamics of solid tumors under target-specific therapeutic interventions.}
+    The figure shows the time course of tumor density (left y-axis, blue curves) and the mean mutation rate $\langle \mu \rangle$ of the cancer population (right y-axis, orange curves) across four treatment strategies. In all panels, the treatment is triggered when the tumor density reaches $30\%$ of the tissue grid, indicated by the vertical dashed line (Intervention Instant). The lower panels sketch the logic of each class of intervention. 
+    (a) Remove cells proportionally to $r$: Selective clearance of highly proliferative cancer cells (probability proportional to replication rate $r$) causes a transient drop in tumor density, followed by rapid regrowth of the surviving population.
+    (b) Clear low-instability clones: Targeting cells with low mutation rates ($\mu \leq \Delta\mu$) results in immediate regression but leaves highly unstable cells, accelerating evolution and driving rapid recurrence.
+    (c) Clear high-instability clones: Clearance of cells with high mutation rates ($\mu \geq 3\Delta\mu$) limits the evolutionary capacity of the tumor, preventing the emergence of aggressive clones and stabilizing tumor growth.
+    \rev{(d)} Double instability burden: Doubling the mutation rate increment parameter $\Delta\mu$ drives the population into a mutational meltdown (error catastrophe), where the accumulation of deleterious mutations overwhelms selection, leading to complete tumor collapse.}
+    \label{fig:therapeutics}
+\end{figure*}
+
+A prominent distinguishing feature among these regimes is that the early expansion velocity of the Polyploid population is substantially higher than that observed in either the Diploid cohort, and comparable to the Aneuploid one, while in the long run, it displays the slower tumor growth curve. In mechanistic terms, whole-chromosome missegregations act as an immediate double-edged sword. Toward the beginning of tumor development, these large-scale duplications rapidly increase cellular replication rates by amplifying the number of copies across growth-promoting pathways. Here, duplicated chromosomes provide structural redundancy that protects the population from immediate fitness penalties, allowing cells to harbor highly mutated housekeeping ($\mathcal{H}$) genes without facing strict negative selection. However, as the neoplasm matures, this unselected reservoir of hidden mutational damage reaches critical saturation. In this advanced phase, subsequent whole-chromosome missegregation events carry a prohibitive fitness cost, frequently eliminating the remaining functional housekeeping alleles and driving a sharp increase in the cancer cell death rate.  
+In contrast, the Aneuploid regime exhibits a unique adaptive trajectory. Cells undergoing segmental missegregation are continuously selected to optimize their replication speed while managing their underlying mutational fragility. This active selection enables the Aneuploid population to achieve a accelerated rate of expansion relative to the rigid Diploid baseline, while avoiding the catastrophic late-stage mortality spike that limits the Polyploid cohort to linear growth.  
+
+
+
+
+
+\subsection*{Instability enhancement as cancer therapeutics}
+
+
+As noted in \citet{yap2026targeting}, targeting genomic instability 
+has reshaped oncology. CIN in particular is crucial for accelerating 
+the acquisition of hallmark traits \cite{janssen2013genetic,huang2013genetic}. It also creates fragilities that 
+can be used as therapeutic targets \cite{martin2010genomic,hussain2025genomic}. In addition to ongoing efforts 
+on the clinical trial side, theoretical models can illuminate key 
+aspects of the nature of evolving instability. 
+
+
+How does the viability of CIN-positive cancer cell populations 
+change as they evolve toward a critical instability threshold? If
+such tumors spontaneously approach an edge-of-stability state 
+\cite{Amor2014-jv,sole2014can,andor2017genomic}, then 
+further increases in instability should generate a strongly 
+nonlinear response, potentially including tumor regression. However, 
+the result is expected to depend not only on the magnitude of the 
+perturbation but also on the cellular subpopulation to which it is 
+targeted. We explore this question through simulated therapeutic 
+interventions, summarized by the four time series shown in 
+Fig.~\ref{fig:therapeutics}, each corresponding to a different 
+treatment protocol, indicated in the lower panels.
+
+
+Standard interventions based on proportional mass reduction fail to eradicate the disease. Killing cells according to their proliferation rate leaves the underlying subpopulation architecture largely intact, because reproductive output is nearly homogeneous across the tumor population (Fig.~\ref{fig:therapeutics}a). Similarly, selective removal of the most unstable clones produces only a transient reduction in the mutational burden. The ongoing forward transitions rapidly regenerate high-instability classes, restoring the original distribution and allowing tumor growth to resume (Fig.~\ref{fig:therapeutics}c).
+
+In contrast, successful eradication requires interventions that irreversibly reshape the mutational landscape. Two scenarios achieve this outcome. In the first, selective depletion of the lowest-mutating subpopulation removes the stable reservoir from which viable tumor growth is maintained. Because genetic transitions are effectively unidirectional in the model, these low-instability classes cannot be regenerated by the remaining cells. Their loss therefore produces a permanent upward displacement of the population distribution toward higher mutational classes, eventually compromising viability (Fig.~\ref{fig:therapeutics}b). In the second scenario, a uniform increase in $\Delta\mu$ amplifies genomic damage in all classes of cells (Fig.~\ref{fig:therapeutics}d), pushing the tumor beyond the critical transition boundary, as shown in Fig.~\ref{fig:phase_diagram}. In both cases, collapse occurs because the intervention breaks the ecological balance that allows proliferative gains to compensate for genomic fragility. The population is driven across a phase boundary into an irreversible extinction regime, as expected for a system already poised near the edge of instability.
+
+At the molecular level, these two successful scenarios 
+suggest different therapeutic analogs. The first would 
+correspond to strategies that eliminate low-instability 
+founder-like reservoirs, for example, by targeting truncal 
+oncogenic dependencies, clonal neoantigens, or stable surface 
+markers enriched in the least unstable compartment 
+\cite{Weinstein2002,Gerlinger2012,McGranahan2016}. This could 
+include genotype-specific inhibition of founder drivers, 
+clonal neoantigen-directed vaccines or adoptive T-cell therapies, 
+and antibody-based approaches against persistent 
+reservoir markers. The second scenario would correspond 
+to therapies that deliberately increase replication stress, 
+chromosome missegregation, or mitotic failure, thus converting 
+CIN from an adaptive source of heterogeneity into a 
+lethal burden \cite{Sansregret2018,Hosea2024}. Candidate 
+interventions include DNA-damaging chemotherapy and 
+radiation therapy, checkpoint abrogation by inhibiting 
+ATR, CHK1, or WEE1, and mitotic fidelity inhibitors such 
+as MPS1/TTK, Aurora kinase, PLK1, CENP-E, or microtubule-targeting 
+agents \cite{Bakhoum2015,daCosta2023,Longo2024}. In 
+this interpretation, therapeutic success does not arise from 
+reducing tumor mass, but from forcing a persistent 
+displacement of the tumor population across its critical 
+viability boundary.
+
+
+
+
+\section*{Discussion}
+
+%\textcolor{violet}{\bf ** remember: genes versus gene networks (Huang and others); transitions associated to network-level percolation (Shin et al., Nat Comm). }
+
+Chromosomal instability (CIN) occupies a paradoxical position in 
+cancer evolution. On the one hand, it fuels tumor progression by 
+generating the karyotypic diversity required for adaptation, clonal 
+diversification, and escape from tissue-level constraints. However
+, the same process progressively erodes cellular viability 
+by increasing the probability of losing essential genetic functions, 
+producing lethal dosage imbalances, and destabilizing the mitotic 
+machinery itself. Our results support the view that CIN-driven tumor 
+evolution behaves as a runaway dynamics toward a critical boundary: 
+below this boundary, instability remains compatible with malignant 
+growth and adaptive exploration; beyond it, the population enters a 
+collapse phase in which genomic damage overwhelms the capacity for 
+reproduction. In this sense, successful tumors are not simply those 
+that maximize instability, but those that evolve close to the edge 
+that separates evolvable malignancy from mutational or karyotypic 
+catastrophe.
+
+Previous models of evolutionary dynamics of cancer have been developed over the last decades~\cite{Sole2003-ne,Sole2004-bf,Sardanyes2017JMB,Sardanyes2018SciRep}, 
+A novel aspect of our approach is the explicit construction of an \textit{in silico} diploid genome that encodes distinct classes of genes that control growth, death, division, chromosome segregation, and mutational processes. Rather than representing instability as a single phenomenological parameter, the model allows genomic alterations to act directly on the rules that determine cellular viability and reproductive success. This places the evolving tumor population on a large, high-dimensional fitness landscape, where each mutational or chromosomal event can modify both cell fitness and the future rate of exploration. In this setting, cancer progression emerges as a runaway evolutionary process: mutations that increase proliferation or instability expand the accessible region of genotype space, but at the same time push the population toward progressively higher levels of genomic disruption and, ultimately, toward a critical viability boundary. By mapping the parameter space under which a tumor either expands or collapses, our model quantifies the interplay between two opposing forces: the expansive force associated with the replicative advantage of malignant cells, and the shrinking tendency caused by the accumulated genomic fragility generated by ongoing alterations. In particular, we identify a dynamic boundary region that, once crossed, precipitates a mutational catastrophe leading to complete population collapse. This evolution towards a critical boundary is self-organized, but instead of being a result of purely ecological events \cite{sole2002self}, it emerges from the evolutionary dynamics of the population, where cell division, mutation, chromosomal missegregation, and death collectively determine whether the tumor remains viable or collapses.
+
+A key finding is that the stability conditions of the simulated tumor arise from the structural equilibration between mutation supply and loss of viability. \rev{This ecological balance naturally reconciles single-cell mutational irreversibility with clinical observations of genomic stasis. For instance, single-cell sequencing in breast cancer shows that early bursts of copy-number alterations are followed by prolonged clonal stasis~\cite{gao2016punctuated}, while live imaging in colorectal organoids reveals that persistent chromosome missegregation coexists with remarkably stable modal karyotypes~\cite{bolhaqueiro2019ongoing}. In our framework, macroscopic stability does not require backward mutations or single-cell reversibility; rather, it emerges as an ecological attractor where purifying selection against lethal housekeeping damage continuously balances mutational influx, stabilizing the population-level karyotype.}
+
+This scenario was observed in both solid and liquid tumor configurations, but with important differences. Spatial locality in solid tumors constrains clonal expansion and produces local pockets of high instability, making collapse more accessible once fragile lineages accumulate. By contrast, in the liquid-tumor setting, where spatial constraints are relaxed, the population exhibits greater resilience because unstable lineages are more efficiently diluted within the global population. This comparison suggests that tissue architecture and dispersal may modulate the degree to which a tumor can approach the critical CIN boundary before extinction.
+
+Additionally, our critical transition analysis further demonstrates that neoplastic survival near the viability boundary is governed by universal critical dynamics, with key qualitative differences depending on mutational controls and tissue architecture. Near the critical thresholds, both solid and liquid tumors exhibit severe critical slowing down, manifested as a sharp non-linear divergence in extinction times. However, while variations in proliferation rate ($\Delta r$) yield a sharp, clean boundary separating growth from collapse, escalating mutation rates ($\Delta \mu$) generate a cloud of intermediate population densities near criticality. These population values found between the persistence and the collapse of the tumor may represent two possible scenarios: (i) the tumor is in an extremely long transient toward collapse, or (ii) there is another equilibrium state just at the bifurcation value involving lower tumor sizes, e.g., a quasi-neutral set of equilibria as identified in Ref.~\cite{Sardanyes2017JMB,Sardanyes2018RSOS, Sardanyes2018SciRep}, for the haploid model. Furthermore, tissue architecture dictates the emergent phase behavior: spatial constraints in solid tumors enforce a continuous transition, whereas the unconstrained spatial mixing of liquid tumors gives rise to a distinct bistable regime, where early stochastic fluctuations determine whether the neoplasm achieves sustained growth or suffers complete population extinction.
+
+Our analysis also highlights the role of karyotype structure in 
+shaping long-term tumor fate. The early accumulation of extra 
+chromosomes can provide a transient evolutionary advantage by 
+increasing mutational target size, buffering deleterious losses, or 
+amplifying driver-containing chromosomes. However, this advantage is 
+self-limiting. As the karyotype becomes increasingly distorted, 
+downstream mutations and chromosomal imbalances accumulate, 
+progressively increasing fragility. Thus, polyploid or highly 
+aneuploid states can initially expand the accessible adaptive space, 
+but at the cost of moving the tumor closer to a viability threshold.
+This provides a mechanistic interpretation of CIN as a double-edged 
+process: it creates the diversity on which selection acts while 
+simultaneously increasing the probability of population-level 
+failure.
+
+
+This framework also allows us to evaluate synthetic therapeutic 
+strategies designed to perturb tumor growth. Interventions based 
+solely on proportional mass reduction, such as non-specific killing 
+or removal of highly proliferative cells, often fail because they 
+leave behind viable regions of the instability distribution from 
+which regrowth can occur. By contrast, strategies that directly 
+alter the mutational or karyotypic burden can be more effective 
+because they move the entire population to the critical 
+limit. In this interpretation, therapeutic success does not 
+necessarily require immediate eradication of every malignant cell. 
+Instead, treatment can act by forcing a persistent shift of the 
+tumor population into a region of parameter space where its own 
+instability becomes incompatible with continued evolution. \rev{However, the efficacy of this strategy critically assumes unidirectional mutational accumulation. In clinical translation, it is essential to first evaluate the potential for backward mutations, compensatory repair adaptations, or phenotypic stabilization in the tumor. If cells can downregulate their instability or revert damaged phenotypes, surviving clones could arrest the mutational collapse, escape the extinction threshold, and repopulate the lesion. Assessing whether a tumor's instability is genuinely irreversible is therefore a vital prerequisite for CIN-inducing therapeutics.}
+
+Several limitations remain. Our coarse-grained model maps discrete 
+functional gene classes onto a simplified lattice and does not yet 
+include dynamic microenvironmental factors or explicit immune 
+predation. Cell replication is also 
+treated through fixed autonomous phenotypic rules, neglecting 
+phenotypic plasticity or epigenetic inheritance. Our spatial simulations are restricted to two dimensions, representing a minimal framework for local competition and spatially constrained proliferation. Although the underlying genomic mechanisms are not specific to two-dimensional geometry, extending the model to three dimensions could alter growth-front dynamics, clonal competition, and the quantitative location of the viability boundary. The comparison with well-mixed populations supports the existence of instability-driven collapse across different interaction structures, but a systematic analysis of dimensionality remains an important direction for future work. Future work could extend the framework to models involving off-lattice or continuous agents coupled to partial differential equations describing oxygen, 
+metabolites, drug diffusion, and vascular dynamics. Such extensions 
+would allow us to study how local ecological niches reshape the CIN 
+boundary and whether hypoxic, poorly vascularized, or mechanically 
+confined regions act as reservoirs of instability-tolerant cells.
+
+A particularly important extension concerns combination therapies. 
+Previous mathematical work has suggested that genetic instability 
+can enhance immune surveillance by increasing mutational burden and 
+neoantigen production, creating transitions toward immune control 
+when mutational load and immune recruitment are jointly increased 
+\cite{aguade2019genetic,aguade2026tumor}. Related models of neoantigen heterogeneity 
+indicate that immune control is limited not only by total neoantigen 
+load, but also by the distribution of neoantigens between tumor 
+subclones: beyond a diversity threshold, T cells may fail to control
+a highly heterogeneous tumor, whereas therapies that reduce 
+heterogeneity or induce selective sweeps can open a time window in 
+which checkpoint blockade becomes more effective 
+\cite{aguade2020tumour,pounraj2024targeting}. These results 
+suggest that CIN-directed 
+therapies could have two opposing immunological consequences. 
+Moderate increases in instability might enhance immunotherapy by 
+increasing the availability of neoantigens, whereas excessive or highly 
+heterogeneous instability could promote immune escape by fragmenting
+the antigenic landscape. Therefore, a natural next step is to couple 
+the present CIN-collapse model with explicit immune recognition, 
+neoantigen production, and clonal antigen sharing. 
+
+Ultimately, by mapping the state transitions separating malignant 
+expansion from instability-driven extinction, and by validating 
+these transitions through analytical Master Equations, this work 
+establishes a quantitative blueprint for evolutionary therapies 
+designed to drive malignant populations into a permanent, self-directed collapse. The broader implication is that CIN should not be 
+viewed only as a hallmark that enables cancer adaptation, but also 
+as a latent vulnerability. Cancer progression requires remaining on
+the viable side of a critical boundary; therapy may succeed by 
+pushing the tumor across it.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Materials and Methods}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Simulations setups}
+Simulations are initialized within a healthy tissue domain at homeostatic equilibrium, into which a small founding cohort of $N_0$ cancer cells is introduced at the geometric center of the spatial lattice for the solid tumor scenario, and in random position for the liquid case. These founding malignant cells are generated by introducing a driver mutation into a single oncogene ($\mathcal{O}$) alongside the complete inactivation of all alleles within a designated genome instability gene ($\mathcal{I}$). This baseline genotype equips the founding cells with the minimal phenotypic hallmarks of a neoplasm: an enhanced replication rate relative to wild-type cells and a baseline mutation rate significantly greater than zero.
+
+Simulations proceed dynamically until one of two mutually exclusive termination criteria is satisfied: either the total number of cancer cells drops to zero, representing complete stochastic reabsorption and a return to a healthy tissue state, or the malignant population expands to occupy 40\% of the total tissue volume, signifying successful tumor establishment. This upper threshold was strategically implemented to ensure that measurements of early-to-mid phase expansion kinetics remain uncorrupted by boundary effects or finite-size lattice constraints.
+
+\subsection*{Simulation Parameters}
+
+The complete configurations of the simulation parameters utilized across the distinct computational analyses in this study are detailed in Tables 3, 4, and 5 within Section 2 of the Supplementary Materials.
+
+\subsection*{Analytical derivation of stationary mutational populations densities for the solid tumor case}
+
+The continuous-time Master Equation governing the tumor subpopulation fractions $x$ is initially non-linear:
+$$\frac{dx}{dt} = rAx - \Phi x$$
+This non-linearity arises from the constraint term $\Phi$, which acts as the average fitness of the entire tumor population to enforce a constant total size. Analytically, $\Phi$ is the sum of the effective growth rates across all subpopulations:
+$$\Phi = r \sum_{i=1}^{N_I} x_i (1 - p_{d,i})$$
+Because the model dictates unidirectional transitions (from class $i$ to $i+1$) and forbids back mutations, the transition matrix $A$ is strictly lower bidiagonal. For any bidiagonal matrix, the eigenvalues are simply the entries on the main diagonal. Thus, the exact eigenvalues are:
+$$\lambda_i = 1 - p_{d,i} - p_{\mu,i}$$
+for $1 \leq i < N_I$, and $\lambda_{N_I} = 1 - p_{d,N_I}$ for the final class. The corresponding eigenvectors can be found analytically through straightforward forward-substitution.
+
+The population eventually converges to a stationary ecological equilibrium, $x^*$. Mathematically, this corresponds exactly to the normalized principal eigenvector of the transition matrix $A$ (associated with the largest eigenvalue). Because probabilities of death and transition monotonically increase with instability, the maximum eigenvalue is definitively the first one:
+$$\lambda_{max} = \lambda_1 = 1 - p_{d,1} - p_{\mu,1}$$
+To find the concentrations of the stationary subpopulation, we solve the eigenvector system $A x^* = \lambda_1 x^*$ recursively using forward substitution. For classes $1 < i \leq N_I$, this yields the following:
+$$x_i^* = x_{i-1}^* \frac{p_{\mu, i-1}}{\lambda_1 - \lambda_i}$$
+By substituting the eigenvalues and expanding the recursion, we obtain a complete product formula relative to the first class:
+$$x_i^* = x_1^* \prod_{j=2}^i \frac{p_{\mu, j-1}}{(p_{d,j} + p_{\mu,j}) - (p_{d,1} + p_{\mu,1})}$$
+Finally, we apply the biological constraint that the sum of all subpopulation fractions must equal 1 ($\sum_{i=1}^{N_I} x_i^* = 1$). This provides the absolute fraction for the lowest instability class:
+$$x_1^* = \left( 1 + \sum_{i=2}^{N_I} \prod_{j=2}^i \frac{p_{\mu, j-1}}{(p_{d,j} + p_{\mu,j}) - (p_{d,1} + p_{\mu,1})} \right)^{-1}$$
+
+\subsection*{Mean-field analytical derivation for the liquid tumor case}
+
+We developed an exact analytical framework describing a well-mixed liquid tumor model under a constant population size constraint. The cellular population is partitioned by densities into healthy wild-type cells ($f_W$), empty dead slots ($p_D$), and discrete cancer sub-populations ($f_k$), where $k \in \{1, \dots, N_I\}$ denotes the number of mutated instability genes. Cellular replacement is governed by a Moran-like competition process where cells divide at intrinsic rates ($r_{\text{max}}$ for cancer, $r_0$ for wild-type) and displace targets based on relative fitness.  
+A fundamental premise of our framework is that stochastic mutation and viability checks occur strictly upon successful cellular division. During division, a cancer cell's per-locus mutation probability scales linearly with its instability class ($\mu_k = k \cdot \Delta\mu$). A cell survives this process only if all essential housekeeping loci remain unmutated, establishing a baseline survival probability. We exacted this stochastic process into a combinatorial formulation that dictates three potential post-replication fates for both mother and daughter cells: faithful cloning ($\alpha_k$), multi-step promotion to a higher instability class ($P_{k \to k+j}$), or lethal mutation ($\delta_k$). Full details of the possible transitions and associated probabilities are reported in Supplementary Materials, section 1.1, Tab.2. 
+
+By applying the thermodynamic limit ($N \to \infty$), we transitioned from a discrete stochastic master equation, which maps all microscopic transitions, into a continuous system of ordinary differential equations (ODEs). These ODEs track the dynamic balances of the system, including faithful clonal expansion, mutational promotion influx from upstream classes, and cellular loss due to lethal mutations, wild-type clearance, and spatial self-displacement.  
+
+Performing a linear stability analysis on the healthy fixed point yielded a unified growth foothold inequality: $r_{\text{max}} (2\alpha_1 - 1) > r_0$. This inequality explicitly defines the boundary where a tumor's net mutational survival overcomes homeostatic wild-type division.  
+
+Provided the foothold inequality is satisfied, the system reaches a steady-state equilibrium. By setting the ODEs to zero, we derived the tumor's non-equilibrium stationary subpopulation densities ($f_k^*$) sequentially through a standard quadratic formulation. This exact solution accounts for the self-interaction, net growth, and upstream mutational influx of each instability class.  
+The fully detailed derivation is reported in Supplementary Material, section 1.
+
+\vspace{0.2 cm}
+
+{\bf Acknowledgments}
+\vspace{0.2 cm}
+\\
+The authors thank the members of the Complex Systems Lab for valuable discussions and feedback. RS acknowledges the support of the AGAUR 2021 SGR 0075 grant; an AEI-PID2023-152129NB-I00 grant; and the Santa Fe Institute, where many of the ideas developed in this work first began to take shape. FZ is supported by a Decreto Ministeriale n. 118 del 02/03/2023, M4C1 I. 4.1 from Piano Nazionale di Ripresa e Resilienza (PNRR), and acknowledges partial financial support from the INFN grant LINCOLN. G.A-G. was supported by a Marie Sklodowska-Curie Actions Postdoctoral Fellowship under project FRAGILEPRINTS - 101105029. Further support for CRM has been provided by the Spanish Research Agency (AEI), through the Severo Ochoa and Maria de Maeztu Program for Centres and Units of Excellence in R\&D (CEX2020-001084-M). We thank the CERCA Programme/Generalitat de Catalunya for institutional
+support.
+\vspace{0.2 cm}
+
+
+{\bf Author contributions} RS: initial conceptualization, mathematical modeling, simulation models, and first draft of the paper. FZ: conceptualization, computer simulations, mathematical modeling, data analysis and manuscript writing; GLD: conceptualization, computer simulations, and data analysis; QM,GA, JS: conceptualization. All authors contributed to the discussion, final editing, and analysis. 
+
+
+
+
+\vspace{0.2 cm}
+
+
+\renewcommand{\bibsection}{\section*{References}}
+\bibliography{biblio}
+
+%\clearpage
+%\section*{Detailed Word Count Diagnostic}
+%\detailtexcount{main}
+
+\end{document}
+
+
+
+
+\begin{table*}[t]
+\centering
+\begin{tabular}{p{5cm}|ccc}
+\toprule
+ & \textbf{Diploid} & \textbf{Polyploid} & \textbf{Aneuploid} \\
+\midrule
+\multirow{2}{*}{\textbf{Survival probability} $p_{surv}$} 
+& \multicolumn{3}{c}{\textit{Subcritical regime} ($\mu_{lim} < \mu_{crit}$)} \\
+& $\approx 1$ & $\approx 1$ & $\approx 1$ \\
+\cmidrule(lr){2-4}
+\multirow{2}{*}{}
+& \multicolumn{3}{c}{\textit{Supercritical regime} ($\mu_{lim} > \mu_{crit}$)} \\
+& 0.28 & 0.25 & 0.36 \\
+\midrule
+\textbf{Growth speed (stationary regime)} 
+& \multicolumn{3}{c}{$s_D > s_A > s_P$} \\
+\midrule
+\textbf{Growth speed (initial phase)} 
+& \multicolumn{3}{c}{$s_P > s_D > s_A$} \\
+\bottomrule
+\end{tabular}
+\caption{
+Summary of tumor survival and growth characteristics under different ploidy states.
+\textit{Simulation parameters:} 
+$\mu_0 = 0$, $\Delta\mu = 5\times10^{-3}$, 
+$r_0 = 2\times10^{-1}$, $\Delta r = 2\times10^{-2}$, 
+$r_{\max} = 2r_0$, $L = 100$, $d_{lim} = 0.4$, 
+$\eta_0 = 0$, $\delta\eta = 2\times10^{-3}$.
+}
+\label{tab:res}
+\end{table*}
